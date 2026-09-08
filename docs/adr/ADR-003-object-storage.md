@@ -11,22 +11,22 @@ unique, and the state bucket needs a companion lock to support five people runni
 concurrently.
 
 ## Decision
-One bucket per purpose, named `tillflow-<purpose>-<account_id>` (lowercase, account-ID suffix for
+One bucket per purpose, named `devops-g3-<purpose>-<account_id>` (lowercase, account-ID suffix for
 global uniqueness):
 
 | Bucket | Versioning | Encryption | Public access | Lifecycle |
 |---|---|---|---|---|
-| `tillflow-tfstate-<account_id>` | On | SSE-KMS (shared CMK, bucket keys on) | Blocked | Noncurrent versions expire after 90d; current version never expires |
-| `tillflow-artifacts-<account_id>` | On | SSE-KMS | Blocked | → Glacier IR at 30d, expire at 180d |
-| `tillflow-logs-<account_id>` | On | SSE-KMS | Blocked | → Glacier IR at 30d, expire at 400d (>1yr audit trail) |
-| `tillflow-backups-<account_id>` | On | SSE-KMS | Blocked | Expire at 35d (matches RDS's 7-day retention with margin) |
-| `tillflow-evidence-<account_id>` | On | SSE-KMS | Blocked | No automatic expiration — these are graded artifacts |
+| `devops-g3-tfstate-<account_id>` | On | SSE-KMS (shared CMK, bucket keys on) | Blocked | Noncurrent versions expire after 90d; current version never expires |
+| `devops-g3-artifacts-<account_id>` | On | SSE-KMS | Blocked | → Glacier IR at 30d, expire at 180d |
+| `devops-g3-logs-<account_id>` | On | SSE-KMS | Blocked | → Glacier IR at 30d, expire at 400d (>1yr audit trail) |
+| `devops-g3-backups-<account_id>` | On | SSE-KMS | Blocked | Expire at 35d (matches RDS's 7-day retention with margin) |
+| `devops-g3-evidence-<account_id>` | On | SSE-KMS | Blocked | No automatic expiration — these are graded artifacts |
 
-All buckets share one customer-managed KMS key (`alias/tillflow-s3`, rotation enabled) — adequate
+All buckets share one customer-managed KMS key (`alias/devops-g3-s3`, rotation enabled) — adequate
 isolation at this scale via IAM key-policy scoping of who can `Decrypt`, without paying per-bucket
 KMS overhead. Block Public Access is enabled at both the bucket and account level.
 
-The state bucket is paired with a DynamoDB lock table, `tillflow-tfstate-lock` (`LockID` partition
+The state bucket is paired with a DynamoDB lock table, `devops-g3-tflock` (`LockID` partition
 key, `PAY_PER_REQUEST` billing), referenced by every `infra/envs/*` root module's S3 backend block.
 
 ## Alternatives considered
