@@ -12,7 +12,7 @@ fast, pre-rehearsed action rather than an improvised rebuild.
 ## Decision
 - **Artifact identity**: every push to `main` builds one container image per changed service,
   tagged with the immutable commit SHA
-  (`<account_id>.dkr.ecr.us-west-1.amazonaws.com/tillflow-<service>:<sha>`). **`latest` is never
+  (`<account_id>.dkr.ecr.us-west-1.amazonaws.com/devops-g3/<service>:<sha>`). **`latest` is never
   used** — an image tag always names exactly one build.
 - **CI gate** (`.github/workflows/ci.yml`, required check on `main`): build, test, and validate on
   every PR and push. A separate `release.yml` job on `main` builds and scans each changed service's
