@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Required top-level layout
+        run: |
+          set -euo pipefail
+          for path in services/web services/pos services/payments services/commission services/_shared infra docs evidence CODEOWNERS; do
+            if [ ! -e "$path" ]; then
+              echo "::error::missing required path: $path"
+              exit 1
+            fi
+          done
+
+      - name: No unresolved ADR template markers on main-bound ADRs
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in docs/adr/ADR-0*.md; do
+            [ "$(basename "$f")" = "ADR-000-template.md" ] && continue
+            if grep -q '_TODO' "$f"; then
+              echo "::error file=$f::unresolved _TODO left in $f"
+              fail=1
+            fi
+          done
+          exit $fail

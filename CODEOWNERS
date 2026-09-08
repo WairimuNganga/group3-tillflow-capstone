@@ -1,0 +1,13 @@
+# CODEOWNERS — exactly one DRI per path.
+# Cross-reviewers are added as PR reviewers, not here.
+
+/infra/                     @lwambisrat
+/.github/workflows/         @WairimuNganga
+/services/payments/         @hunterachieng
+/services/pos/              @Ndichu-shee
+/services/web/              @Ndichu-shee
+/services/commission/       @Ndichu-shee   # calc+ledger = Product; B2C endpoint lives in payments
+/services/_shared/          @hunterachieng @WairimuNganga @Minage-Lauryne
+/docs/slo-error-budgets.md  @Minage-Lauryne
+/docs/runbook.md            @Minage-Lauryne
+/docs/threat-model.md       @lwambisrat
