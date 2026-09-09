@@ -27,8 +27,8 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from tillflow_shared.logging import configure_logging, get_logger
-from tillflow_shared.sampling import sampler_for_service
+from tillflow_shared.otel.logging import configure_logging, get_logger
+from tillflow_shared.otel.sampling import sampler_for_service
 
 DEFAULT_OTLP_ENDPOINT = "http://localhost:4317"
 

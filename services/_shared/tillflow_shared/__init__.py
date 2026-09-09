@@ -1,35 +1,23 @@
-"""Shared telemetry for every TillFlow service (ADR-008).
+"""TillFlow shared libraries — M-Pesa adapter, OTel instrumentation, health routes.
 
-    from tillflow_shared import setup_telemetry, get_logger
+One subpackage per DRI, so two owners never edit the same file:
 
-    setup_telemetry("pos")
-    log = get_logger(__name__)
+| Subpackage | DRI |
+|---|---|
+| ``tillflow_shared.mpesa`` | Hunter ([ADR-007]) |
+| ``tillflow_shared.otel`` | Minage ([ADR-008]) |
+| ``tillflow_shared.health`` | Wairimu (golden path) |
 
-HTTP services also wire ``tillflow_shared.middleware``. It is not imported here
-because it needs the ``http`` extra, which the commission worker does not install.
+The most-used calls are re-exported here for convenience.
 """
 
-from tillflow_shared.context import get_idempotency_key, get_tenant_id, request_context
-from tillflow_shared.logging import get_logger
-from tillflow_shared.metrics import business_counter
-from tillflow_shared.redaction import hash_msisdn, redact
-from tillflow_shared.telemetry import (
-    get_meter,
-    get_tracer,
-    setup_telemetry,
-    shutdown_telemetry,
-)
+from tillflow_shared.mpesa.factory import create_mpesa_adapter
+from tillflow_shared.mpesa.settings import MpesaSettings
+from tillflow_shared.otel import get_logger, setup_telemetry
 
 __all__ = [
-    "business_counter",
-    "get_idempotency_key",
+    "MpesaSettings",
+    "create_mpesa_adapter",
     "get_logger",
-    "get_meter",
-    "get_tenant_id",
-    "get_tracer",
-    "hash_msisdn",
-    "redact",
-    "request_context",
     "setup_telemetry",
-    "shutdown_telemetry",
 ]

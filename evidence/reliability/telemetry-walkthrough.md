@@ -65,7 +65,20 @@ changes between those two cases; only the collector's config does.
 
 ## 5. File by file, function by function
 
-### `tillflow_shared/context.py` — who this request belongs to
+`services/_shared` is one Python package with one subpackage per DRI, so two owners
+never edit the same file:
+
+```
+tillflow_shared/
+  mpesa/     Hunter    — adapter interface, Daraja sandbox, deterministic fake
+  otel/      Minage    — everything below
+  health/    Wairimu   — /health and /ready for the golden path
+```
+
+Only `tillflow_shared/__init__.py`, `tests/conftest.py`, `pyproject.toml` and
+`README.md` are shared, and they are all small and rarely change.
+
+### `tillflow_shared/otel/context.py` — who this request belongs to
 
 A server handles many requests at once, so "the current tenant" can't live in an
 ordinary variable — one request would overwrite another's. This uses Python
@@ -82,7 +95,7 @@ This is the shared-context agreement with Joyce: her database layer reads
 ([ADR-005](../../docs/adr/ADR-005-multi-tenancy-isolation.md)), and the logger reads the
 same value. One source of truth, not two mechanisms that can drift.
 
-### `tillflow_shared/redaction.py` — phone numbers never get written down
+### `tillflow_shared/otel/pii.py` — phone numbers never get written down
 
 | Function | What it does |
 |---|---|
@@ -96,7 +109,7 @@ hash. An unsalted hash of a 12-digit number can be brute-forced in seconds by tr
 every Kenyan number, so an unset salt has to fail closed rather than emit something
 that only looks safe.
 
-### `tillflow_shared/logging.py` — one log call becomes a full record
+### `tillflow_shared/otel/logging.py` — one log call becomes a full record
 
 `JsonFormatter.format()` is the core. Every `log.info(...)` anywhere in any service
 runs through it and produces a single line of JSON containing the time, level, service,
@@ -114,7 +127,7 @@ and it still cannot reach stdout in the clear.
 | `configure_logging(service, level)` | Attaches the formatter to the root logger. Deliberately *removes* existing handlers first, because uvicorn installs its own on import and you would otherwise get every line twice. Also routes uvicorn's own logs through the same formatter. |
 | `get_logger(name)` | Returns a plain Python logger. |
 
-### `tillflow_shared/sampling.py` — which traces get kept
+### `tillflow_shared/otel/sampling.py` — which traces get kept
 
 `ratio_for_service()` returns 100% for `payments` and `commission`, 10% for `pos` and
 `web`, per ADR-008. `TILLFLOW_TRACE_SAMPLE_RATIO` overrides it (clamped to 0–1) so a k6
@@ -136,7 +149,7 @@ known. That rule has to be a `tail_sampling` policy in the collector instead.
 
 **Both need an ADR-008 amendment.**
 
-### `tillflow_shared/metrics.py` — the numbers
+### `tillflow_shared/otel/metrics.py` — the numbers
 
 | Function | What it does |
 |---|---|
@@ -146,7 +159,7 @@ known. That rule has to be a `tail_sampling` policy in the collector instead.
 The names come straight from ADR-008 and must be identical across services, or a single
 Grafana query and a single burn-rate alert can't be written once and reused.
 
-### `tillflow_shared/telemetry.py` — the one function everyone calls
+### `tillflow_shared/otel/bootstrap.py` — the one function everyone calls
 
 `setup_telemetry("pos")` does five things: builds the service's identity, pins the
 propagation format, installs tracing with this service's sampling policy, installs
@@ -170,7 +183,7 @@ The propagation format is pinned explicitly rather than left to `OTEL_PROPAGATOR
 two services disagreed on the wire format, cross-service traces would break silently,
 with no error appearing anywhere.
 
-### `tillflow_shared/middleware.py` — runs on every HTTP request
+### `tillflow_shared/otel/middleware.py` — runs on every HTTP request
 
 `TelemetryMiddleware.__call__()` reads the `X-Tenant-Id` and `Idempotency-Key` headers
 into request context, attaches them to the span, runs the request, then records how
@@ -200,7 +213,7 @@ trace onto the span. Exception messages routinely contain the value that caused 
 and on this code path that value can be a phone number. The full stack still reaches
 the log, which is redacted.
 
-### `tillflow_shared/http_client.py` — calling another service
+### `tillflow_shared/otel/http_client.py` — calling another service
 
 | Class | What it does |
 |---|---|
@@ -234,7 +247,7 @@ stands in for AMP remote-write.
 
 ## 6. What the tests prove
 
-41 tests. No Docker, no collector, no AWS.
+53 tests across all three `_shared` areas. No Docker, no collector, no AWS.
 
 ```bash
 cd services/_shared
@@ -243,11 +256,11 @@ cd services/_shared
 
 | File | Proves |
 |---|---|
-| `test_redaction.py` | All five phone formats are stripped; one person hashes the same across formats; a missing salt drops the value; dangerous field names are dropped; **trace IDs and money amounts are not mangled** (over-redaction is its own bug). |
-| `test_logging.py` | Required fields present; timestamp format; trace and span IDs match the live span; tenant comes from context; extras merged; redaction covers both message and extras; exceptions structured; one record is exactly one line. |
-| `test_sampling.py` | The 100%/10% split; the env override and its clamping; money-path services ignore their caller's decision. |
-| `test_middleware.py` | Headers reach the handler; context doesn't leak between requests; the metric label is the parameterised route; `/health` is not counted at all; a crash still counts as a 5xx. |
-| `test_http_client.py` | `traceparent` is injected; **the downstream service joins the same trace**; tenant and idempotency key are forwarded; explicit headers win; no tenant header outside a request; timeouts are bounded; the async client behaves identically. |
+| `tests/otel/test_pii.py` | All five phone formats are stripped; one person hashes the same across formats; a missing salt drops the value; dangerous field names are dropped; **trace IDs and money amounts are not mangled** (over-redaction is its own bug). |
+| `tests/otel/test_logging.py` | Required fields present; timestamp format; trace and span IDs match the live span; tenant comes from context; extras merged; redaction covers both message and extras; exceptions structured; one record is exactly one line. |
+| `tests/otel/test_sampling.py` | The 100%/10% split; the env override and its clamping; money-path services ignore their caller's decision. |
+| `tests/otel/test_middleware.py` | Headers reach the handler; context doesn't leak between requests; the metric label is the parameterised route; `/health` is not counted at all; a crash still counts as a 5xx. |
+| `tests/otel/test_http_client.py` | `traceparent` is injected; **the downstream service joins the same trace**; tenant and idempotency key are forwarded; explicit headers win; no tenant header outside a request; timeouts are bounded; the async client behaves identically. |
 
 ## 7. Reproducing the runtime proof
 
@@ -306,8 +319,8 @@ Frozen signatures — these will not change without a PR to
 
 ```python
 from tillflow_shared import setup_telemetry, get_logger
-from tillflow_shared.middleware import instrument_fastapi, traced
-from tillflow_shared.http_client import ServiceClient
+from tillflow_shared.otel.middleware import instrument_fastapi, traced
+from tillflow_shared.otel.http_client import ServiceClient
 
 setup_telemetry("pos")                          # once, at startup
 log = get_logger(__name__)

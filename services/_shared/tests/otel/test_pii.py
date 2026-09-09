@@ -2,7 +2,7 @@
 
 import pytest
 
-from tillflow_shared.redaction import REDACTED, hash_msisdn, redact, redact_text
+from tillflow_shared.otel.pii import REDACTED, hash_msisdn, redact, redact_text
 
 
 @pytest.mark.parametrize(

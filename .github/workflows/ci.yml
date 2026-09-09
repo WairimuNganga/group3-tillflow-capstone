@@ -35,3 +35,23 @@ jobs:
             fi
           done
           exit $fail
+
+  shared:
+    name: shared (Step 4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tillflow-shared
+        working-directory: services/_shared
+        run: pip install -e ".[dev]"
+
+      - name: Pytest
+        working-directory: services/_shared
+        env:
+          MPESA_ADAPTER: fake
+        run: pytest -v

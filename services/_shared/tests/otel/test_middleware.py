@@ -7,9 +7,9 @@ from opentelemetry import trace
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import InMemoryMetricReader
 
-from tillflow_shared.context import get_idempotency_key, get_tenant_id
-from tillflow_shared.metrics import build_red_metrics
-from tillflow_shared.middleware import TelemetryMiddleware, traced
+from tillflow_shared.otel.context import get_idempotency_key, get_tenant_id
+from tillflow_shared.otel.metrics import build_red_metrics
+from tillflow_shared.otel.middleware import TelemetryMiddleware, traced
 
 
 @pytest.fixture

@@ -41,6 +41,6 @@ def business_counter(name: str, description: str) -> Counter:
 
     Exposed so a service never touches the meter provider directly.
     """
-    from tillflow_shared.telemetry import get_meter
+    from tillflow_shared.otel.bootstrap import get_meter
 
     return get_meter().create_counter(name=name, description=description, unit="1")

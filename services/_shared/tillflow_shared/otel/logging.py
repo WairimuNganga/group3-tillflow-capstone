@@ -16,8 +16,8 @@ from typing import Any
 
 from opentelemetry import trace
 
-from tillflow_shared.context import get_tenant_id
-from tillflow_shared.redaction import redact
+from tillflow_shared.otel.context import get_tenant_id
+from tillflow_shared.otel.pii import redact
 
 DEFAULT_LOG_LEVEL = "INFO"
 

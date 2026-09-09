@@ -57,6 +57,10 @@ def redact_text(value: str) -> str:
     return _MSISDN_RE.sub(lambda match: hash_msisdn(match.group(0)), value)
 
 
+#: Kept as the name the M-Pesa adapter's docs already advertise.
+redact_msisdn = hash_msisdn
+
+
 def redact(value: Any) -> Any:
     """Recursively redact a log payload or span attribute set.
 

@@ -16,10 +16,10 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.trace import Span, Status, StatusCode
 
-from tillflow_shared.context import get_idempotency_key, get_tenant_id, request_context
-from tillflow_shared.metrics import RedMetrics, build_red_metrics
-from tillflow_shared.redaction import redact, redact_text
-from tillflow_shared.telemetry import get_meter, get_tracer
+from tillflow_shared.otel.context import get_idempotency_key, get_tenant_id, request_context
+from tillflow_shared.otel.metrics import RedMetrics, build_red_metrics
+from tillflow_shared.otel.pii import redact, redact_text
+from tillflow_shared.otel.bootstrap import get_meter, get_tracer
 
 TENANT_HEADER = b"x-tenant-id"
 IDEMPOTENCY_HEADER = b"idempotency-key"

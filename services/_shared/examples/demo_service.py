@@ -5,21 +5,30 @@ real trace id, a span in Jaeger, and the RED metrics increment in Prometheus, wi
 any of the real services existing yet. Delete it once POS and Payments are real.
 
 Named ``payments`` so the money-path sampling rule applies and every request produces
-a trace. The ``/health`` and ``/ready`` handlers here are the minimum needed to show
-that probe traffic is excluded; the real ones belong to the shared Dockerfile and must
-also expose the commit SHA and image digest (threat model T7.3).
+a trace. Probes come from the shared health router, so this also demonstrates that the
+middleware excludes them from the RED metrics.
 """
+
+import os
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from tillflow_shared import business_counter, get_logger, setup_telemetry
-from tillflow_shared.middleware import instrument_fastapi, traced
+from tillflow_shared import get_logger, setup_telemetry
+from tillflow_shared.health import create_health_router
+from tillflow_shared.otel import business_counter
+from tillflow_shared.otel.middleware import instrument_fastapi, traced
 
 setup_telemetry("payments")
 
 log = get_logger(__name__)
 app = FastAPI(title="TillFlow telemetry demo")
+app.include_router(
+    create_health_router(
+        service_name="payments",
+        git_sha=os.getenv("GIT_COMMIT_SHA", "unknown"),
+    )
+)
 instrument_fastapi(app, service_name="payments")
 
 stk_initiated = business_counter(
@@ -31,16 +40,6 @@ stk_initiated = business_counter(
 class StkRequest(BaseModel):
     amount_minor: int
     attendant_msisdn: str
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.get("/ready")
-def ready() -> dict[str, str]:
-    return {"status": "ready"}
 
 
 @app.post("/demo/stk")

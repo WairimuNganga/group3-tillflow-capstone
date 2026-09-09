@@ -21,8 +21,8 @@ from typing import Any
 import httpx
 from opentelemetry.propagate import inject
 
-from tillflow_shared.context import get_idempotency_key, get_tenant_id
-from tillflow_shared.middleware import traced
+from tillflow_shared.otel.context import get_idempotency_key, get_tenant_id
+from tillflow_shared.otel.middleware import traced
 
 TENANT_HEADER = "X-Tenant-Id"
 IDEMPOTENCY_HEADER = "Idempotency-Key"

@@ -5,13 +5,8 @@ import pytest
 from opentelemetry import trace
 from opentelemetry.propagate import extract
 
-from tillflow_shared.context import request_context
-from tillflow_shared.http_client import AsyncServiceClient, ServiceClient
-
-
-@pytest.fixture
-def anyio_backend():
-    return "asyncio"
+from tillflow_shared.otel.context import request_context
+from tillflow_shared.otel.http_client import AsyncServiceClient, ServiceClient
 
 
 @pytest.fixture
@@ -97,7 +92,6 @@ def test_timeout_is_bounded_by_default(outbound):
         assert client.timeout.connect == 2.0
 
 
-@pytest.mark.anyio
 async def test_async_client_propagates_too(outbound):
     seen, transport = outbound
 

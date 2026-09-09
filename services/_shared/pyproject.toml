@@ -1,40 +1,40 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "tillflow-shared"
 version = "0.1.0"
-description = "Shared telemetry, request context and PII redaction for TillFlow services (ADR-008)."
-requires-python = ">=3.12"
+description = "TillFlow cross-service shared libraries: M-Pesa adapter, telemetry, health routes"
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = [
-  "opentelemetry-sdk>=1.30,<2",
-  "opentelemetry-exporter-otlp-proto-grpc>=1.30,<2",
+    "fastapi>=0.115,<1.0",
+    "httpx>=0.27,<1.0",
+    "pydantic>=2.0,<3.0",
+    "pydantic-settings>=2.0,<3.0",
+    "opentelemetry-sdk>=1.30,<2.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.30,<2.0",
+    "opentelemetry-instrumentation-fastapi>=0.51b0",
 ]
 
 [project.optional-dependencies]
-# Services that serve HTTP or call another service. The commission worker needs the
-# client half for its call to the Payments B2C endpoint.
-http = [
-  "opentelemetry-instrumentation-fastapi>=0.51b0",
-  "httpx>=0.27",
-]
 dev = [
-  "pytest>=8",
-  "fastapi>=0.115",
-  "httpx>=0.27",
-  "opentelemetry-instrumentation-fastapi>=0.51b0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24,<2.0",
 ]
 
 [tool.setuptools.packages.find]
+where = ["."]
 include = ["tillflow_shared*"]
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

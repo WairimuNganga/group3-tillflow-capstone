@@ -2,7 +2,7 @@
 
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON, ParentBased
 
-from tillflow_shared.sampling import ratio_for_service, sampler_for_service
+from tillflow_shared.otel.sampling import ratio_for_service, sampler_for_service
 
 
 def test_money_path_services_are_fully_sampled():

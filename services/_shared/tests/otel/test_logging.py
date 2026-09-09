@@ -2,8 +2,8 @@
 
 from opentelemetry import trace
 
-from tillflow_shared.context import request_context
-from tillflow_shared.redaction import REDACTED
+from tillflow_shared.otel.context import request_context
+from tillflow_shared.otel.pii import REDACTED
 
 REQUIRED_FIELDS = ("ts", "level", "service", "msg")
 
