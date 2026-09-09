@@ -3,6 +3,10 @@
 *.tfstate.*
 .DS_Store
 node_modules/
+.env
+.env.*
+
+# Python
 .venv/
 __pycache__/
 *.py[cod]
@@ -12,5 +16,3 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
-.env
-.env.*
