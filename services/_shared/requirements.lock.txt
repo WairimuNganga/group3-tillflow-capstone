@@ -8,6 +8,12 @@
 # versions. This file freezes the exact closure so the image build is reproducible
 # regardless of when it runs.
 #
+# Drift guard: Dockerfile.base runs `pip check` right after installing this lock and
+# tillflow_shared --no-deps. If this lock ever stops satisfying pyproject.toml's
+# version ranges (e.g. someone bumps a range here without regenerating the lock, or
+# vice versa), that `pip check` — not a service failing mysteriously later — is what
+# catches it, and fails the image build with exactly which package and range disagree.
+#
 # Regenerate after any pyproject.toml dependency change:
 #
 #   cd services/_shared

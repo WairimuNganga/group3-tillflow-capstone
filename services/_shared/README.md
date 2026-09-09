@@ -251,6 +251,23 @@ time" guarantee above) or a hand-pinned Debian package build number that isn't
 guaranteed to match between the amd64 and arm64 variants of this multi-platform image —
 the platform-native flag has neither problem.
 
+### Handoff to Platform (Lwam) — required task-definition env vars
+
+Two things the ECS task definition (`infra/modules/ecs-service`) must set that this
+image deliberately does **not** bake in, because they're per-deployment facts rather
+than build-time ones:
+
+- **`TILLFLOW_ENVIRONMENT`** — read by `setup_telemetry` for the
+  `deployment.environment.name` resource attribute
+  ([ADR-008](../../docs/adr/ADR-008-telemetry-conventions.md)). If this is left unset,
+  the task boots fine and looks healthy — it just silently reports every span and
+  metric as `deployment.environment.name=local`, which will quietly break any
+  dashboard or alert that filters by environment. There is no error to catch this; it
+  has to be set correctly in the task definition every time.
+- **`linuxParameters.initProcessEnabled = true`** — see the `ENTRYPOINT` note above.
+  Without it, `SIGTERM` handling and zombie reaping fall back to the container's raw
+  PID 1 behaviour instead of Fargate's built-in init.
+
 ### Try it yourself
 
 ```bash

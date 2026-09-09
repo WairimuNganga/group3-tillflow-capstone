@@ -59,8 +59,19 @@ RUN python -m venv /opt/venv \
 # of pip silently resolving a second, unlocked version of something.
 COPY pyproject.toml README.md ./
 COPY tillflow_shared ./tillflow_shared
-RUN /opt/venv/bin/pip install --no-cache-dir --no-deps . \
- && find /opt/venv -type d -name '__pycache__' -prune -exec rm -rf {} +
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps .
+
+# Lock-drift guard: `pip install --no-deps` above never actually re-resolves
+# pyproject.toml's dependency ranges against what's in the lock — it just trusts
+# the lock blindly. `pip check` closes that gap by validating the *installed*
+# tillflow-shared package's declared Requires-Dist (straight from pyproject.toml)
+# against what requirements.lock.txt actually put in the venv. If someone bumps a
+# version range in pyproject.toml without regenerating the lock, this fails the
+# build here with a clear "X has requirement Y, but you have Z" message, instead
+# of shipping a silently inconsistent dependency set.
+RUN /opt/venv/bin/pip check
+
+RUN find /opt/venv -type d -name '__pycache__' -prune -exec rm -rf {} +
 
 # ---------------------------------------------------------------------------
 # base — the image services actually FROM. Fresh from the pinned Python image,
@@ -83,6 +94,19 @@ LABEL org.opencontainers.image.title="tillflow-${SERVICE_NAME}" \
 RUN groupadd --gid 10001 tillflow \
  && useradd --uid 10001 --gid tillflow --no-create-home --shell /usr/sbin/nologin tillflow
 
+# NOT set here, deliberately: TILLFLOW_ENVIRONMENT (bootstrap.py's
+# deployment.environment.name — ADR-008). This image is one immutable,
+# SHA-tagged artifact that gets deployed to more than one environment
+# (ADR-009), so "which environment is this" cannot be a build-time fact baked
+# into the image — it has to come from wherever it's actually run.
+#
+# bootstrap.py defaults it to "local" when unset. That default exists for
+# plain `docker run`/local dev, but it means: if an ECS task definition
+# forgets to set TILLFLOW_ENVIRONMENT, the task boots fine, looks healthy, and
+# silently reports every span/metric as deployment.environment.name=local —
+# no error, no crash, just wrong dashboards later. infra/modules/ecs-service
+# (ADR-001/002/003/010, Lwam) MUST set TILLFLOW_ENVIRONMENT explicitly in the
+# task definition's container environment for every non-local target.
 ENV PATH="/opt/venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
