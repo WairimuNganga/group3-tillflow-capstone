@@ -1,0 +1,17 @@
+# Provisioned as code, not clicked in the UI. ADR-008 requires dashboards and data
+# sources to be reproducible artefacts so a reviewer can rebuild them from the repo.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: tillflow-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Jaeger
+    uid: tillflow-jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686

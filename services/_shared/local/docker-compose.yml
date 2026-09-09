@@ -1,0 +1,53 @@
+# Local telemetry stack: what a developer needs to see their own instrumentation,
+# without an AWS account or anyone else's service existing.
+#
+# The application is not in here. It runs on the host and exports to localhost:4317,
+# the same address it uses in ECS where the collector is a sidecar in the same task.
+# The deployed sidecar uses the ADOT distribution rather than upstream contrib; the
+# config format is identical.
+
+name: tillflow-telemetry-local
+
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.116.0
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC, where the application exports
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # Prometheus scrape endpoint
+    depends_on:
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=6h
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.65.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      # Local only. Access to the deployed, private Grafana is an open question the
+      # mentor requires answered before G3.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

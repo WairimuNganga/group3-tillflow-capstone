@@ -1,0 +1,47 @@
+# Local development collector, standing in for the ADOT sidecar.
+#
+# Deliberately a passthrough: no sampling here, so a developer sees every span they
+# produce. Jaeger stands in for X-Ray and a scrape endpoint stands in for remote-write
+# to Amazon Managed Prometheus. The application does not change between local and
+# deployed — only this file does.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Promotes service.name and deployment.environment.name to Prometheus labels.
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  debug:
+    verbosity: basic
+
+service:
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]

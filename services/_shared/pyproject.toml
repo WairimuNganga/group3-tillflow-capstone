@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tillflow-shared"
+version = "0.1.0"
+description = "Shared telemetry, request context and PII redaction for TillFlow services (ADR-008)."
+requires-python = ">=3.12"
+dependencies = [
+  "opentelemetry-sdk>=1.30,<2",
+  "opentelemetry-exporter-otlp-proto-grpc>=1.30,<2",
+]
+
+[project.optional-dependencies]
+# Services that serve HTTP or call another service. The commission worker needs the
+# client half for its call to the Payments B2C endpoint.
+http = [
+  "opentelemetry-instrumentation-fastapi>=0.51b0",
+  "httpx>=0.27",
+]
+dev = [
+  "pytest>=8",
+  "fastapi>=0.115",
+  "httpx>=0.27",
+  "opentelemetry-instrumentation-fastapi>=0.51b0",
+]
+
+[tool.setuptools.packages.find]
+include = ["tillflow_shared*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
