@@ -1,14 +1,7 @@
 #!/usr/bin/env bash
-# Builds the golden-path image (Dockerfile.base + examples/Dockerfile) and proves,
-# rather than asserts, the claims Dockerfile.base's header makes:
-#   - boots and answers /health + /ready
-#   - runs as a fixed non-root uid, not root
-#   - genuinely works under --read-only (a write outside /tmp must fail)
-#   - stdout is one-JSON-object-per-line with the ADR-008 required fields
-#   - the image's own HEALTHCHECK reaches "healthy"
-#
-# Run locally: services/_shared/docker-smoke-test.sh
-# Run in CI: the `docker-golden-path` job in .github/workflows/ci.yml calls this.
+# Builds the golden-path image and proves, not just asserts, README.md's
+# "Docker golden path" claims against the running container. Run locally, or
+# via the `docker-golden-path` CI job.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

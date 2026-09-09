@@ -215,7 +215,17 @@ service that `FROM`s it:
   moving tag) — see the file header for the multi-arch (amd64+arm64) manifest digest
 - a **fully version-pinned dependency closure** ([`requirements.lock.txt`](requirements.lock.txt)),
   so rebuilding the same commit SHA later reproduces the same image, per
-  [ADR-009](../../docs/adr/ADR-009-ci-cd-promotion-and-rollback.md)
+  [ADR-009](../../docs/adr/ADR-009-ci-cd-promotion-and-rollback.md). `pip check` in
+  `Dockerfile.base` fails the build if this ever drifts from `pyproject.toml`.
+  Regenerate after a dependency change:
+  ```bash
+  cd services/_shared
+  docker run --rm -v "$(pwd)":/src:ro python@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254 \
+    bash -c 'cp -r /src /build && python -m venv /tmp/e \
+      && /tmp/e/bin/pip install --no-cache-dir "uvicorn[standard]>=0.32,<1.0" /build \
+      && /tmp/e/bin/pip freeze --exclude-editable' \
+    | grep -v '^tillflow-shared @' > requirements.lock.txt
+  ```
 - a **fixed non-root uid/gid** (`10001:10001`) — the image cannot run as root even if a
   service's own Dockerfile forgets to say so
 - **no `apt-get` in the final stage** — nothing is pulled from a live package mirror at

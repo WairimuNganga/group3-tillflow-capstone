@@ -12,18 +12,10 @@ def create_health_router(
     git_sha: str = "unknown",
     ready_check: Callable[[], bool] | None = None,
 ) -> APIRouter:
-    """Standard ``/health`` and ``/ready`` endpoints for the golden path.
+    """Standard ``/health`` (liveness) and ``/ready`` (readiness) endpoints.
 
-    ``/health`` is liveness only — it must stay cheap and dependency-free, since the
-    Docker/ECS healthcheck (``Dockerfile.base``) and any container-restart policy key
-    off it. ``/ready`` is what an ALB target group or ECS service's own health check
-    should point at instead: it answers "can this task take traffic right now", which
-    ``ready_check`` lets a service wire up to its own DB-connection-pool state etc.
-
-    The status *code*, not just the body, is what a target-group health check reads —
-    almost nothing checking HTTP health parses a JSON body. A not-ready response that
-    still returns 200 is invisible to ALB/ECS and defeats the point of a readiness
-    probe, so this returns 503 in that case.
+    ``/ready`` returns 503, not just a JSON body, when not ready — ALB/ECS target
+    health checks read the status code, not the body.
     """
     router = APIRouter(tags=["health"])
 
@@ -41,10 +33,7 @@ def create_health_router(
             try:
                 is_ready = ready_check()
             except Exception:
-                # A readiness probe that throws (a DB ping mid-outage, say) means
-                # "not ready", not "crash the health endpoint into a 500". The
-                # exception is still visible in logs/traces — just not as an
-                # unhandled 500 from this route.
+                # A failing probe means not-ready, not an unhandled 500.
                 _log.exception("ready_check raised; reporting not_ready")
                 is_ready = False
 

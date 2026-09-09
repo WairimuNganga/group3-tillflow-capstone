@@ -1,37 +1,7 @@
-# Exact-pinned runtime dependency closure for the TillFlow service base image
-# (services/_shared/Dockerfile.base).
-#
-# Why this file exists: pyproject.toml deliberately uses version *ranges* (so a
-# library consumer isn't locked to one patch release), but ADR-009 requires that
-# rebuilding the same commit SHA produce the same artifact. A floating-range
-# `pip install .` run six months apart can silently resolve different transitive
-# versions. This file freezes the exact closure so the image build is reproducible
-# regardless of when it runs.
-#
-# Drift guard: Dockerfile.base runs `pip check` right after installing this lock and
-# tillflow_shared --no-deps. If this lock ever stops satisfying pyproject.toml's
-# version ranges (e.g. someone bumps a range here without regenerating the lock, or
-# vice versa), that `pip check` — not a service failing mysteriously later — is what
-# catches it, and fails the image build with exactly which package and range disagree.
-#
-# Regenerate after any pyproject.toml dependency change:
-#
-#   cd services/_shared
-#   docker run --rm -v "$(pwd)":/src:ro \
-#     python@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254 \
-#     bash -c 'cp -r /src /build && python -m venv /tmp/lockenv \
-#       && /tmp/lockenv/bin/pip install --no-cache-dir "uvicorn[standard]>=0.32,<1.0" \
-#       && /tmp/lockenv/bin/pip install --no-cache-dir /build \
-#       && /tmp/lockenv/bin/pip freeze --exclude-editable' \
-#     | grep -v '^tillflow-shared @' > requirements.lock.txt
-#
-# (the digest above must match Dockerfile.base's PYTHON_IMAGE build arg — the lock
-# is only valid for the exact base image it was generated against). Review the diff
-# before committing; a lockfile bump is a real dependency change and should be
-# reviewed like one, not rubber-stamped.
-#
-# tillflow-shared itself is installed separately, from local source, with --no-deps
-# — see Dockerfile.base. It is intentionally not listed here.
+# Exact-pinned dependency closure for Dockerfile.base — reproducible builds
+# per ADR-009. `pip check` in Dockerfile.base guards against this drifting
+# from pyproject.toml. Regenerate command + rationale: README.md "Docker
+# golden path". tillflow-shared itself is installed separately, --no-deps.
 
 annotated-doc==0.0.5
 annotated-types==0.8.0
@@ -64,7 +34,6 @@ pydantic-settings==2.15.0
 pydantic_core==2.46.5
 python-dotenv==1.2.3
 PyYAML==6.0.3
-setuptools==84.0.0
 starlette==1.6.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
@@ -72,5 +41,4 @@ uvicorn==0.52.4
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==17.1
-wheel==0.48.0
 wrapt==2.4.0

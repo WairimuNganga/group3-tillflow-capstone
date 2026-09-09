@@ -22,8 +22,6 @@ def test_health_and_ready_endpoints() -> None:
 
 
 def test_ready_returns_503_when_not_ready() -> None:
-    """A target-group/ECS health check reads the status code, not the JSON body —
-    a not-ready response that still says 200 is invisible to it."""
     app = FastAPI()
     app.include_router(
         create_health_router(service_name="payments", ready_check=lambda: False)
@@ -34,15 +32,10 @@ def test_ready_returns_503_when_not_ready() -> None:
 
     assert ready.status_code == 503
     assert ready.json()["status"] == "not_ready"
-
-    # /health stays a pure liveness probe, unaffected by readiness state.
     assert client.get("/health").status_code == 200
 
 
 def test_ready_check_exception_is_not_silently_healthy() -> None:
-    """If a service's readiness probe (e.g. a DB ping) throws, that must surface as
-    not-ready, not as an unhandled 500 that some health checkers treat as healthy."""
-
     def flaky_check() -> bool:
         raise RuntimeError("db connection pool exhausted")
 
