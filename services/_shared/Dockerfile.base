@@ -1,0 +1,124 @@
+# syntax=docker/dockerfile:1.7
+#
+# TillFlow shared service base image — the golden path every service container
+# builds on (Wairimu, Delivery/CI-CD; see README.md and ADR-009/ADR-010).
+#
+# Usage — a real service's own Dockerfile does:
+#
+#   FROM tillflow-base:<tag> AS runtime
+#   WORKDIR /app
+#   COPY --chown=tillflow:tillflow . .
+#   CMD ["uvicorn", "<service>.main:app", "--host", "0.0.0.0", "--port", "8080"]
+#
+# See examples/Dockerfile for a complete, buildable instance of this pattern.
+#
+# What this image guarantees to every service that builds on it:
+#   - pinned, digest-locked Python — not a moving `latest`/`3.12` tag
+#   - a fully version-pinned dependency closure (requirements.lock.txt), so
+#     rebuilding the same commit SHA later reproduces the same image (ADR-009)
+#   - runs as a fixed non-root uid/gid, never root
+#   - no apt-get in the final stage — nothing pulled from a live package mirror
+#     at build time, so the only thing that can move the image is this repo
+#   - PYTHONDONTWRITEBYTECODE=1, so it boots correctly under `--read-only`
+#     without a writable site-packages directory
+#   - a container-native HEALTHCHECK against /health (ECS uses the image's
+#     HEALTHCHECK when the task definition doesn't override it)
+#   - OTel resource attributes (service.version, deployment.environment.name)
+#     wired to real build/runtime metadata, not left for each service to redo
+#
+# What it deliberately does NOT do: run anything by default (see the `base`
+# stage's CMD) or install an init process — see the note above ENTRYPOINT below
+# for why.
+
+ARG PYTHON_IMAGE=python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
+
+# ---------------------------------------------------------------------------
+# builder — resolves and installs the dependency closure + tillflow_shared
+# into a venv. Nothing from this stage except /opt/venv reaches the final
+# image, so build tools, pip's cache, and source checkouts never ship.
+# ---------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_ROOT_USER_ACTION=ignore
+
+WORKDIR /build
+
+# requirements.lock.txt first and on its own: this layer only invalidates when
+# the dependency closure actually changes, not on every source-code edit.
+COPY requirements.lock.txt .
+RUN python -m venv /opt/venv \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.lock.txt
+
+# tillflow_shared installed from local source, --no-deps: every dependency it
+# declares must already be satisfied by requirements.lock.txt above. If
+# pyproject.toml and the lock ever drift, this fails the build loudly instead
+# of pip silently resolving a second, unlocked version of something.
+COPY pyproject.toml README.md ./
+COPY tillflow_shared ./tillflow_shared
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps . \
+ && find /opt/venv -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+# ---------------------------------------------------------------------------
+# base — the image services actually FROM. Fresh from the pinned Python image,
+# not from `builder`, so nothing build-time (pip cache, wheel metadata, the
+# /build source tree) survives into it.
+# ---------------------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS base
+
+ARG GIT_COMMIT_SHA=unknown
+ARG SERVICE_NAME=unknown
+
+LABEL org.opencontainers.image.title="tillflow-${SERVICE_NAME}" \
+      org.opencontainers.image.revision="${GIT_COMMIT_SHA}" \
+      org.opencontainers.image.source="https://github.com/WairimuNganga/group3-tillflow-capstone"
+
+# Fixed uid/gid (not `useradd` without one) so the numeric id is identical
+# across every service image and matches the ECS task definition's
+# `user: "10001:10001"` / any filesystem ACLs set up ahead of time for mounted
+# volumes. No shell, no home directory — this user cannot log in or hold state.
+RUN groupadd --gid 10001 tillflow \
+ && useradd --uid 10001 --gid tillflow --no-create-home --shell /usr/sbin/nologin tillflow
+
+ENV PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    GIT_COMMIT_SHA=${GIT_COMMIT_SHA} \
+    TILLFLOW_SERVICE_NAME=${SERVICE_NAME} \
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+    OTEL_RESOURCE_ATTRIBUTES=service.namespace=tillflow \
+    TILLFLOW_TELEMETRY_EXPORT=otlp \
+    LOG_LEVEL=INFO
+
+# GIT_COMMIT_SHA is also set as service.version via tillflow_shared's own
+# bootstrap (ADR-008) reading this exact env var — the running task's traces
+# and this image's tag/digest always name the same build.
+
+COPY --from=builder --chown=tillflow:tillflow /opt/venv /opt/venv
+
+WORKDIR /app
+USER tillflow
+
+EXPOSE 8080
+
+# ECS applies this automatically when the task definition doesn't specify its
+# own container healthCheck. Uses the stdlib rather than curl/wget so the
+# final image needs no apt-get at all (see file header).
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+  CMD ["python", "-c", "import urllib.request as u; r = u.urlopen('http://127.0.0.1:8080/health', timeout=2); exit(0 if r.status == 200 else 1)"]
+
+# No ENTRYPOINT / init process baked in on purpose: on ECS Fargate, set
+# `linuxParameters.initProcessEnabled = true` on the task definition instead
+# (Lwam's infra/modules/ecs-service, per ADR-010) — Fargate then runs the
+# container's own CMD as PID 1 under its built-in tini equivalent, forwarding
+# SIGTERM and reaping zombies for free. Locally, `docker run --init` does the
+# same. Baking tini into the image ourselves would mean either installing an
+# unpinned apt package (breaking the "no live mirror at build time" guarantee
+# above) or pinning one exact Debian build number that can silently mismatch
+# between the amd64 and arm64 variants of this multi-platform image — the
+# platform-native flag has neither problem.
+CMD ["python", "-c", "import sys; sys.exit('tillflow-base is not runnable directly. A service Dockerfile must FROM this image and set its own CMD — see examples/Dockerfile.')"]

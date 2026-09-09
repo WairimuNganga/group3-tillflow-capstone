@@ -1,0 +1,70 @@
+# Exact-pinned runtime dependency closure for the TillFlow service base image
+# (services/_shared/Dockerfile.base).
+#
+# Why this file exists: pyproject.toml deliberately uses version *ranges* (so a
+# library consumer isn't locked to one patch release), but ADR-009 requires that
+# rebuilding the same commit SHA produce the same artifact. A floating-range
+# `pip install .` run six months apart can silently resolve different transitive
+# versions. This file freezes the exact closure so the image build is reproducible
+# regardless of when it runs.
+#
+# Regenerate after any pyproject.toml dependency change:
+#
+#   cd services/_shared
+#   docker run --rm -v "$(pwd)":/src:ro \
+#     python@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254 \
+#     bash -c 'cp -r /src /build && python -m venv /tmp/lockenv \
+#       && /tmp/lockenv/bin/pip install --no-cache-dir "uvicorn[standard]>=0.32,<1.0" \
+#       && /tmp/lockenv/bin/pip install --no-cache-dir /build \
+#       && /tmp/lockenv/bin/pip freeze --exclude-editable' \
+#     | grep -v '^tillflow-shared @' > requirements.lock.txt
+#
+# (the digest above must match Dockerfile.base's PYTHON_IMAGE build arg — the lock
+# is only valid for the exact base image it was generated against). Review the diff
+# before committing; a lockfile bump is a real dependency change and should be
+# reviewed like one, not rubber-stamped.
+#
+# tillflow-shared itself is installed separately, from local source, with --no-deps
+# — see Dockerfile.base. It is intentionally not listed here.
+
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+asgiref==3.12.1
+certifi==2026.7.22
+click==8.5.0
+fastapi==0.141.1
+googleapis-common-protos==1.75.3
+grpcio==1.83.1
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+idna==3.19
+opentelemetry-api==1.44.0
+opentelemetry-exporter-otlp-proto-common==1.44.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
+opentelemetry-instrumentation==0.65b0
+opentelemetry-instrumentation-asgi==0.65b0
+opentelemetry-instrumentation-fastapi==0.65b0
+opentelemetry-proto==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-semantic-conventions==0.65b0
+opentelemetry-util-http==0.65b0
+packaging==26.3
+protobuf==7.36.1
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pydantic_core==2.46.5
+python-dotenv==1.2.3
+PyYAML==6.0.3
+setuptools==84.0.0
+starlette==1.6.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.52.4
+uvloop==0.22.1
+watchfiles==1.2.0
+websockets==17.1
+wheel==0.48.0
+wrapt==2.4.0
