@@ -55,3 +55,13 @@ jobs:
         env:
           MPESA_ADAPTER: fake
         run: pytest -v
+
+  docker-golden-path:
+    name: docker golden path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build + smoke-test the golden-path image
+        working-directory: services/_shared
+        run: ./docker-smoke-test.sh

@@ -8,7 +8,7 @@ never edit the same file:
 | `tillflow_shared/mpesa/` | **Hunter** | [ADR-007](../../docs/adr/ADR-007-m-pesa-adapter.md) | implemented |
 | `tillflow_shared/otel/` | **Minage** | [ADR-008](../../docs/adr/ADR-008-telemetry-conventions.md) | implemented |
 | `tillflow_shared/health/` | **Wairimu** | Golden path `/health` + `/ready` | implemented |
-| `Dockerfile.base` | **Wairimu** | Multi-stage service base | TODO |
+| `Dockerfile.base` | **Wairimu** | Multi-stage service base | implemented |
 
 ## Install (local dev)
 
@@ -184,3 +184,129 @@ from tillflow_shared.health import create_health_router
 app = FastAPI()
 app.include_router(create_health_router(service_name="payments", git_sha="abc123"))
 ```
+
+`/health` is a pure liveness probe — no dependency checks, always cheap. `/ready` is what
+an ALB target group or ECS service should actually point at; give it `ready_check` to
+wire in whatever "can this task take traffic" means for that service (a DB ping, a
+warmed cache, ...):
+
+```python
+app.include_router(
+    create_health_router(
+        service_name="payments",
+        git_sha=GIT_SHA,
+        ready_check=lambda: db_pool.is_connected(),
+    )
+)
+```
+
+`/ready` returns **HTTP 503** (not 200) when `ready_check` returns falsy or raises — a
+target-group health check reads the status code, not the JSON body, so a not-ready
+response that still says 200 would be invisible to it and defeat the point of the probe.
+
+## Docker golden path (Wairimu)
+
+[`Dockerfile.base`](Dockerfile.base) is the base image every service container builds
+on. It is a two-stage build (dependencies resolved and installed in `builder`; nothing
+but the resulting venv copied into a fresh `base` stage) that guarantees, to every
+service that `FROM`s it:
+
+- a **pinned, digest-locked** Python (`python:3.12-slim-bookworm@sha256:...`, not a
+  moving tag) — see the file header for the multi-arch (amd64+arm64) manifest digest
+- a **fully version-pinned dependency closure** ([`requirements.lock.txt`](requirements.lock.txt)),
+  so rebuilding the same commit SHA later reproduces the same image, per
+  [ADR-009](../../docs/adr/ADR-009-ci-cd-promotion-and-rollback.md). `pip check` in
+  `Dockerfile.base` fails the build if this ever drifts from `pyproject.toml`.
+  Regenerate after a dependency change:
+  ```bash
+  cd services/_shared
+  docker run --rm -v "$(pwd)":/src:ro python@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254 \
+    bash -c 'cp -r /src /build && python -m venv /tmp/e \
+      && /tmp/e/bin/pip install --no-cache-dir "uvicorn[standard]>=0.32,<1.0" /build \
+      && /tmp/e/bin/pip freeze --exclude-editable' \
+    | grep -v '^tillflow-shared @' > requirements.lock.txt
+  ```
+- a **fixed non-root uid/gid** (`10001:10001`) — the image cannot run as root even if a
+  service's own Dockerfile forgets to say so
+- **no `apt-get` in the final stage** — nothing is pulled from a live package mirror at
+  build/deploy time; the only thing that can change the image is this repo
+- correct behaviour under a **read-only root filesystem**
+  (`PYTHONDONTWRITEBYTECODE=1`, so Python never needs to write `.pyc` files into
+  site-packages) — `docker run --read-only --tmpfs /tmp` works out of the box
+- a container-native `HEALTHCHECK` against `/health` (ECS uses an image's own
+  `HEALTHCHECK` automatically when the task definition doesn't specify one)
+- [ADR-008](../../docs/adr/ADR-008-telemetry-conventions.md) resource attributes wired
+  to real build metadata: `GIT_COMMIT_SHA` is baked in as a build arg and becomes both
+  an OCI image label (`org.opencontainers.image.revision`) and `service.version` on
+  every span/metric this container emits, so a running task and the pipeline that built
+  it always name the same commit.
+
+A real service Dockerfile is three lines on top of it — see
+[`examples/Dockerfile`](examples/Dockerfile) for the full, buildable version:
+
+```dockerfile
+FROM tillflow-base:<tag> AS runtime
+WORKDIR /app
+COPY --chown=tillflow:tillflow . .
+CMD ["uvicorn", "<service>.main:app", "--host", "0.0.0.0", "--port", "8080"]
+```
+
+No `ENTRYPOINT`/init process is baked into the image. On ECS Fargate set
+`linuxParameters.initProcessEnabled = true` on the task definition instead — Fargate
+then runs the container's `CMD` as PID 1 under its own tini-equivalent, handling
+`SIGTERM` forwarding and zombie reaping for free. `docker run --init` does the same
+locally. This was a deliberate choice over vendoring `tini` into the image: `tini`
+would either need an unpinned `apt-get install` (breaking the "no live mirror at build
+time" guarantee above) or a hand-pinned Debian package build number that isn't
+guaranteed to match between the amd64 and arm64 variants of this multi-platform image —
+the platform-native flag has neither problem.
+
+### Handoff to Platform (Lwam) — required task-definition env vars
+
+Two things the ECS task definition (`infra/modules/ecs-service`) must set that this
+image deliberately does **not** bake in, because they're per-deployment facts rather
+than build-time ones:
+
+- **`TILLFLOW_ENVIRONMENT`** — read by `setup_telemetry` for the
+  `deployment.environment.name` resource attribute
+  ([ADR-008](../../docs/adr/ADR-008-telemetry-conventions.md)). If this is left unset,
+  the task boots fine and looks healthy — it just silently reports every span and
+  metric as `deployment.environment.name=local`, which will quietly break any
+  dashboard or alert that filters by environment. There is no error to catch this; it
+  has to be set correctly in the task definition every time.
+- **`linuxParameters.initProcessEnabled = true`** — see the `ENTRYPOINT` note above.
+  Without it, `SIGTERM` handling and zombie reaping fall back to the container's raw
+  PID 1 behaviour instead of Fargate's built-in init.
+
+### Try it yourself
+
+```bash
+cd services/_shared
+docker build -f Dockerfile.base \
+  --build-arg SERVICE_NAME=base --build-arg GIT_COMMIT_SHA=$(git rev-parse --short HEAD) \
+  -t tillflow-base:local .
+docker build -f examples/Dockerfile \
+  --build-arg GIT_COMMIT_SHA=$(git rev-parse --short HEAD) \
+  -t tillflow-golden-path:local .
+docker run --rm -p 8080:8080 --init \
+  --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+  -e TILLFLOW_TELEMETRY_EXPORT=none \
+  tillflow-golden-path:local
+```
+
+Then in another shell: `curl localhost:8080/health`, `curl localhost:8080/ready`, and
+`docker logs <container>` to see JSON log lines with real `trace_id`/`span_id`
+correlation.
+
+### Automated proof, not just a manual check
+
+[`docker-smoke-test.sh`](docker-smoke-test.sh) builds both images and *proves* every
+claim above against the running container — it doesn't just build and hope: non-root
+uid, `/health`/`/ready` returning 200, `git_sha` round-tripping into the response, a
+write outside `/tmp` actually failing under `--read-only`, every stdout line parsing as
+JSON with the required ADR-008 fields, the image's own `HEALTHCHECK` reaching
+`healthy`, and a clean (non-`SIGKILL`) shutdown on `SIGTERM`. It fails loudly (non-zero
+exit, container logs dumped) the moment any of those isn't true.
+
+Run it locally with `services/_shared/docker-smoke-test.sh`; CI runs it on every PR and
+push to `main` as the `docker-golden-path` job.

@@ -1,0 +1,44 @@
+# Exact-pinned dependency closure for Dockerfile.base — reproducible builds
+# per ADR-009. `pip check` in Dockerfile.base guards against this drifting
+# from pyproject.toml. Regenerate command + rationale: README.md "Docker
+# golden path". tillflow-shared itself is installed separately, --no-deps.
+
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+asgiref==3.12.1
+certifi==2026.7.22
+click==8.5.0
+fastapi==0.141.1
+googleapis-common-protos==1.75.3
+grpcio==1.83.1
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.8.0
+httpx==0.28.1
+idna==3.19
+opentelemetry-api==1.44.0
+opentelemetry-exporter-otlp-proto-common==1.44.0
+opentelemetry-exporter-otlp-proto-grpc==1.44.0
+opentelemetry-instrumentation==0.65b0
+opentelemetry-instrumentation-asgi==0.65b0
+opentelemetry-instrumentation-fastapi==0.65b0
+opentelemetry-proto==1.44.0
+opentelemetry-sdk==1.44.0
+opentelemetry-semantic-conventions==0.65b0
+opentelemetry-util-http==0.65b0
+packaging==26.3
+protobuf==7.36.1
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pydantic_core==2.46.5
+python-dotenv==1.2.3
+PyYAML==6.0.3
+starlette==1.6.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.52.4
+uvloop==0.22.1
+watchfiles==1.2.0
+websockets==17.1
+wrapt==2.4.0

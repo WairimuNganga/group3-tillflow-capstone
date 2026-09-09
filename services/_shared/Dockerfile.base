@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.7
+#
+# Shared base image every service container builds on. See README.md
+# "Docker golden path" for what this guarantees, usage, and rationale.
+
+ARG PYTHON_IMAGE=python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
+
+# Only /opt/venv from this stage reaches the final image.
+FROM ${PYTHON_IMAGE} AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_ROOT_USER_ACTION=ignore
+
+WORKDIR /build
+
+# Lock copied on its own so this layer only invalidates when deps change.
+COPY requirements.lock.txt .
+RUN python -m venv /opt/venv \
+ && /opt/venv/bin/pip install --no-cache-dir -r requirements.lock.txt
+
+COPY pyproject.toml README.md ./
+COPY tillflow_shared ./tillflow_shared
+RUN /opt/venv/bin/pip install --no-cache-dir --no-deps .
+
+# Catches pyproject.toml/lock drift (see requirements.lock.txt) at build time.
+RUN /opt/venv/bin/pip check
+
+RUN find /opt/venv -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+# Fresh from the pinned image, not from `builder` — no build tools/cache ship.
+FROM ${PYTHON_IMAGE} AS base
+
+ARG GIT_COMMIT_SHA=unknown
+ARG SERVICE_NAME=unknown
+
+LABEL org.opencontainers.image.title="tillflow-${SERVICE_NAME}" \
+      org.opencontainers.image.revision="${GIT_COMMIT_SHA}" \
+      org.opencontainers.image.source="https://github.com/WairimuNganga/group3-tillflow-capstone"
+
+# Fixed uid/gid so it's identical across every service image.
+RUN groupadd --gid 10001 tillflow \
+ && useradd --uid 10001 --gid tillflow --no-create-home --shell /usr/sbin/nologin tillflow
+
+# TILLFLOW_ENVIRONMENT is intentionally not set here — it's a per-deployment
+# fact, not a build-time one. The ECS task definition must set it explicitly
+# or telemetry silently reports deployment.environment.name=local. See README.
+ENV PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    GIT_COMMIT_SHA=${GIT_COMMIT_SHA} \
+    TILLFLOW_SERVICE_NAME=${SERVICE_NAME} \
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+    OTEL_RESOURCE_ATTRIBUTES=service.namespace=tillflow \
+    TILLFLOW_TELEMETRY_EXPORT=otlp \
+    LOG_LEVEL=INFO
+
+COPY --from=builder --chown=tillflow:tillflow /opt/venv /opt/venv
+
+WORKDIR /app
+USER tillflow
+
+EXPOSE 8080
+
+# ECS applies this automatically when the task definition doesn't override it.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+  CMD ["python", "-c", "import urllib.request as u; r = u.urlopen('http://127.0.0.1:8080/health', timeout=2); exit(0 if r.status == 200 else 1)"]
+
+# No init process baked in — set linuxParameters.initProcessEnabled on the
+# ECS task definition instead (or `docker run --init` locally). See README.
+CMD ["python", "-c", "import sys; sys.exit('tillflow-base is not runnable directly. A service Dockerfile must FROM this image and set its own CMD — see examples/Dockerfile.')"]
