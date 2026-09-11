@@ -84,6 +84,81 @@ if jq -e '[recurse] | map(select(type == "string" and test(":latest\"?$"))) | le
   fail=1
 fi
 
+# ---------------------------------------------------------------------------
+# Character sets AWS enforces on free-text fields.
+#
+# These are the cheapest bugs in the world to write and the most expensive to
+# find: `terraform validate` and `terraform test` both pass, then apply fails
+# halfway through against the real API. Three separate applies were lost to an
+# em-dash, an apostrophe, and a pair of parentheses. Checking the plan catches
+# them before anything is created.
+#
+# The rules differ per field, which is why this is three checks and not one:
+#   EC2 SG + SG-rule description: a-zA-Z0-9 and . _ - : / ( ) # , @ [ ] + = & ; { } ! $ *
+#                                 (no apostrophe, no non-ASCII)
+#   AWS tag VALUES:               letters, digits, whitespace and + - = . _ : / @
+#                                 (no parentheses, no semicolons)
+#   IAM role description:         printable ASCII only
+# ---------------------------------------------------------------------------
+
+echo "== character sets: EC2 descriptions, tag values, IAM descriptions =="
+
+# EC2 security groups and their rules.
+while IFS=$'\t' read -r addr desc; do
+  [ -z "${desc}" ] && continue
+  # NOTE the ordering inside the bracket expression: a literal ']' must come
+  # first and a literal '-' must come last, or the class ends early and the
+  # check silently passes everything.
+  if printf '%s' "${desc}" | LC_ALL=C grep -q '[^]a-zA-Z0-9._:/()#,@[+=&;{}!$* -]'; then
+    echo "  FAIL ${addr}: description has characters EC2 rejects"
+    echo "       ${desc}"
+    fail=1
+  fi
+done < <(
+  jq -r '
+    .planned_values.root_module
+    | [recurse(.child_modules[]?) | .resources[]?]
+    | map(select(.type | startswith("aws_security_group") or startswith("aws_vpc_security_group")))
+    | .[] | select(.values.description != null)
+    | [.address, .values.description] | @tsv
+  ' "${PLAN_JSON}"
+)
+
+# Tag values, anywhere.
+while IFS=$'\t' read -r addr key value; do
+  if printf '%s' "${value}" | LC_ALL=C grep -q '[^a-zA-Z0-9+=._:/@ -]'; then
+    echo "  FAIL ${addr}: tag '${key}' value has characters AWS rejects in tag values"
+    echo "       ${value}"
+    fail=1
+  fi
+done < <(
+  jq -r '
+    .planned_values.root_module
+    | [recurse(.child_modules[]?) | .resources[]?]
+    | map(select(.values.tags_all != null))
+    | .[] as $r | $r.values.tags_all | to_entries[]
+    | [$r.address, .key, (.value | tostring)] | @tsv
+  ' "${PLAN_JSON}"
+)
+
+# IAM role descriptions must be printable ASCII.
+while IFS=$'\t' read -r addr desc; do
+  [ -z "${desc}" ] && continue
+  if printf '%s' "${desc}" | LC_ALL=C grep -q '[^ -~]'; then
+    echo "  FAIL ${addr}: IAM description contains non-ASCII"
+    echo "       ${desc}"
+    fail=1
+  fi
+done < <(
+  jq -r '
+    .planned_values.root_module
+    | [recurse(.child_modules[]?) | .resources[]?]
+    | map(select(.type == "aws_iam_role"))
+    | .[] | select(.values.description != null)
+    | [.address, .values.description] | @tsv
+  ' "${PLAN_JSON}"
+)
+
 echo
 if [ "${fail}" -eq 0 ]; then
   echo "PASS — ${checked} named resources checked, all tags present."
