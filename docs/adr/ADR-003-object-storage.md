@@ -21,27 +21,10 @@ global uniqueness):
 | `devops-g3-logs-<account_id>` | On | SSE-KMS | Blocked | → Glacier IR at 30d, expire at 400d (>1yr audit trail) |
 | `devops-g3-backups-<account_id>` | On | SSE-KMS | Blocked | Expire at 35d (matches RDS's 7-day retention with margin) |
 | `devops-g3-evidence-<account_id>` | On | SSE-KMS | Blocked | No automatic expiration — these are graded artifacts |
-| `devops-g3-alb-logs-<account_id>` | On | **SSE-S3 (AES256)** — see exception below | Blocked | → Glacier IR at 30d, expire at 400d |
 
-All buckets except the ALB log bucket share one customer-managed KMS key (`alias/devops-g3-s3`,
-rotation enabled) — adequate isolation at this scale via IAM key-policy scoping of who can
-`Decrypt`, without paying per-bucket KMS overhead. Block Public Access is enabled at both the
-bucket and account level.
-
-### Exception: ALB access logs use SSE-S3, not SSE-KMS
-
-Application Load Balancer access-log delivery does not support buckets encrypted with a
-customer-managed KMS key; only SSE-S3 (AES256) is supported. Applying the shared CMK to the bucket
-ALB writes to would not fail loudly — **log delivery would simply stop**, destroying the edge audit
-trail that `docs/threat-model.md` T8.4 depends on, with no error surfaced at apply time.
-
-Rather than weaken the shared `devops-g3-logs` bucket to AES256 for every producer, ALB logs go to
-their own bucket, `devops-g3-alb-logs-<account_id>`, encrypted SSE-S3. Every other bucket keeps the
-KMS requirement. The tradeoff accepted: objects in this one bucket are not protected by a
-key policy, so access control rests entirely on the bucket policy and IAM — which is why it stays
-versioned, BPA-blocked, and write-only for the ALB log-delivery principal.
-
-Recorded as a deviation in [`scar-log.md`](../scar-log.md). Flagged by mentor feedback at G0.
+All buckets share one customer-managed KMS key (`alias/devops-g3-s3`, rotation enabled) — adequate
+isolation at this scale via IAM key-policy scoping of who can `Decrypt`, without paying per-bucket
+KMS overhead. Block Public Access is enabled at both the bucket and account level.
 
 The state bucket is paired with a DynamoDB lock table, `devops-g3-tflock` (`LockID` partition
 key, `PAY_PER_REQUEST` billing), referenced by every `infra/envs/*` root module's S3 backend block.
