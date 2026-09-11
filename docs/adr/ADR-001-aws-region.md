@@ -10,8 +10,8 @@ ADR's job is to document what that constraint actually means for the design and 
 it, not to re-litigate the choice.
 
 `us-west-1` differs from the more commonly-used `us-west-2` in three ways that matter here:
-1. Only **two** usable Availability Zones are generally available to new accounts (`us-west-1a`,
-   `us-west-1b`); a third AZ exists for some legacy accounts but must not be assumed available.
+1. Only **two** usable Availability Zones are generally available to new accounts. In account
+   `240462142849`, the usable AZs were verified as `us-west-1a` and `us-west-1c`.
 2. It is a **thinner** region (~161 services) — notably, **Amazon Managed Grafana is not offered
    there**.
 3. **Amazon Managed Service for Prometheus (AMP) is available** (GA'd there September 2025), so a
@@ -21,7 +21,7 @@ it, not to re-litigate the choice.
 
 ## Decision
 Accept `us-west-1` as assigned and design around its gaps:
-- **Pin AZs explicitly**: `us-west-1a` and `us-west-1b`, hardcoded in Terraform (see
+- **Pin AZs explicitly**: `us-west-1a` and `us-west-1c`, hardcoded in Terraform (see
   [ADR-010](ADR-010-networking-topology.md)), never derived from `data.aws_availability_zones`
   with an assumed count — a 3rd-AZ assumption would silently break for teammates on accounts that
   don't have it.

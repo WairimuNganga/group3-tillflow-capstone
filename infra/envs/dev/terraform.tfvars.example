@@ -1,0 +1,22 @@
+# Copy to terraform.tfvars (gitignored) or pass with -var-file.
+# Only kms_key_arn is required; everything else has a defensible default.
+
+# From: terraform -chdir=../../bootstrap output -raw kms_key_arn
+kms_key_arn = "arn:aws:kms:us-west-1:240462142849:key/REPLACE_ME"
+
+# VERIFY FIRST — see the variable's description:
+#   aws ec2 describe-availability-zones --region us-west-1 \
+#     --query 'AvailabilityZones[?State==`available`].ZoneName' --output text
+# availability_zones = ["us-west-1a", "us-west-1c"]
+
+# Set by the pipeline after the first build. REPLACE_ME until then.
+# image_tags = {
+#   web        = "a1b2c3d"
+#   pos        = "a1b2c3d"
+#   payments   = "a1b2c3d"
+#   commission = "a1b2c3d"
+# }
+
+# Before any G4 drill that claims AZ resilience:
+# db_multi_az       = true
+# nat_gateway_count = 2
