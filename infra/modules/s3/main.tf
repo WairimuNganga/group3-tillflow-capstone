@@ -33,7 +33,10 @@ locals {
       # error, log delivery just silently stops — destroying the very audit
       # trail threat model T8.4 depends on. Isolated in its own bucket so the
       # KMS requirement holds everywhere else. Recorded in ADR-003 + scar log.
-      purpose       = "ALB access logs (SSE-S3; see ADR-003 exception)"
+      # Tag VALUES are stricter than security-group descriptions: S3 allows only
+      # letters, digits, whitespace and + - = . _ : / @ — no parentheses or
+      # semicolons. Keep the prose here in the comment, not in the tag.
+      purpose       = "ALB access logs SSE-S3 per ADR-003 exception"
       kms           = false
       transition_ia = 30
       expire_days   = 400

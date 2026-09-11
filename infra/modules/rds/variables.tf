@@ -16,8 +16,24 @@ variable "client_security_group_ids" {
 variable "kms_key_arn" { type = string }
 
 variable "engine_version" {
-  type    = string
-  default = "16.4"
+  description = <<-EOT
+    MAJOR version only. The AWS provider treats this as a prefix and RDS picks
+    the latest available minor, so we never pin a minor that a given region
+    does not carry — "16.4" failed to create in us-west-1 with
+    InvalidParameterCombination. With auto_minor_version_upgrade on, pinning a
+    minor would be fiction anyway: RDS would move it during the maintenance
+    window and the next plan would show drift.
+
+    ADR-002 says "PostgreSQL 16.x, latest RDS-supported minor at deploy time",
+    which is exactly this behaviour.
+  EOT
+  type        = string
+  default     = "16"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.engine_version))
+    error_message = "Use the major version only (e.g. \"16\"); RDS selects the latest available minor."
+  }
 }
 
 variable "instance_class" {

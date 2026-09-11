@@ -241,8 +241,9 @@ resource "aws_security_group" "this" {
 resource "aws_vpc_security_group_ingress_rule" "from_alb" {
   count = var.attach_to_alb ? 1 : 0
 
-  security_group_id            = aws_security_group.this.id
-  description                  = "HTTP from the ALB on this service's port only"
+  security_group_id = aws_security_group.this.id
+  # No apostrophe: EC2 rejects it. Allowed set is a-zA-Z0-9 and . _ - : / ( ) # , @ [ ] + = & ; { } ! $ *
+  description                  = "HTTP from the ALB on this service port only"
   referenced_security_group_id = var.alb_security_group_id
   from_port                    = var.container_port
   to_port                      = var.container_port
