@@ -13,7 +13,7 @@ resource "aws_elasticache_subnet_group" "this" {
 
 resource "aws_security_group" "this" {
   name        = "${var.name_prefix}-cache"
-  description = "Valkey — reachable only from named service security groups"
+  description = "Valkey - reachable only from named service security groups"
   vpc_id      = var.vpc_id
 
   tags = { Name = "${var.name_prefix}-cache" }

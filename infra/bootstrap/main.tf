@@ -24,6 +24,12 @@ locals {
     "repo:${local.github_owner}@*/${local.github_repo}@*:${ref}",
     "repo:${lower(local.github_owner)}@*/${lower(local.github_repo)}@*:${ref}",
   ]])
+  deploy_environment_oidc_subs = [
+    "repo:${var.github_repository}:environment:dev",
+    "repo:${lower(var.github_repository)}:environment:dev",
+    "repo:${local.github_owner}@*/${local.github_repo}@*:environment:dev",
+    "repo:${lower(local.github_owner)}@*/${lower(local.github_repo)}@*:environment:dev",
+  ]
   plan_oidc_subs = [
     "repo:${var.github_repository}:*",
     "repo:${lower(var.github_repository)}:*",
@@ -171,10 +177,51 @@ resource "aws_dynamodb_table" "tflock" {
 # roles, without paying per-bucket KMS overhead.
 # ---------------------------------------------------------------------------
 
+data "aws_iam_policy_document" "s3_key" {
+  statement {
+    sid    = "EnableAccountIamPermissions"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${local.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowProjectCloudWatchLogs"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.region}.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:/${var.name_prefix}/*"]
+    }
+  }
+}
+
 resource "aws_kms_key" "s3" {
   description             = "${var.name_prefix} shared CMK for S3 state/artifacts/logs/backups/evidence"
   enable_key_rotation     = true
   deletion_window_in_days = 30
+  policy                  = data.aws_iam_policy_document.s3_key.json
 
   tags = { service = "platform" }
 }
@@ -216,7 +263,7 @@ data "aws_iam_policy_document" "ci_deploy_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = local.deploy_oidc_subs
+      values   = concat(local.deploy_oidc_subs, local.deploy_environment_oidc_subs)
     }
   }
 }
@@ -318,9 +365,30 @@ data "aws_iam_policy_document" "ci_deploy" {
       "iam:DetachRolePolicy",
       "iam:ListAttachedRolePolicies",
       "iam:ListInstanceProfilesForRole",
-      "iam:CreateServiceLinkedRole",
     ]
     resources = ["arn:aws:iam::${local.account_id}:role/${var.name_prefix}-*"]
+  }
+
+  # Some managed AWS services create account-level service-linked roles on
+  # first use. The action cannot be scoped to our name prefix because AWS owns
+  # the role path/name, so restrict it by the service name instead.
+  statement {
+    sid       = "CreateRequiredServiceLinkedRoles"
+    actions   = ["iam:CreateServiceLinkedRole"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values = [
+        "apigateway.amazonaws.com",
+        "ops.apigateway.amazonaws.com",
+        "elasticache.amazonaws.com",
+        "ecs.amazonaws.com",
+        "rds.amazonaws.com",
+        "elasticloadbalancing.amazonaws.com",
+      ]
+    }
   }
 
   # Secret *references* only. CI creates the containers and wires ARNs into task
