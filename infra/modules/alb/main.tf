@@ -7,7 +7,7 @@
 
 resource "aws_security_group" "this" {
   name        = "${var.name_prefix}-alb"
-  description = "Internal ALB — inbound from the API Gateway VPC Link only"
+  description = "Internal ALB - inbound from the API Gateway VPC Link only"
   vpc_id      = var.vpc_id
 
   tags = { Name = "${var.name_prefix}-alb" }

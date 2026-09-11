@@ -12,7 +12,7 @@ resource "aws_db_subnet_group" "this" {
 
 resource "aws_security_group" "db" {
   name        = "${var.name_prefix}-db"
-  description = "PostgreSQL — reachable only from the RDS Proxy"
+  description = "PostgreSQL - reachable only from the RDS Proxy"
   vpc_id      = var.vpc_id
 
   tags = { Name = "${var.name_prefix}-db" }
@@ -20,7 +20,7 @@ resource "aws_security_group" "db" {
 
 resource "aws_security_group" "proxy" {
   name        = "${var.name_prefix}-db-proxy"
-  description = "RDS Proxy — reachable only from named service security groups"
+  description = "RDS Proxy - reachable only from named service security groups"
   vpc_id      = var.vpc_id
 
   tags = { Name = "${var.name_prefix}-db-proxy" }

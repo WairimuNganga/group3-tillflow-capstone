@@ -147,7 +147,7 @@ data "aws_iam_policy_document" "task_execution_assume" {
 
 resource "aws_iam_role" "task_execution" {
   name               = "${var.name_prefix}-exec"
-  description        = "Shared ECS task execution role — image pull + log write only"
+  description        = "Shared ECS task execution role - image pull and log write only"
   assume_role_policy = data.aws_iam_policy_document.task_execution_assume.json
 
   tags = { Name = "${var.name_prefix}-exec" }

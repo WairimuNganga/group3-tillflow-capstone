@@ -21,6 +21,17 @@ locals {
   # EventBridge → SQS; it has no inbound HTTP route at all, which is also why
   # it cannot be reached from outside to trigger a payout.
   http_services = ["web", "pos", "payments"]
+
+  # First infra apply creates ECR repositories before any service image exists.
+  # Keep services at zero tasks while they still point at the placeholder image;
+  # once the delivery pipeline writes a real tag or digest, Terraform can scale
+  # to the normal desired count without waiting for a second manual edit.
+  service_desired_counts = {
+    for service in local.services : service =>
+    var.image_tags[service] == "REPLACE_ME" && lookup(var.image_digests, service, null) == null
+    ? 0
+    : var.desired_counts[service]
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -43,6 +54,7 @@ module "storage" {
 
   name_prefix = var.name_prefix
   account_id  = local.account_id
+  region      = var.region
   kms_key_arn = var.kms_key_arn
 }
 
@@ -181,7 +193,7 @@ module "service" {
   # the internet at all.
   allow_internet_egress = each.key == "payments"
 
-  desired_count = var.desired_counts[each.key]
+  desired_count = local.service_desired_counts[each.key]
   cpu           = var.task_sizes[each.key].cpu
   memory        = var.task_sizes[each.key].memory
 
@@ -244,7 +256,7 @@ module "service" {
 # commission → payments over Service Connect, never through the ALB (T3.2).
 resource "aws_vpc_security_group_ingress_rule" "commission_to_payments" {
   security_group_id            = module.service["payments"].security_group_id
-  description                  = "Service Connect: commission → payments B2C endpoint"
+  description                  = "Service Connect: commission to payments B2C endpoint"
   referenced_security_group_id = module.service["commission"].security_group_id
   from_port                    = 8080
   to_port                      = 8080

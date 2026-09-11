@@ -5,6 +5,11 @@
 # exist before this stack can have a backend.
 
 locals {
+  legacy_elb_log_delivery_account_ids = {
+    us-west-1 = "027434742980"
+  }
+  legacy_elb_log_delivery_account_id = lookup(local.legacy_elb_log_delivery_account_ids, var.region, null)
+
   # Encryption is per-bucket rather than uniform because ALB log delivery does
   # not support a customer-managed KMS key — see the alb-logs entry.
   buckets = {
@@ -28,7 +33,7 @@ locals {
       # error, log delivery just silently stops — destroying the very audit
       # trail threat model T8.4 depends on. Isolated in its own bucket so the
       # KMS requirement holds everywhere else. Recorded in ADR-003 + scar log.
-      purpose       = "ALB access logs (SSE-S3 — see ADR-003 exception)"
+      purpose       = "ALB access logs (SSE-S3; see ADR-003 exception)"
       kms           = false
       transition_ia = 30
       expire_days   = 400
@@ -160,14 +165,15 @@ data "aws_iam_policy_document" "deny_insecure" {
   }
 }
 
-# ALB log delivery needs an explicit grant. In us-west-1 (and every region
-# post-2022) the delivery principal is the logdelivery service, not the legacy
-# per-region ELB account ID.
+# ALB log delivery needs an explicit grant. Keep the write scope at the exact
+# prefix AWS uses for this account's access logs. The service principal is the
+# current AWS recommendation; us-west-1 also supports the legacy regional ELB
+# account, so include it for compatibility in this older region.
 data "aws_iam_policy_document" "alb_logs" {
   source_policy_documents = [data.aws_iam_policy_document.deny_insecure["alb-logs"].json]
 
   statement {
-    sid    = "AllowAlbLogDelivery"
+    sid    = "AllowModernAlbLogDelivery"
     effect = "Allow"
 
     principals {
@@ -176,12 +182,29 @@ data "aws_iam_policy_document" "alb_logs" {
     }
 
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.this["alb-logs"].arn}/*"]
+    resources = ["${aws_s3_bucket.this["alb-logs"].arn}/alb/AWSLogs/${var.account_id}/*"]
 
     condition {
       test     = "StringEquals"
       variable = "s3:x-amz-acl"
       values   = ["bucket-owner-full-control"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = local.legacy_elb_log_delivery_account_id == null ? [] : [local.legacy_elb_log_delivery_account_id]
+
+    content {
+      sid    = "AllowLegacyAlbLogDelivery"
+      effect = "Allow"
+
+      principals {
+        type        = "AWS"
+        identifiers = ["arn:aws:iam::${statement.value}:root"]
+      }
+
+      actions   = ["s3:PutObject"]
+      resources = ["${aws_s3_bucket.this["alb-logs"].arn}/alb/AWSLogs/${var.account_id}/*"]
     }
   }
 }

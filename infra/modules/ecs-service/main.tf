@@ -274,7 +274,7 @@ resource "aws_vpc_security_group_egress_rule" "internet_https" {
   count = var.allow_internet_egress ? 1 : 0
 
   security_group_id = aws_security_group.this.id
-  description       = "HTTPS to any host (AR-7 — hostname filtering is not expressible with SGs)"
+  description       = "HTTPS to any host (AR-7 - hostname filtering is not expressible with SGs)"
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 443
   to_port           = 443
@@ -381,13 +381,6 @@ resource "aws_ecs_service" "this" {
   # Give a new task time to boot both containers before the ALB starts
   # counting health-check failures against it.
   health_check_grace_period_seconds = var.attach_to_alb ? 60 : null
-
-  lifecycle {
-    # The pipeline updates the image; Terraform owns everything else. Without
-    # this, an infra-only apply would roll a running service back to whatever
-    # image tag was last in tfvars (the SSM/image-tag drift problem).
-    ignore_changes = [desired_count]
-  }
 
   tags = {
     Name    = "${var.name_prefix}-${var.service_name}"
