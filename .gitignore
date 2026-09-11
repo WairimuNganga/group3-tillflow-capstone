@@ -1,6 +1,21 @@
 .terraform/
 *.tfstate
 *.tfstate.*
+*.tfplan
+# Lock files belong to root modules (bootstrap, envs/*) only. Modules are
+# never init'd directly outside local validation.
+infra/modules/*/.terraform.lock.hcl
+tfplan
+plan.json
+crash.log
+crash.*.log
+
+# Variable files may hold sensitive values; the example is safe to commit.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
 .DS_Store
 node_modules/
 .env
