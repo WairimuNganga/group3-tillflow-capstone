@@ -409,6 +409,23 @@ data "aws_iam_policy_document" "ci_deploy" {
     resources = ["arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:${var.name_prefix}/*"]
   }
 
+  # RDS stores the master password in its own Secrets Manager secret so the
+  # password does not pass through Terraform state. AWS names those secrets
+  # with the `rds!` prefix, so this permission is separate from the normal
+  # `devops-g3/` application secrets. CI can create and tag the secret, but it
+  # still cannot read the password value.
+  statement {
+    sid = "RdsManagedMasterSecret"
+    actions = [
+      "secretsmanager:CreateSecret",
+      "secretsmanager:DeleteSecret",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:TagResource",
+      "secretsmanager:RotateSecret",
+    ]
+    resources = ["arn:aws:secretsmanager:${var.region}:${local.account_id}:secret:rds!*"]
+  }
+
   statement {
     sid = "ProjectBuckets"
     actions = [
