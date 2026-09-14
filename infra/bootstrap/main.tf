@@ -307,15 +307,14 @@ data "aws_iam_policy_document" "ci_deploy" {
 
   # Delivery records the image selected for each service in SSM. Terraform
   # reads those values before planning so an infra-only merge cannot roll a
-  # running service back to REPLACE_ME. The build workflow also writes them
-  # after pushing to ECR.
+  # running service back to REPLACE_ME. CodeBuild also writes them after
+  # pushing to ECR.
   statement {
     sid = "ImageVersionParameters"
     actions = [
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:DeleteParameter",
-      "ssm:DescribeParameters",
       "ssm:PutParameter",
       "ssm:AddTagsToResource",
       "ssm:ListTagsForResource",
@@ -324,6 +323,15 @@ data "aws_iam_policy_document" "ci_deploy" {
       "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-tag",
       "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-digest",
     ]
+  }
+
+  # DescribeParameters is a list/filter API. AWS does not support scoping it to
+  # individual parameter ARNs, so Terraform needs this separate account-level
+  # permission to refresh aws_ssm_parameter resources during apply.
+  statement {
+    sid       = "DescribeImageVersionParameters"
+    actions   = ["ssm:DescribeParameters"]
+    resources = ["*"]
   }
 
   # Infrastructure Terraform manages. Scoped by service rather than by ARN:
