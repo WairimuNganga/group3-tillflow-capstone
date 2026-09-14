@@ -26,7 +26,7 @@ checked=0
 # Resource types that carry a user-chosen name AND support tags. Types that
 # AWS names for you (route table associations, SG rules, policy attachments)
 # are deliberately excluded — asserting a prefix on them would be noise.
-NAMED_TYPES='["aws_vpc","aws_subnet","aws_security_group","aws_lb","aws_lb_target_group","aws_ecs_cluster","aws_ecs_service","aws_ecs_task_definition","aws_ecr_repository","aws_db_instance","aws_db_proxy","aws_elasticache_replication_group","aws_sqs_queue","aws_s3_bucket","aws_iam_role","aws_cloudwatch_log_group","aws_kms_alias","aws_dynamodb_table","aws_apigatewayv2_api","aws_apigatewayv2_vpc_link","aws_scheduler_schedule","aws_nat_gateway"]'
+NAMED_TYPES='["aws_vpc","aws_subnet","aws_security_group","aws_lb","aws_lb_target_group","aws_ecs_cluster","aws_ecs_service","aws_ecs_task_definition","aws_ecr_repository","aws_db_instance","aws_db_proxy","aws_db_subnet_group","aws_elasticache_replication_group","aws_elasticache_subnet_group","aws_secretsmanager_secret","aws_ssm_parameter","aws_sqs_queue","aws_s3_bucket","aws_iam_role","aws_cloudwatch_log_group","aws_kms_alias","aws_dynamodb_table","aws_apigatewayv2_api","aws_apigatewayv2_vpc_link","aws_scheduler_schedule","aws_nat_gateway","aws_codepipeline","aws_codebuild_project","aws_codestarconnections_connection"]'
 
 echo "== naming: every resource starts with '${PREFIX}' =="
 while IFS=$'\t' read -r addr name; do
@@ -44,7 +44,7 @@ done < <(
     | [recurse(.child_modules[]?) | .resources[]?]
     | map(select(.type as $t | $types | index($t)))
     | .[]
-    | [.address, (.values.name // .values.bucket // .values.identifier // .values.replication_group_id // "")]
+    | [.address, (.values.name // .values.family // .values.bucket // .values.identifier // .values.replication_group_id // "")]
     | @tsv
   ' "${PLAN_JSON}"
 )

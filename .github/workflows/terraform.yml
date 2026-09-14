@@ -17,7 +17,7 @@ on:
 # One infra run at a time. Two concurrent applies would contend on the state
 # lock and one would fail partway.
 concurrency:
-  group: terraform-${{ github.ref }}
+  group: terraform-dev
   cancel-in-progress: false
 
 permissions:
@@ -90,6 +90,29 @@ jobs:
         working-directory: infra/envs/dev
         run: terraform init -input=false
 
+      - name: resolve deployed image versions
+        working-directory: infra/envs/dev
+        run: |
+          set -euo pipefail
+          tags=""
+          digests=""
+          for svc in web pos payments commission; do
+            sha=$(aws ssm get-parameter \
+              --name "/devops-g3/$svc/image-tag" \
+              --query 'Parameter.Value' --output text 2>/dev/null || echo "REPLACE_ME")
+            digest=$(aws ssm get-parameter \
+              --name "/devops-g3/$svc/image-digest" \
+              --query 'Parameter.Value' --output text 2>/dev/null || true)
+
+            echo "[$svc] tag=$sha digest=${digest:-unset}"
+            tags="${tags}${svc}=\"${sha}\","
+            if [ -n "$digest" ] && [ "$digest" != "UNSET" ]; then
+              digests="${digests}${svc}=\"${digest}\","
+            fi
+          done
+          echo "TF_VAR_image_tags={${tags%,}}" >> "$GITHUB_ENV"
+          echo "TF_VAR_image_digests={${digests%,}}" >> "$GITHUB_ENV"
+
       - name: plan
         working-directory: infra/envs/dev
         env:
@@ -140,22 +163,31 @@ jobs:
         working-directory: infra/envs/dev
         run: terraform init -input=false
 
-      # Read each service's currently-deployed SHA from SSM rather than using
-      # the tfvars default. Without this, an infra-only merge would roll every
+      # Read each service's selected image from SSM rather than using the
+      # tfvars default. Without this, an infra-only merge would roll every
       # running service back to REPLACE_ME.
-      - name: resolve deployed image tags
+      - name: resolve deployed image versions
         working-directory: infra/envs/dev
         run: |
           set -euo pipefail
           tags=""
+          digests=""
           for svc in web pos payments commission; do
             sha=$(aws ssm get-parameter \
               --name "/devops-g3/$svc/image-tag" \
               --query 'Parameter.Value' --output text 2>/dev/null || echo "REPLACE_ME")
-            echo "[$svc] $sha"
+            digest=$(aws ssm get-parameter \
+              --name "/devops-g3/$svc/image-digest" \
+              --query 'Parameter.Value' --output text 2>/dev/null || true)
+
+            echo "[$svc] tag=$sha digest=${digest:-unset}"
             tags="${tags}${svc}=\"${sha}\","
+            if [ -n "$digest" ] && [ "$digest" != "UNSET" ]; then
+              digests="${digests}${svc}=\"${digest}\","
+            fi
           done
           echo "TF_VAR_image_tags={${tags%,}}" >> "$GITHUB_ENV"
+          echo "TF_VAR_image_digests={${digests%,}}" >> "$GITHUB_ENV"
 
       - name: plan
         working-directory: infra/envs/dev

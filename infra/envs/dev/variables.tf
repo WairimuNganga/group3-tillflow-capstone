@@ -19,6 +19,18 @@ variable "owner" {
   default     = "lwam"
 }
 
+variable "github_repository" {
+  description = "GitHub owner/repo connected to the AWS CodePipeline source action."
+  type        = string
+  default     = "WairimuNganga/group3-tillflow-capstone"
+}
+
+variable "github_branch" {
+  description = "Branch CodePipeline releases from."
+  type        = string
+  default     = "main"
+}
+
 variable "kms_key_arn" {
   description = "Shared CMK from infra/bootstrap (terraform output kms_key_arn)."
   type        = string

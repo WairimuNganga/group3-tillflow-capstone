@@ -51,6 +51,12 @@ variable "adot_config_file" {
   default     = "ecs-default-config.yaml"
 }
 
+variable "adot_container_user" {
+  description = "Non-root uid:gid for the ADOT sidecar."
+  type        = string
+  default     = "10001:10001"
+}
+
 variable "amp_remote_write_url" {
   description = "Amazon Managed Prometheus remote-write endpoint (ADR-001: AMP is available in us-west-1)."
   type        = string
