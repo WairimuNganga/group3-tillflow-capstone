@@ -1,7 +1,7 @@
 # infra
 
-Owner: **Lwam (Platform)**. All AWS infrastructure is Terraform-managed —
-console changes earn no evidence credit and show up as plan drift.
+Owner: **Lwam (Platform)**. AWS infrastructure is managed through Terraform.
+Manual console changes are treated as drift and must be reconciled through code.
 
 ```
 infra/
@@ -39,6 +39,25 @@ Teardown for the G5 destroy/rebuild proof: `./infra/scripts/destroy.sh`.
 It deliberately leaves `bootstrap/` alone — the state bucket must outlive the
 environment it tracks.
 
+## Delivery connection authorization
+
+The CodePipeline source stage uses an AWS CodeConnections resource managed by
+Terraform. AWS requires a one-time GitHub authorization before the connection
+can read repository source.
+
+Delivery connection details:
+
+```text
+Connection: devops-g3-github
+Repo: WairimuNganga/group3-tillflow-capstone
+Region: us-west-1
+Pipeline: devops-g3-pipeline
+```
+
+After authorization, the connection status should be `Available`. A pipeline
+release should then execute the expected G1 path: Source -> BuildScanPush ->
+DeployEcs -> Smoke.
+
 ## Checks that run without AWS credentials
 
 ```bash
@@ -53,7 +72,7 @@ It asserts the ALB is internal, exactly two distinct AZs, one SG per service,
 ECR/log-group/cluster naming, and that `latest` and the fake adapter are
 rejected outright. It runs on every PR.
 
-## Design notes worth knowing before you edit
+## Design notes
 
 **The VPC Link security group lives in `envs/dev/main.tf`, not in a module.**
 The ALB must allow it as ingress while API Gateway must reference the ALB's
@@ -71,12 +90,18 @@ id. `count` must resolve at plan time and the id is unknown until apply.
 that talks to Daraja. The rule it creates is 443-to-anywhere, not a Daraja
 allow-list — security groups filter by CIDR, not hostname, and Daraja publishes
 no stable range. That residual is accepted as **AR-7** in the threat model and
-watched via VPC flow logs; do not describe it as "Daraja-only egress".
+watched via VPC flow logs. The design therefore documents this as controlled
+HTTPS egress rather than a hostname-level Daraja allow-list.
 
 **ALB access logs go to their own SSE-S3 bucket.** ALB log delivery does not
 support a customer-managed KMS key, and pointing it at the KMS-encrypted logs
 bucket does not error — delivery just silently stops. See the ADR-003
 exception and `docs/scar-log.md`.
+
+**ADOT health checks use exec form.** The collector image is distroless, so it
+does not provide a shell or `grep`. The sidecar health check is
+`["CMD", "/healthcheck"]`, and the app container starts only after ADOT reports
+healthy.
 
 Backed by [ADR-001](../docs/adr/ADR-001-aws-region.md) (region),
 [ADR-002](../docs/adr/ADR-002-database.md) (database),
