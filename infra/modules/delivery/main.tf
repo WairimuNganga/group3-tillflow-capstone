@@ -297,8 +297,11 @@ data "aws_iam_policy_document" "codepipeline" {
   statement {
     sid = "DeployToEcs"
     actions = [
+      "ecs:DescribeClusters",
       "ecs:DescribeServices",
       "ecs:DescribeTaskDefinition",
+      "ecs:DescribeTasks",
+      "ecs:ListTasks",
       "ecs:RegisterTaskDefinition",
       "ecs:UpdateService",
     ]

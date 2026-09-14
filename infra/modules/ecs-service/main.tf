@@ -115,7 +115,7 @@ locals {
     ]
 
     healthCheck = {
-      command     = ["CMD-SHELL", "grep -qa awscollector /proc/1/cmdline || grep -qa otelcol /proc/1/cmdline"]
+      command     = ["CMD", "/healthcheck"]
       interval    = 30
       timeout     = 5
       retries     = 3
