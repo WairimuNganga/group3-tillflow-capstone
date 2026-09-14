@@ -294,6 +294,9 @@ data "aws_iam_policy_document" "codepipeline" {
     resources = concat([for p in aws_codebuild_project.image : p.arn], [aws_codebuild_project.smoke.arn])
   }
 
+  # Permissions required by the ECS standard deploy action. RegisterTaskDefinition
+  # requires wildcard resource scope, and ecs:TagResource is required when ECS
+  # tagging authorization is enforced for task-definition registration.
   statement {
     sid = "DeployToEcs"
     actions = [
@@ -303,15 +306,25 @@ data "aws_iam_policy_document" "codepipeline" {
       "ecs:DescribeTasks",
       "ecs:ListTasks",
       "ecs:RegisterTaskDefinition",
+      "ecs:TagResource",
       "ecs:UpdateService",
     ]
     resources = ["*"]
   }
 
+  # Registering a task definition requires passing the execution and task roles.
+  # The role scope is limited to this project's prefix and the ECS service
+  # principals used by the standard deploy action.
   statement {
     sid       = "PassTaskRoles"
     actions   = ["iam:PassRole"]
     resources = ["arn:aws:iam::${var.account_id}:role/${var.name_prefix}-*"]
+
+    condition {
+      test     = "StringEqualsIfExists"
+      variable = "iam:PassedToService"
+      values   = ["ecs.amazonaws.com", "ecs-tasks.amazonaws.com"]
+    }
   }
 
   statement {
