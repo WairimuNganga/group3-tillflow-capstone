@@ -4,9 +4,10 @@ Run it against the stack in ``services/_shared/local/`` to see a JSON log line w
 real trace id, a span in Jaeger, and the RED metrics increment in Prometheus, without
 any of the real services existing yet. Delete it once POS and Payments are real.
 
-Named ``payments`` so the money-path sampling rule applies and every request produces
-a trace. Probes come from the shared health router, so this also demonstrates that the
-middleware excludes them from the RED metrics.
+The service name comes from ``SERVICE_NAME`` so the same golden-path image can
+stand in for web, POS, payments and commission during G1. Probes come from the
+shared health router, so this also demonstrates that the middleware excludes
+them from the RED metrics.
 """
 
 import os
@@ -19,17 +20,19 @@ from tillflow_shared.health import create_health_router
 from tillflow_shared.otel import business_counter
 from tillflow_shared.otel.middleware import instrument_fastapi, traced
 
-setup_telemetry("payments")
+SERVICE_NAME = os.getenv("SERVICE_NAME") or "payments"
+
+setup_telemetry(SERVICE_NAME)
 
 log = get_logger(__name__)
 app = FastAPI(title="TillFlow telemetry demo")
 app.include_router(
     create_health_router(
-        service_name="payments",
-        git_sha=os.getenv("GIT_COMMIT_SHA", "unknown"),
+        service_name=SERVICE_NAME,
+        git_sha=os.getenv("GIT_SHA", os.getenv("GIT_COMMIT_SHA", "unknown")),
     )
 )
-instrument_fastapi(app, service_name="payments")
+instrument_fastapi(app, service_name=SERVICE_NAME)
 
 stk_initiated = business_counter(
     "payments_stk_initiated_total",

@@ -62,11 +62,11 @@ locals {
 
     dependsOn = [{
       containerName = "adot"
-      condition     = "START"
+      condition     = "HEALTHY"
     }]
 
     healthCheck = {
-      command     = ["CMD-SHELL", "curl -fsS http://localhost:${var.container_port}${var.health_path} || exit 1"]
+      command     = ["CMD-SHELL", "python -c \"import urllib.request as u; r = u.urlopen('http://127.0.0.1:${var.container_port}${var.health_path}', timeout=2); exit(0 if r.status == 200 else 1)\""]
       interval    = 30
       timeout     = 5
       retries     = 3
@@ -93,8 +93,14 @@ locals {
     # turn an observability outage into a customer-facing one.
     essential = false
 
-    user                   = "0"
-    readonlyRootFilesystem = false
+    user                   = var.adot_container_user
+    readonlyRootFilesystem = true
+
+    mountPoints = [{
+      sourceVolume  = "tmp"
+      containerPath = "/tmp"
+      readOnly      = false
+    }]
 
     command = ["--config=/etc/ecs/${var.adot_config_file}"]
 
@@ -107,6 +113,14 @@ locals {
       { containerPort = 4317, protocol = "tcp" }, # OTLP gRPC
       { containerPort = 4318, protocol = "tcp" }, # OTLP HTTP
     ]
+
+    healthCheck = {
+      command     = ["CMD-SHELL", "grep -qa awscollector /proc/1/cmdline || grep -qa otelcol /proc/1/cmdline"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 15
+    }
 
     logConfiguration = {
       logDriver = "awslogs"
@@ -386,5 +400,14 @@ resource "aws_ecs_service" "this" {
   tags = {
     Name    = "${var.name_prefix}-${var.service_name}"
     service = var.service_name
+  }
+
+  lifecycle {
+    # Application releases are owned by the Terraform-managed CodePipeline
+    # lane. It registers a new task definition revision from imagedefinitions
+    # and may scale from the first-apply placeholder count after images exist.
+    # Terraform still owns the service shell: networking, load balancer,
+    # Service Connect, circuit breaker, tags and IAM.
+    ignore_changes = [task_definition, desired_count]
   }
 }

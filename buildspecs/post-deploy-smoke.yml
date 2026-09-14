@@ -1,0 +1,49 @@
+version: 0.2
+
+# Final CodePipeline gate after ECS deploy actions. It scales services from the
+# first-apply placeholder count, waits for ECS stability, and checks the public
+# edge health route.
+
+env:
+  variables:
+    NAME_PREFIX: devops-g3
+    SERVICES: web pos payments commission
+    WEB_DESIRED_COUNT: "2"
+    POS_DESIRED_COUNT: "2"
+    PAYMENTS_DESIRED_COUNT: "2"
+    COMMISSION_DESIRED_COUNT: "1"
+
+phases:
+  build:
+    commands:
+      - set -euo pipefail
+      - |
+        desired_count() {
+          case "$1" in
+            web) echo "${WEB_DESIRED_COUNT}" ;;
+            pos) echo "${POS_DESIRED_COUNT}" ;;
+            payments) echo "${PAYMENTS_DESIRED_COUNT}" ;;
+            commission) echo "${COMMISSION_DESIRED_COUNT}" ;;
+            *) echo "unknown service $1" >&2; exit 2 ;;
+          esac
+        }
+      - |
+        for svc in ${SERVICES}; do
+          desired="$(desired_count "$svc")"
+          echo "Scaling ${NAME_PREFIX}-${svc} to ${desired}"
+          aws ecs update-service \
+            --cluster "${NAME_PREFIX}" \
+            --service "${NAME_PREFIX}-${svc}" \
+            --desired-count "${desired}" \
+            --force-new-deployment >/dev/null
+        done
+      - |
+        for svc in ${SERVICES}; do
+          echo "Waiting for ${NAME_PREFIX}-${svc} to become stable"
+          aws ecs wait services-stable \
+            --cluster "${NAME_PREFIX}" \
+            --services "${NAME_PREFIX}-${svc}"
+        done
+      - test -n "${API_ENDPOINT}"
+      - curl -fsS "${API_ENDPOINT%/}/health"
+      - curl -fsS "${API_ENDPOINT%/}/ready"

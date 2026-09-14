@@ -57,6 +57,19 @@ output "bucket_ids" {
   value = module.storage.bucket_ids
 }
 
+output "delivery_pipeline_name" {
+  value = module.delivery.pipeline_name
+}
+
+output "delivery_github_connection_arn" {
+  description = "Authorize this CodeConnections connection once before the first pipeline run."
+  value       = module.delivery.github_connection_arn
+}
+
+output "delivery_codebuild_project_names" {
+  value = module.delivery.codebuild_project_names
+}
+
 output "availability_zones" {
   description = "Pinned, not discovered. Verify against the account before first apply."
   value       = module.network.availability_zones

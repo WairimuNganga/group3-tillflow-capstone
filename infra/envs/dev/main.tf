@@ -106,6 +106,11 @@ module "alb" {
   vpc_link_security_group_id = aws_security_group.vpc_link.id
   access_logs_bucket         = module.storage.alb_logs_bucket
 
+  # ALB creation performs an access-log delivery preflight. Wait for the S3
+  # bucket policy from the storage module first, otherwise a fresh apply can
+  # fail intermittently with "Access Denied for bucket".
+  depends_on = [module.storage]
+
   targets = {
     web = {
       port          = 8080
@@ -305,6 +310,39 @@ module "messaging" {
   name_prefix = var.name_prefix
   account_id  = local.account_id
   kms_key_arn = var.kms_key_arn
+}
+
+# ---------------------------------------------------------------------------
+# Delivery
+#
+# AWS-native lane required by the brief: CodeConnection -> CodePipeline ->
+# CodeBuild -> ECR -> ECS -> post-deploy smoke. GitHub Actions remains the PR
+# check and Terraform plan/apply lane; application releases flow through this
+# Terraform-managed pipeline.
+# ---------------------------------------------------------------------------
+
+module "delivery" {
+  source = "../../modules/delivery"
+
+  name_prefix         = var.name_prefix
+  region              = var.region
+  account_id          = local.account_id
+  github_repository   = var.github_repository
+  github_branch       = var.github_branch
+  artifact_bucket     = module.storage.bucket_ids["artifacts"]
+  artifact_bucket_arn = module.storage.bucket_arns["artifacts"]
+  kms_key_arn         = var.kms_key_arn
+
+  services       = local.services
+  cluster_name   = module.ecs_platform.cluster_name
+  api_endpoint   = module.apigw.api_endpoint
+  desired_counts = var.desired_counts
+
+  depends_on = [
+    module.service,
+    aws_secretsmanager_secret_policy.db,
+    aws_secretsmanager_secret_policy.daraja,
+  ]
 }
 
 # ---------------------------------------------------------------------------

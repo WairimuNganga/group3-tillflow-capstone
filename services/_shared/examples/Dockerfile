@@ -3,7 +3,11 @@
 # "Docker golden path" for build/run commands and what this proves.
 
 ARG BASE_IMAGE=tillflow-base:local
+ARG SERVICE_NAME=payments
 FROM ${BASE_IMAGE} AS golden-path
+
+ARG SERVICE_NAME=payments
+ENV SERVICE_NAME=${SERVICE_NAME}
 
 WORKDIR /app
 COPY --chown=tillflow:tillflow examples/demo_service.py ./examples/demo_service.py

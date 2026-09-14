@@ -305,13 +305,25 @@ data "aws_iam_policy_document" "ci_deploy" {
     resources = [aws_kms_key.s3.arn]
   }
 
-  # The apply job reads each service's currently-deployed SHA from SSM before
-  # planning, so an infra-only merge cannot roll a running service back to
-  # REPLACE_ME. Read-only: CodeBuild writes these, CI only reads them.
+  # Delivery records the image selected for each service in SSM. Terraform
+  # reads those values before planning so an infra-only merge cannot roll a
+  # running service back to REPLACE_ME. The build workflow also writes them
+  # after pushing to ECR.
   statement {
-    sid       = "ImageTagLookup"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-tag"]
+    sid = "ImageVersionParameters"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:DeleteParameter",
+      "ssm:DescribeParameters",
+      "ssm:PutParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-tag",
+      "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-digest",
+    ]
   }
 
   # Infrastructure Terraform manages. Scoped by service rather than by ARN:
@@ -334,6 +346,10 @@ data "aws_iam_policy_document" "ci_deploy" {
       "scheduler:*",
       "servicediscovery:*",
       "application-autoscaling:*",
+      "codebuild:*",
+      "codepipeline:*",
+      "codestar-connections:*",
+      "codeconnections:*",
       "cloudwatch:*",
       "logs:*",
       "kms:DescribeKey",
@@ -523,9 +539,12 @@ data "aws_iam_policy_document" "ci_plan" {
   }
 
   statement {
-    sid       = "ImageTagLookup"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = ["arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-tag"]
+    sid     = "ImageTagLookup"
+    actions = ["ssm:GetParameter", "ssm:GetParameters"]
+    resources = [
+      "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-tag",
+      "arn:aws:ssm:${var.region}:${local.account_id}:parameter/${var.name_prefix}/*/image-digest",
+    ]
   }
 
   # ReadOnlyAccess grants secretsmanager:GetSecretValue. Deny it outright:
