@@ -40,6 +40,20 @@ output "db_proxy_endpoint" {
   value = module.rds.proxy_endpoint
 }
 
+output "db_name" {
+  value = module.rds.database_name
+}
+
+output "db_secret_arn" {
+  description = "Application DB credentials secret. Values are populated by the G2 DB bootstrap job."
+  value       = module.secrets.secret_arns["db"]
+}
+
+output "db_bootstrap_project_name" {
+  description = "Run this CodeBuild project after apply to create G2 schemas, DB roles and service credentials."
+  value       = module.db_bootstrap.project_name
+}
+
 output "redis_endpoint" {
   value = module.redis.primary_endpoint
 }

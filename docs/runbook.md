@@ -69,3 +69,79 @@ The shared health router supports dependency-aware readiness through
 checks because it is a placeholder service. When the real services replace the
 demo app, `/ready` should validate required dependencies before the task is
 considered ready for ALB traffic.
+
+## G2 database bootstrap
+
+Terraform creates the database bootstrap project and wires it into the delivery
+pipeline. CodePipeline runs the `DbBootstrap` stage after image build and before
+ECS deployment. The project creates the initial PostgreSQL service boundary,
+runs inside the VPC, connects through RDS Proxy, reads the RDS-managed master
+secret at runtime, and stores only service runtime credentials in
+`devops-g3/db`.
+
+Rerun: the bootstrap is a **pipeline stage** (`DbBootstrap`, between
+`BuildScanPush` and `DeployEcs`), so it cannot be started directly —
+`aws codebuild start-build` is rejected on a CODEPIPELINE-source project.
+Retry the stage instead:
+
+```bash
+AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
+EXEC_ID=$(aws codepipeline list-pipeline-executions \
+  --pipeline-name devops-g3-pipeline --max-items 1 \
+  --query 'pipelineExecutionSummaries[0].pipelineExecutionId' --output text)
+
+AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
+aws codepipeline retry-stage-execution \
+  --pipeline-name devops-g3-pipeline \
+  --stage-name DbBootstrap \
+  --pipeline-execution-id "$EXEC_ID" \
+  --retry-mode FAILED_ACTIONS
+```
+
+Reruns are safe: existing per-service passwords are reused, so a run with
+nothing to do re-asserts schemas, roles and grants and changes no credential.
+To deliberately rotate, set `ROTATE_PASSWORDS=true` as a build override — every
+task must then restart to pick up the new secret version.
+
+Check the latest build:
+
+```bash
+AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
+aws codebuild list-builds-for-project \
+  --project-name devops-g3-db-bootstrap \
+  --sort-order DESCENDING \
+  --query 'ids[0]' \
+  --output text
+```
+
+Expected database layout:
+
+- schema owners: `tillflow_web_owner`, `tillflow_pos_owner`,
+  `tillflow_payments_owner`, `tillflow_commission_owner`
+- runtime roles: `tillflow_web`, `tillflow_pos`, `tillflow_payments`,
+  `tillflow_commission`
+- service schemas: `web`, `pos`, `payments`, `commission`
+- runtime secret: `devops-g3/db`
+
+Runtime roles do not own schemas and do not have schema `CREATE`. Migrations
+should create tables through the matching owner role and grant application DML
+through default privileges. A migration runner using the controlled master
+credential can switch into the schema owner role for the service it is changing:
+
+```sql
+BEGIN;
+SET ROLE tillflow_pos_owner;
+-- apply pos schema migration here
+RESET ROLE;
+COMMIT;
+```
+
+Tenant tables must include:
+
+```sql
+ALTER TABLE <schema>.<table> ENABLE ROW LEVEL SECURITY;
+ALTER TABLE <schema>.<table> FORCE ROW LEVEL SECURITY;
+```
+
+This keeps application connections subject to tenant RLS policies, including
+when a table owner would otherwise bypass policy checks.
