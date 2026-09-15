@@ -6,6 +6,8 @@ never edit the same file:
 | Path | Owner | ADR | Status |
 |---|---|---|---|
 | `tillflow_shared/mpesa/` | **Hunter** | [ADR-007](../../docs/adr/ADR-007-m-pesa-adapter.md) | implemented |
+| `tillflow_shared/money/` | **Hunter** | [ADR-004](../../docs/adr/ADR-004-idempotency-and-money-integrity.md) | implemented |
+| `tillflow_shared/idempotency/` | **Hunter** | [ADR-004](../../docs/adr/ADR-004-idempotency-and-money-integrity.md) | implemented |
 | `tillflow_shared/otel/` | **Minage** | [ADR-008](../../docs/adr/ADR-008-telemetry-conventions.md) | implemented |
 | `tillflow_shared/health/` | **Wairimu** | Golden path `/health` + `/ready` | implemented |
 | `Dockerfile.base` | **Wairimu** | Multi-stage service base | implemented |
@@ -77,6 +79,44 @@ Set via Secrets Manager in deployed environments — never commit values:
 - `DARAJA_SHORTCODE`, `DARAJA_INITIATOR`, `DARAJA_SECURITY_CREDENTIAL`
 - `DARAJA_STK_CALLBACK_URL`, `DARAJA_B2C_RESULT_URL`
 - `DARAJA_BASE_URL` (default: Safaricom sandbox)
+
+## Money boundary (Hunter — [ADR-004])
+
+The only module allowed to convert minor units ↔ whole shillings:
+
+```python
+from tillflow_shared.money import from_whole_kes, to_whole_kes
+
+whole = to_whole_kes(150)   # 2 KES (half-up rounding)
+minor = from_whole_kes(2)   # 200 minor units
+```
+
+## Idempotency (Hunter — [ADR-004])
+
+Shared guard for money-path routes. Keys are scoped to `(service, tenant_id, key)` per
+threat model M1. Postgres store lives in each service; tests use `InMemoryIdempotencyStore`.
+
+```python
+from fastapi import Depends, FastAPI
+from tillflow_shared.idempotency import (
+    IdempotencyHandle,
+    idempotency_handle,
+    register_idempotency_handlers,
+)
+
+app = FastAPI()
+register_idempotency_handlers(app)
+guard = idempotency_handle(store, service_name="payments")
+
+@app.post("/payments/stk")
+async def stk(handle: IdempotencyHandle = Depends(guard)) -> JSONResponse:
+    await handle.begin()
+    body = {"status": "pending"}
+    await handle.complete(status_code=202, response_body=body)
+    return JSONResponse(status_code=202, content=body)
+```
+
+A replayed `Idempotency-Key` returns the stored response verbatim and never re-runs the handler.
 
 ## Telemetry (Minage)
 
