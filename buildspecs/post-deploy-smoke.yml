@@ -5,11 +5,9 @@ version: 0.2
 # edge health route.
 
 env:
-  # CodeBuild runs buildspec commands under /bin/sh unless told otherwise. On
-  # the Ubuntu standard image that is dash, which has no `set -o pipefail` —
-  # it exits 2 and `set -e` kills the phase before any command runs. Declaring
-  # bash makes the shell a property of the buildspec rather than an accident of
-  # whichever build image the project happens to use.
+  # `set -o pipefail` is a bash builtin; the Ubuntu standard image's /bin/sh is
+  # dash, which rejects it. Declare the shell rather than depending on whichever
+  # image the project happens to use.
   shell: bash
   variables:
     NAME_PREFIX: devops-g3
@@ -21,21 +19,39 @@ env:
 
 phases:
   build:
+    # ONE command, deliberately. CodeBuild runs each entry in a `commands:` list
+    # in a separate shell, so a function — or `set -euo pipefail` — declared in
+    # one entry does not exist in the next. Splitting this up previously meant
+    # `desired_count` was "command not found", `desired` came out empty, and
+    # `--desired-count ""` failed the AWS CLI with exit 255 *after* the missing
+    # function had already been silently tolerated.
     commands:
-      - set -euo pipefail
       - |
+        set -euo pipefail
+
         desired_count() {
           case "$1" in
-            web) echo "${WEB_DESIRED_COUNT}" ;;
-            pos) echo "${POS_DESIRED_COUNT}" ;;
-            payments) echo "${PAYMENTS_DESIRED_COUNT}" ;;
+            web)        echo "${WEB_DESIRED_COUNT}" ;;
+            pos)        echo "${POS_DESIRED_COUNT}" ;;
+            payments)   echo "${PAYMENTS_DESIRED_COUNT}" ;;
             commission) echo "${COMMISSION_DESIRED_COUNT}" ;;
-            *) echo "unknown service $1" >&2; exit 2 ;;
+            *) echo "unknown service $1" >&2; return 2 ;;
           esac
         }
-      - |
+
         for svc in ${SERVICES}; do
           desired="$(desired_count "$svc")"
+
+          # Belt and braces: an empty or non-numeric count reaches the CLI as
+          # `--desired-count ""`, which fails with an opaque int-parse error.
+          # Fail here instead, naming the variable that was not set.
+          case "${desired}" in
+            ''|*[!0-9]*)
+              echo "refusing to scale ${svc}: desired count '${desired}' is not a number" >&2
+              exit 1
+              ;;
+          esac
+
           echo "Scaling ${NAME_PREFIX}-${svc} to ${desired}"
           aws ecs update-service \
             --cluster "${NAME_PREFIX}" \
@@ -43,13 +59,14 @@ phases:
             --desired-count "${desired}" \
             --force-new-deployment >/dev/null
         done
-      - |
+
         for svc in ${SERVICES}; do
           echo "Waiting for ${NAME_PREFIX}-${svc} to become stable"
           aws ecs wait services-stable \
             --cluster "${NAME_PREFIX}" \
             --services "${NAME_PREFIX}-${svc}"
         done
-      - test -n "${API_ENDPOINT}"
-      - curl -fsS "${API_ENDPOINT%/}/health"
-      - curl -fsS "${API_ENDPOINT%/}/ready"
+
+        test -n "${API_ENDPOINT}"
+        curl -fsS "${API_ENDPOINT%/}/health"
+        curl -fsS "${API_ENDPOINT%/}/ready"

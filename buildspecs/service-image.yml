@@ -4,15 +4,20 @@ version: 0.2
 # CodePipeline sets SERVICE_NAME for each action: web, pos, payments, commission.
 
 env:
-  # See post-deploy-smoke.yml: `set -o pipefail` needs bash. This project's ARM
-  # image happens to link /bin/sh to bash so it passed without this, but that
-  # is luck, not a contract — pin it.
+  # Needed for `set -o pipefail` and for bash-isms inside any multi-line block.
   shell: bash
   variables:
     NAME_PREFIX: devops-g3
     IMAGE_PLATFORM: linux/arm64
 
 phases:
+  # Each entry below runs in its own shell. CodeBuild carries *environment
+  # variables* across commands, which is why IMAGE_URI set here is still
+  # readable in post_build — but it does NOT carry shell functions or shell
+  # options. So `set -euo pipefail` only governs the command it appears in;
+  # anything that must abort mid-sequence has to live in a single block.
+  # Per-command failures are still caught, because CodeBuild fails the phase on
+  # any non-zero exit.
   pre_build:
     commands:
       - set -euo pipefail
