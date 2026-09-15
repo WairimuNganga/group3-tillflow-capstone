@@ -4,6 +4,10 @@ version: 0.2
 # CodePipeline sets SERVICE_NAME for each action: web, pos, payments, commission.
 
 env:
+  # See post-deploy-smoke.yml: `set -o pipefail` needs bash. This project's ARM
+  # image happens to link /bin/sh to bash so it passed without this, but that
+  # is luck, not a contract — pin it.
+  shell: bash
   variables:
     NAME_PREFIX: devops-g3
     IMAGE_PLATFORM: linux/arm64
