@@ -5,6 +5,12 @@ version: 0.2
 # edge health route.
 
 env:
+  # CodeBuild runs buildspec commands under /bin/sh unless told otherwise. On
+  # the Ubuntu standard image that is dash, which has no `set -o pipefail` —
+  # it exits 2 and `set -e` kills the phase before any command runs. Declaring
+  # bash makes the shell a property of the buildspec rather than an accident of
+  # whichever build image the project happens to use.
+  shell: bash
   variables:
     NAME_PREFIX: devops-g3
     SERVICES: web pos payments commission
