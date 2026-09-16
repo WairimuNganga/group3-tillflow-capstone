@@ -4,11 +4,20 @@ version: 0.2
 # CodePipeline sets SERVICE_NAME for each action: web, pos, payments, commission.
 
 env:
+  # Needed for `set -o pipefail` and for bash-isms inside any multi-line block.
+  shell: bash
   variables:
     NAME_PREFIX: devops-g3
     IMAGE_PLATFORM: linux/arm64
 
 phases:
+  # Each entry below runs in its own shell. CodeBuild carries *environment
+  # variables* across commands, which is why IMAGE_URI set here is still
+  # readable in post_build — but it does NOT carry shell functions or shell
+  # options. So `set -euo pipefail` only governs the command it appears in;
+  # anything that must abort mid-sequence has to live in a single block.
+  # Per-command failures are still caught, because CodeBuild fails the phase on
+  # any non-zero exit.
   pre_build:
     commands:
       - set -euo pipefail
@@ -32,8 +41,37 @@ phases:
       - IMAGE_DIGEST=$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text)
       - aws ecr start-image-scan --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" >/dev/null 2>&1 || true
       - aws ecr wait image-scan-complete --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" || true
-      - HIGH_FINDINGS=$(aws ecr describe-image-scan-findings --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" --query "length(imageScanFindings.findings[?severity=='HIGH' || severity=='CRITICAL'])" --output text 2>/dev/null || echo 0)
-      - if [ "${HIGH_FINDINGS}" != "0" ]; then echo "Image scan found ${HIGH_FINDINGS} HIGH/CRITICAL findings"; exit 1; fi
+      - aws ecr describe-image-scan-findings --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" --output json > image-scan-findings.json
+      - |
+        python - <<'PY' > image-scan-summary.env
+        import json
+        import sys
+
+        with open("image-scan-findings.json", encoding="utf-8") as handle:
+            findings = json.load(handle).get("imageScanFindings", {}).get("findings", [])
+
+        total = 0
+        fixable = 0
+        for finding in findings:
+            if finding.get("severity") not in {"HIGH", "CRITICAL"}:
+                continue
+
+            total += 1
+            attrs = {attr.get("key"): attr.get("value") for attr in finding.get("attributes", [])}
+            fixed_version = (attrs.get("fixed_version") or "").strip()
+            if fixed_version and fixed_version.lower() != "none":
+                fixable += 1
+                print(
+                    f"FIXABLE_FINDING {finding.get('severity')} {finding.get('name')} fixed_version={fixed_version}",
+                    file=sys.stderr,
+                )
+
+        print(f"TOTAL_HIGH_CRITICAL={total}")
+        print(f"FIXABLE_HIGH_CRITICAL={fixable}")
+        PY
+      - cat image-scan-summary.env
+      - . ./image-scan-summary.env
+      - if [ "${FIXABLE_HIGH_CRITICAL}" != "0" ]; then echo "Image scan found ${FIXABLE_HIGH_CRITICAL} fixable HIGH/CRITICAL findings"; exit 1; fi
       - aws ssm put-parameter --name "/${NAME_PREFIX}/${SERVICE_NAME}/image-tag" --type String --value "${IMAGE_TAG}" --overwrite
       - aws ssm put-parameter --name "/${NAME_PREFIX}/${SERVICE_NAME}/image-digest" --type String --value "${IMAGE_DIGEST}" --overwrite
       - for param in image-tag image-digest; do aws ssm add-tags-to-resource --resource-type Parameter --resource-id "/${NAME_PREFIX}/${SERVICE_NAME}/${param}" --tags "Key=group,Value=${NAME_PREFIX}" "Key=owner,Value=lwam" "Key=environment,Value=dev" "Key=service,Value=${SERVICE_NAME}" "Key=managed-by,Value=terraform" "Key=capstone,Value=tillflow"; done

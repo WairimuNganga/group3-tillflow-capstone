@@ -289,26 +289,46 @@ data "aws_iam_policy_document" "codepipeline" {
   }
 
   statement {
-    sid       = "RunBuilds"
-    actions   = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
-    resources = concat([for p in aws_codebuild_project.image : p.arn], [aws_codebuild_project.smoke.arn])
+    sid     = "RunBuilds"
+    actions = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
+    resources = concat(
+      [for p in aws_codebuild_project.image : p.arn],
+      [aws_codebuild_project.smoke.arn],
+      [var.db_bootstrap_project_arn],
+    )
   }
 
+  # Permissions required by the ECS standard deploy action. RegisterTaskDefinition
+  # requires wildcard resource scope, and ecs:TagResource is required when ECS
+  # tagging authorization is enforced for task-definition registration.
   statement {
     sid = "DeployToEcs"
     actions = [
+      "ecs:DescribeClusters",
       "ecs:DescribeServices",
       "ecs:DescribeTaskDefinition",
+      "ecs:DescribeTasks",
+      "ecs:ListTasks",
       "ecs:RegisterTaskDefinition",
+      "ecs:TagResource",
       "ecs:UpdateService",
     ]
     resources = ["*"]
   }
 
+  # Registering a task definition requires passing the execution and task roles.
+  # The role scope is limited to this project's prefix and the ECS service
+  # principals used by the standard deploy action.
   statement {
     sid       = "PassTaskRoles"
     actions   = ["iam:PassRole"]
     resources = ["arn:aws:iam::${var.account_id}:role/${var.name_prefix}-*"]
+
+    condition {
+      test     = "StringEqualsIfExists"
+      variable = "iam:PassedToService"
+      values   = ["ecs.amazonaws.com", "ecs-tasks.amazonaws.com"]
+    }
   }
 
   statement {
@@ -376,6 +396,32 @@ resource "aws_codepipeline" "this" {
         configuration = {
           ProjectName = aws_codebuild_project.image[action.key].name
         }
+      }
+    }
+  }
+
+  # Runs before DeployEcs because an ECS task cannot start until devops-g3/db
+  # holds a value — the execution role injects DB_CREDENTIALS at task start, and
+  # a missing secret version surfaces ten minutes later as a smoke-stage waiter
+  # timeout rather than as anything mentioning secrets. Making it a stage turns
+  # that ordering into a guarantee instead of something someone has to remember.
+  #
+  # Idempotent by design: existing per-service passwords are reused, so a run
+  # with nothing to do is a no-op rather than a password rotation.
+  stage {
+    name = "DbBootstrap"
+
+    action {
+      name            = "schemas-roles-credentials"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = var.db_bootstrap_project_name
       }
     }
   }

@@ -1,0 +1,256 @@
+version: 0.2
+
+# One-off G2 database bootstrap. Run this project after the dev stack exists.
+# It creates per-service owner/runtime role pairs, then stores only runtime
+# credentials in the application DB secret. The master password is read from
+# the RDS-managed secret at runtime and is never printed.
+
+env:
+  shell: bash
+
+phases:
+  install:
+    commands:
+      - set -euo pipefail
+      - |
+        if ! command -v psql >/dev/null 2>&1; then
+          if command -v apt-get >/dev/null 2>&1; then
+            find /etc/apt -type f -name '*.list' -exec sed -i 's|http://|https://|g' {} +
+            apt-get update
+            apt-get install -y postgresql-client
+          elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y postgresql15
+          elif command -v yum >/dev/null 2>&1; then
+            yum install -y postgresql15
+          else
+            echo "No supported package manager found for installing psql" >&2
+            exit 2
+          fi
+        fi
+
+  build:
+    commands:
+      - set -euo pipefail
+      - test -n "${DB_HOST}"
+      - test -n "${DB_NAME}"
+      - test -n "${MASTER_SECRET_ARN}"
+      - test -n "${DB_SECRET_ARN}"
+      - MASTER_JSON="$(aws secretsmanager get-secret-value --secret-id "${MASTER_SECRET_ARN}" --query SecretString --output text)"
+      - export MASTER_JSON
+      - export PGUSER="$(python3 -c 'import json, os; print(json.loads(os.environ["MASTER_JSON"])["username"])')"
+      - export PGPASSWORD="$(python3 -c 'import json, os; print(json.loads(os.environ["MASTER_JSON"])["password"])')"
+      - export PGHOST="${DB_HOST}"
+      - export PGPORT="5432"
+      - export PGDATABASE="${DB_NAME}"
+      - export PGSSLMODE="require"
+      - |
+        export ROTATE_PASSWORDS="${ROTATE_PASSWORDS:-false}"
+        EXISTING_DB_JSON=""
+        if [ "${ROTATE_PASSWORDS}" != "true" ]; then
+          EXISTING_DB_JSON="$(aws secretsmanager get-secret-value --secret-id "${DB_SECRET_ARN}" --query SecretString --output text 2>/dev/null || true)"
+        fi
+        export EXISTING_DB_JSON
+
+        password_for() {
+          local service="$1"
+          local existing
+          existing="$(
+            python3 - "${service}" <<'PY' || true
+        import json
+        import os
+        import sys
+
+        raw = os.environ.get("EXISTING_DB_JSON", "")
+        if not raw:
+            sys.exit(0)
+
+        try:
+            value = json.loads(raw).get(sys.argv[1], {}).get("password", "")
+        except Exception:
+            value = ""
+
+        if value:
+            print(value)
+        PY
+          )"
+
+          if [ -n "${existing}" ]; then
+            printf '%s' "${existing}"
+          else
+            # Passwords are interpolated into SQL literals below. Excluding
+            # punctuation keeps the generated values free of quotes and
+            # backslashes.
+            aws secretsmanager get-random-password \
+              --password-length 40 \
+              --exclude-punctuation \
+              --query RandomPassword \
+              --output text
+          fi
+        }
+
+        WEB_PASSWORD="$(password_for web)"
+        POS_PASSWORD="$(password_for pos)"
+        PAYMENTS_PASSWORD="$(password_for payments)"
+        COMMISSION_PASSWORD="$(password_for commission)"
+        export WEB_PASSWORD POS_PASSWORD PAYMENTS_PASSWORD COMMISSION_PASSWORD
+      - |
+        cat > /tmp/g2-db-bootstrap.sql <<SQL
+        REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+        REVOKE ALL ON DATABASE ${DB_NAME} FROM PUBLIC;
+
+        DO \$\$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_web_owner') THEN
+            CREATE ROLE tillflow_web_owner NOLOGIN NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_web_owner WITH NOLOGIN NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_web') THEN
+            CREATE ROLE tillflow_web LOGIN PASSWORD '${WEB_PASSWORD}' NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_web WITH LOGIN PASSWORD '${WEB_PASSWORD}' NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_pos_owner') THEN
+            CREATE ROLE tillflow_pos_owner NOLOGIN NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_pos_owner WITH NOLOGIN NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_pos') THEN
+            CREATE ROLE tillflow_pos LOGIN PASSWORD '${POS_PASSWORD}' NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_pos WITH LOGIN PASSWORD '${POS_PASSWORD}' NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_payments_owner') THEN
+            CREATE ROLE tillflow_payments_owner NOLOGIN NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_payments_owner WITH NOLOGIN NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_payments') THEN
+            CREATE ROLE tillflow_payments LOGIN PASSWORD '${PAYMENTS_PASSWORD}' NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_payments WITH LOGIN PASSWORD '${PAYMENTS_PASSWORD}' NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_commission_owner') THEN
+            CREATE ROLE tillflow_commission_owner NOLOGIN NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_commission_owner WITH NOLOGIN NOBYPASSRLS;
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_commission') THEN
+            CREATE ROLE tillflow_commission LOGIN PASSWORD '${COMMISSION_PASSWORD}' NOBYPASSRLS;
+          ELSE
+            ALTER ROLE tillflow_commission WITH LOGIN PASSWORD '${COMMISSION_PASSWORD}' NOBYPASSRLS;
+          END IF;
+        END
+        \$\$;
+
+        CREATE SCHEMA IF NOT EXISTS web AUTHORIZATION tillflow_web_owner;
+        CREATE SCHEMA IF NOT EXISTS pos AUTHORIZATION tillflow_pos_owner;
+        CREATE SCHEMA IF NOT EXISTS payments AUTHORIZATION tillflow_payments_owner;
+        CREATE SCHEMA IF NOT EXISTS commission AUTHORIZATION tillflow_commission_owner;
+
+        ALTER SCHEMA web OWNER TO tillflow_web_owner;
+        ALTER SCHEMA pos OWNER TO tillflow_pos_owner;
+        ALTER SCHEMA payments OWNER TO tillflow_payments_owner;
+        ALTER SCHEMA commission OWNER TO tillflow_commission_owner;
+
+        GRANT tillflow_web_owner TO "${PGUSER}";
+        GRANT tillflow_pos_owner TO "${PGUSER}";
+        GRANT tillflow_payments_owner TO "${PGUSER}";
+        GRANT tillflow_commission_owner TO "${PGUSER}";
+
+        GRANT CONNECT ON DATABASE ${DB_NAME} TO tillflow_web, tillflow_pos, tillflow_payments, tillflow_commission;
+
+        GRANT USAGE ON SCHEMA web TO tillflow_web;
+        GRANT USAGE ON SCHEMA pos TO tillflow_pos;
+        GRANT USAGE ON SCHEMA payments TO tillflow_payments;
+        GRANT USAGE ON SCHEMA commission TO tillflow_commission;
+
+        -- These grants are a no-op on the first run because the schemas are
+        -- empty. They make the bootstrap safe to rerun after migrations exist;
+        -- the default privileges below cover future objects.
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA web TO tillflow_web;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA pos TO tillflow_pos;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA payments TO tillflow_payments;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA commission TO tillflow_commission;
+
+        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA web TO tillflow_web;
+        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA pos TO tillflow_pos;
+        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA payments TO tillflow_payments;
+        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA commission TO tillflow_commission;
+
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA web TO tillflow_web;
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA pos TO tillflow_pos;
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA payments TO tillflow_payments;
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA commission TO tillflow_commission;
+
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web
+          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_web;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos
+          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_pos;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments
+          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_payments;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission
+          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_commission;
+
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web
+          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_web;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos
+          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_pos;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments
+          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_payments;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission
+          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_commission;
+
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web
+          GRANT EXECUTE ON FUNCTIONS TO tillflow_web;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos
+          GRANT EXECUTE ON FUNCTIONS TO tillflow_pos;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments
+          GRANT EXECUTE ON FUNCTIONS TO tillflow_payments;
+        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission
+          GRANT EXECUTE ON FUNCTIONS TO tillflow_commission;
+
+        ALTER ROLE tillflow_web SET search_path = web;
+        ALTER ROLE tillflow_pos SET search_path = pos;
+        ALTER ROLE tillflow_payments SET search_path = payments;
+        ALTER ROLE tillflow_commission SET search_path = commission;
+        SQL
+      - psql -v ON_ERROR_STOP=1 -f /tmp/g2-db-bootstrap.sql
+      - |
+        python3 - <<'PY' > /tmp/service-db-secret.json
+        import json
+        import os
+
+        host = os.environ["DB_HOST"]
+        db_name = os.environ["DB_NAME"]
+        services = {
+            "web": ("tillflow_web", os.environ["WEB_PASSWORD"]),
+            "pos": ("tillflow_pos", os.environ["POS_PASSWORD"]),
+            "payments": ("tillflow_payments", os.environ["PAYMENTS_PASSWORD"]),
+            "commission": ("tillflow_commission", os.environ["COMMISSION_PASSWORD"]),
+        }
+
+        payload = {
+            service: {
+                "username": username,
+                "password": password,
+                "host": host,
+                "port": 5432,
+                "dbname": db_name,
+                "schema": service,
+                "sslmode": "require",
+            }
+            for service, (username, password) in services.items()
+        }
+        print(json.dumps(payload, separators=(",", ":")))
+        PY
+      - aws secretsmanager put-secret-value --secret-id "${DB_SECRET_ARN}" --secret-string file:///tmp/service-db-secret.json >/dev/null
+      - shred -u /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql 2>/dev/null || rm -f /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql
+      - echo "G2 DB bootstrap completed for schemas: ${SERVICES}"

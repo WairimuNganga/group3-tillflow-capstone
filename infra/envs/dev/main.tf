@@ -73,6 +73,36 @@ module "secrets" {
   recovery_window_in_days = var.secret_recovery_window_days
 }
 
+# G2 database bootstrap runner. The job runs inside the VPC, reaches RDS through
+# the proxy, and writes per-service credentials to devops-g3/db. Terraform owns
+# the runner and permissions; generated passwords stay out of Terraform state.
+resource "aws_security_group" "db_bootstrap" {
+  name        = "${var.name_prefix}-db-bootstrap"
+  description = "G2 DB bootstrap job"
+  vpc_id      = module.network.vpc_id
+
+  tags = {
+    Name    = "${var.name_prefix}-db-bootstrap"
+    service = "platform"
+  }
+}
+
+resource "aws_vpc_security_group_egress_rule" "db_bootstrap_in_vpc" {
+  security_group_id = aws_security_group.db_bootstrap.id
+  description       = "In-VPC access for RDS Proxy and VPC endpoints"
+  cidr_ipv4         = module.network.vpc_cidr
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_egress_rule" "db_bootstrap_https" {
+  security_group_id = aws_security_group.db_bootstrap.id
+  description       = "HTTPS for package repositories and AWS APIs"
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+
 # ---------------------------------------------------------------------------
 # Edge
 #
@@ -281,7 +311,10 @@ module "rds" {
   subnet_ids  = module.network.private_data_subnet_ids
   kms_key_arn = var.kms_key_arn
 
-  client_security_group_ids = { for s in local.services : s => module.service[s].security_group_id }
+  client_security_group_ids = merge(
+    { for s in local.services : s => module.service[s].security_group_id },
+    { db-bootstrap = aws_security_group.db_bootstrap.id },
+  )
 
   instance_class        = var.db_instance_class
   multi_az              = var.db_multi_az
@@ -312,6 +345,24 @@ module "messaging" {
   kms_key_arn = var.kms_key_arn
 }
 
+module "db_bootstrap" {
+  source = "../../modules/db-bootstrap"
+
+  name_prefix       = var.name_prefix
+  region            = var.region
+  account_id        = local.account_id
+  vpc_id            = module.network.vpc_id
+  subnet_ids        = module.network.private_app_subnet_ids
+  security_group_id = aws_security_group.db_bootstrap.id
+
+  db_host           = module.rds.proxy_endpoint
+  db_name           = module.rds.database_name
+  master_secret_arn = module.rds.master_secret_arn
+  db_secret_arn     = module.secrets.secret_arns["db"]
+  kms_key_arn       = var.kms_key_arn
+  services          = local.services
+}
+
 # ---------------------------------------------------------------------------
 # Delivery
 #
@@ -337,6 +388,10 @@ module "delivery" {
   cluster_name   = module.ecs_platform.cluster_name
   api_endpoint   = module.apigw.api_endpoint
   desired_counts = var.desired_counts
+
+  # The bootstrap runs as a pipeline stage before DeployEcs — see the module.
+  db_bootstrap_project_name = module.db_bootstrap.project_name
+  db_bootstrap_project_arn  = module.db_bootstrap.project_arn
 
   depends_on = [
     module.service,
