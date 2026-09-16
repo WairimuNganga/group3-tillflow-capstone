@@ -116,13 +116,8 @@ resource "aws_codebuild_project" "this" {
   service_role  = aws_iam_role.this.arn
   build_timeout = 20
 
-  # CODEPIPELINE rather than NO_SOURCE/NO_ARTIFACTS so this can run as a
-  # pipeline stage before DeployEcs — ECS cannot start a task until
-  # devops-g3/db holds a value, so the ordering has to be enforced, not
-  # remembered. Consequence: `aws codebuild start-build` no longer works on
-  # this project; re-run it by retrying the DbBootstrap stage (see runbook).
   artifacts {
-    type = "CODEPIPELINE"
+    type = "NO_ARTIFACTS"
   }
 
   environment {
@@ -162,12 +157,9 @@ resource "aws_codebuild_project" "this" {
     }
   }
 
-  # Path within the source artifact, not an inlined file(). The SQL is now
-  # versioned with the commit that deploys it, the same as the other two
-  # buildspecs, instead of only changing on a Terraform apply.
   source {
-    type      = "CODEPIPELINE"
-    buildspec = "infra/modules/db-bootstrap/buildspec.yml"
+    type      = "NO_SOURCE"
+    buildspec = file("${path.module}/buildspec.yml")
   }
 
   vpc_config {

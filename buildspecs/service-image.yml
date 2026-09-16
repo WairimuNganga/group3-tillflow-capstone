@@ -28,17 +28,19 @@ phases:
       - IMAGE_TAG=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-dev}" | cut -c1-40)
       - IMAGE_URI="${REGISTRY}/${ECR_REPO}:${IMAGE_TAG}"
       - echo "Building ${SERVICE_NAME} for ${IMAGE_PLATFORM} -> ${IMAGE_URI}"
+      - EXISTING_DIGEST="$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)"
+      - if [ -n "${EXISTING_DIGEST}" ] && [ "${EXISTING_DIGEST}" != "None" ]; then IMAGE_ALREADY_EXISTS=true; IMAGE_DIGEST="${EXISTING_DIGEST}"; else IMAGE_ALREADY_EXISTS=false; fi
+      - echo "Existing immutable image: ${IMAGE_ALREADY_EXISTS}"
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
 
   build:
     commands:
-      - docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/Dockerfile.base --build-arg GIT_COMMIT_SHA="${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "tillflow-base:${IMAGE_TAG}" services/_shared
-      - docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/examples/Dockerfile --build-arg BASE_IMAGE="tillflow-base:${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "${IMAGE_URI}" services/_shared
+      - if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then echo "Reusing ${IMAGE_URI}"; else docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/Dockerfile.base --build-arg GIT_COMMIT_SHA="${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "tillflow-base:${IMAGE_TAG}" services/_shared; fi
+      - if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then echo "Skipping app image build for existing ${IMAGE_URI}"; else docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/examples/Dockerfile --build-arg BASE_IMAGE="tillflow-base:${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "${IMAGE_URI}" services/_shared; fi
 
   post_build:
     commands:
-      - docker push "${IMAGE_URI}"
-      - IMAGE_DIGEST=$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text)
+      - if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then echo "Skipping push for existing immutable tag ${IMAGE_TAG}"; else docker push "${IMAGE_URI}"; IMAGE_DIGEST=$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text); fi
       - aws ecr start-image-scan --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" >/dev/null 2>&1 || true
       - aws ecr wait image-scan-complete --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" || true
       - aws ecr describe-image-scan-findings --repository-name "${ECR_REPO}" --image-id imageTag="${IMAGE_TAG}" --output json > image-scan-findings.json

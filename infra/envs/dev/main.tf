@@ -265,7 +265,16 @@ module "service" {
       DB_CREDENTIALS = "${module.secrets.secret_arns["db"]}:${each.key}::"
     },
     each.key == "payments" ? {
-      DARAJA_CREDENTIALS = module.secrets.secret_arns["daraja"]
+      # Payments reads Daraja settings as flat environment variables. The
+      # secret remains one JSON document in Secrets Manager; ECS selects each
+      # key at task start so the values never pass through Terraform state.
+      DARAJA_CONSUMER_KEY        = "${module.secrets.secret_arns["daraja"]}:DARAJA_CONSUMER_KEY::"
+      DARAJA_CONSUMER_SECRET     = "${module.secrets.secret_arns["daraja"]}:DARAJA_CONSUMER_SECRET::"
+      DARAJA_PASSKEY             = "${module.secrets.secret_arns["daraja"]}:DARAJA_PASSKEY::"
+      DARAJA_SHORTCODE           = "${module.secrets.secret_arns["daraja"]}:DARAJA_SHORTCODE::"
+      DARAJA_INITIATOR           = "${module.secrets.secret_arns["daraja"]}:DARAJA_INITIATOR::"
+      DARAJA_SECURITY_CREDENTIAL = "${module.secrets.secret_arns["daraja"]}:DARAJA_SECURITY_CREDENTIAL::"
+      MPESA_CALLBACK_SECRET      = "${module.secrets.secret_arns["daraja"]}:MPESA_CALLBACK_SECRET::"
     } : {},
   )
 
@@ -388,10 +397,6 @@ module "delivery" {
   cluster_name   = module.ecs_platform.cluster_name
   api_endpoint   = module.apigw.api_endpoint
   desired_counts = var.desired_counts
-
-  # The bootstrap runs as a pipeline stage before DeployEcs — see the module.
-  db_bootstrap_project_name = module.db_bootstrap.project_name
-  db_bootstrap_project_arn  = module.db_bootstrap.project_arn
 
   depends_on = [
     module.service,

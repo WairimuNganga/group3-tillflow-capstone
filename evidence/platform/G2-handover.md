@@ -127,28 +127,17 @@ service-specific JSON key from `devops-g3/db`.
 ## Apply and bootstrap procedure
 
 After this PR is merged, the dev Terraform apply workflow creates the
-`devops-g3-db-bootstrap` project and wires it into the delivery pipeline.
-CodePipeline then runs it as the `DbBootstrap` stage before ECS deployment. The
-job is idempotent and keeps existing service DB passwords unless
-`ROTATE_PASSWORDS=true` is supplied for an intentional rotation.
+standalone `devops-g3-db-bootstrap` CodeBuild project. Run it once before the
+first ECS deploy that needs DB credentials. The job is idempotent and keeps
+existing service DB passwords unless `ROTATE_PASSWORDS=true` is supplied for an
+intentional rotation.
 
-Rerun: the bootstrap is a **pipeline stage** (`DbBootstrap`, between
-`BuildScanPush` and `DeployEcs`), so it cannot be started directly —
-`aws codebuild start-build` is rejected on a CODEPIPELINE-source project.
-Retry the stage instead:
+Run or rerun:
 
 ```bash
 AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-EXEC_ID=$(aws codepipeline list-pipeline-executions \
-  --pipeline-name devops-g3-pipeline --max-items 1 \
-  --query 'pipelineExecutionSummaries[0].pipelineExecutionId' --output text)
-
-AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-aws codepipeline retry-stage-execution \
-  --pipeline-name devops-g3-pipeline \
-  --stage-name DbBootstrap \
-  --pipeline-execution-id "$EXEC_ID" \
-  --retry-mode FAILED_ACTIONS
+aws codebuild start-build \
+  --project-name devops-g3-db-bootstrap
 ```
 
 Reruns are safe: existing per-service passwords are reused, so a run with
