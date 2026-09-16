@@ -77,7 +77,7 @@ curl -s -X POST http://127.0.0.1:8080/callbacks/mpesa/$MPESA_CALLBACK_SECRET \
 
 Default local secret: `local-dev-callback-secret` (override with `MPESA_CALLBACK_SECRET`).
 
-Still pending: end-to-end evidence pack (Phase 8).
+Phase 8 evidence pack: [`evidence/payments/mpesa-integration-manual-test.md`](../../evidence/payments/mpesa-integration-manual-test.md).
 
 ## Phase 7 — money invariants (crown jewels)
 
