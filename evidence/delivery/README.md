@@ -10,8 +10,31 @@ Drop here, each with **exact reproduction commands** (screenshots alone earn no 
 
 ## G1 delivery evidence to capture
 
+### Current status
+
+Latest verified delivery state.
+
+Passed:
+
+- [x] Source stage reads `main` through the approved GitHub CodeConnection.
+- [x] BuildScanPush runs for all four services: `web`, `pos`, `payments` and `commission`.
+- [x] Service image builds push to private ECR and write image tag/digest values to SSM.
+- [x] ECR scan gate logs HIGH/CRITICAL findings and only blocks fixable HIGH/CRITICAL findings.
+
+Pending:
+
+- [ ] DeployEcs final rerun after the ADOT sidecar image source change is merged/applied.
+- [ ] Smoke stage after DeployEcs reaches steady state.
+- [ ] ECS proof that both the app container and `adot` sidecar are healthy.
+- [ ] HTTP proof that deployed `/health` and `/ready` return success.
+
+Current DeployEcs blocker:
+
+Private ECS tasks timed out pulling that public image, so DeployEcs did not reach
+steady state. The fix is to use the mirrored private ECR image instead:
+
 After the ADOT health-check fix is applied and `devops-g3-pipeline` is rerun,
-store the following evidence in this directory:
+store the evidence:
 
 - [ ] CodePipeline execution showing Source, BuildScanPush, DeployEcs and Smoke passed
 - [ ] CodeBuild image logs showing image build, ECR push, image scan summary and SSM image tag/digest update
@@ -20,21 +43,3 @@ store the following evidence in this directory:
 - [ ] ECS task container health showing both app and `adot` containers healthy
 - [ ] Smoke-stage output proving deployed `/health` and `/ready` checks passed
 
-Useful commands:
-
-```bash
-AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-aws codepipeline get-pipeline-state --name devops-g3-pipeline
-
-AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-aws ecs describe-services \
-  --cluster devops-g3 \
-  --services devops-g3-web devops-g3-pos devops-g3-payments devops-g3-commission \
-  --query 'services[].{service:serviceName,status:status,running:runningCount,desired:desiredCount}'
-
-AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-aws ecs describe-tasks \
-  --cluster devops-g3 \
-  --tasks <task-arn> \
-  --query 'tasks[].containers[].{container:name,lastStatus:lastStatus,healthStatus:healthStatus}'
-```

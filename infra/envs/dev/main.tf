@@ -192,6 +192,46 @@ module "ecs_platform" {
   secret_arns        = values(module.secrets.secret_arns)
 }
 
+# Private mirror of the ADOT sidecar. ECS tasks run in private subnets and pull
+# service images through ECR VPC endpoints; pulling the sidecar from public ECR
+# can time out before the task starts. Keep the sidecar in our account so every
+# container image comes from private ECR.
+resource "aws_ecr_repository" "adot" {
+  name                 = "${var.name_prefix}/adot"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-adot"
+    service = "telemetry"
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "adot" {
+  repository = aws_ecr_repository.adot.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep the last 30 ADOT images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
 module "service" {
   source   = "../../modules/ecs-service"
   for_each = toset(local.services)
@@ -215,6 +255,7 @@ module "service" {
   image_repository_url = module.ecs_platform.ecr_repository_urls[each.key]
   image_tag            = var.image_tags[each.key]
   image_digest         = lookup(var.image_digests, each.key, null)
+  adot_image           = "${aws_ecr_repository.adot.repository_url}:v0.43.3"
   amp_remote_write_url = var.amp_remote_write_url
 
   # Only HTTP services sit behind the ALB. commission is a worker driven by
