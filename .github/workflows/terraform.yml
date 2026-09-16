@@ -7,11 +7,13 @@ on:
     branches: [main]
     paths:
       - "infra/**"
+      - "buildspecs/**"
       - ".github/workflows/terraform.yml"
   push:
     branches: [main]
     paths:
       - "infra/**"
+      - "buildspecs/**"
       - ".github/workflows/terraform.yml"
 
 # One infra run at a time. Two concurrent applies would contend on the state
@@ -42,6 +44,13 @@ jobs:
 
       - name: fmt
         run: terraform fmt -check -recursive infra/
+
+      - name: buildspec command syntax guard
+        run: |
+          if grep -rnE "^ *- [^'\"|].*: " buildspecs/ infra/modules/*/buildspec.yml; then
+            echo "buildspec command contains an unquoted ': ' — quote the command string"
+            exit 1
+          fi
 
       - name: init (no backend — provider plugins only)
         working-directory: infra/envs/dev

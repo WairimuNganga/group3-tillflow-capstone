@@ -30,7 +30,7 @@ phases:
       - echo "Building ${SERVICE_NAME} for ${IMAGE_PLATFORM} -> ${IMAGE_URI}"
       - EXISTING_DIGEST="$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)"
       - if [ -n "${EXISTING_DIGEST}" ] && [ "${EXISTING_DIGEST}" != "None" ]; then IMAGE_ALREADY_EXISTS=true; IMAGE_DIGEST="${EXISTING_DIGEST}"; else IMAGE_ALREADY_EXISTS=false; fi
-      - echo "Existing immutable image: ${IMAGE_ALREADY_EXISTS}"
+      - 'echo "Existing immutable image: ${IMAGE_ALREADY_EXISTS}"'
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
 
   build:
