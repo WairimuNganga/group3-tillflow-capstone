@@ -192,6 +192,46 @@ module "ecs_platform" {
   secret_arns        = values(module.secrets.secret_arns)
 }
 
+# Private mirror of the ADOT sidecar. ECS tasks run in private subnets and pull
+# service images through ECR VPC endpoints; pulling the sidecar from public ECR
+# can time out before the task starts. Keep the sidecar in our account so every
+# container image comes from private ECR.
+resource "aws_ecr_repository" "adot" {
+  name                 = "${var.name_prefix}/adot"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-adot"
+    service = "telemetry"
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "adot" {
+  repository = aws_ecr_repository.adot.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep the last 30 ADOT images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
 module "service" {
   source   = "../../modules/ecs-service"
   for_each = toset(local.services)
@@ -215,6 +255,7 @@ module "service" {
   image_repository_url = module.ecs_platform.ecr_repository_urls[each.key]
   image_tag            = var.image_tags[each.key]
   image_digest         = lookup(var.image_digests, each.key, null)
+  adot_image           = "${aws_ecr_repository.adot.repository_url}:v0.43.3"
   amp_remote_write_url = var.amp_remote_write_url
 
   # Only HTTP services sit behind the ALB. commission is a worker driven by
@@ -265,7 +306,16 @@ module "service" {
       DB_CREDENTIALS = "${module.secrets.secret_arns["db"]}:${each.key}::"
     },
     each.key == "payments" ? {
-      DARAJA_CREDENTIALS = module.secrets.secret_arns["daraja"]
+      # Payments reads Daraja settings as flat environment variables. The
+      # secret remains one JSON document in Secrets Manager; ECS selects each
+      # key at task start so the values never pass through Terraform state.
+      DARAJA_CONSUMER_KEY        = "${module.secrets.secret_arns["daraja"]}:DARAJA_CONSUMER_KEY::"
+      DARAJA_CONSUMER_SECRET     = "${module.secrets.secret_arns["daraja"]}:DARAJA_CONSUMER_SECRET::"
+      DARAJA_PASSKEY             = "${module.secrets.secret_arns["daraja"]}:DARAJA_PASSKEY::"
+      DARAJA_SHORTCODE           = "${module.secrets.secret_arns["daraja"]}:DARAJA_SHORTCODE::"
+      DARAJA_INITIATOR           = "${module.secrets.secret_arns["daraja"]}:DARAJA_INITIATOR::"
+      DARAJA_SECURITY_CREDENTIAL = "${module.secrets.secret_arns["daraja"]}:DARAJA_SECURITY_CREDENTIAL::"
+      MPESA_CALLBACK_SECRET      = "${module.secrets.secret_arns["daraja"]}:MPESA_CALLBACK_SECRET::"
     } : {},
   )
 
@@ -388,10 +438,6 @@ module "delivery" {
   cluster_name   = module.ecs_platform.cluster_name
   api_endpoint   = module.apigw.api_endpoint
   desired_counts = var.desired_counts
-
-  # The bootstrap runs as a pipeline stage before DeployEcs — see the module.
-  db_bootstrap_project_name = module.db_bootstrap.project_name
-  db_bootstrap_project_arn  = module.db_bootstrap.project_arn
 
   depends_on = [
     module.service,

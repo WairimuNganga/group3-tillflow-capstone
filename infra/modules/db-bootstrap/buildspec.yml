@@ -150,20 +150,29 @@ phases:
         END
         \$\$;
 
+        -- Membership must come FIRST. CREATE SCHEMA ... AUTHORIZATION <role>
+        -- and ALTER SCHEMA ... OWNER TO <role> both require the executing user
+        -- to be able to SET ROLE to that role. The RDS master user is
+        -- rds_superuser, not a true superuser, so it is not exempt: granting
+        -- these after the CREATE statements fails with
+        --   ERROR: must be able to SET ROLE "tillflow_web_owner"
+        GRANT tillflow_web_owner TO "${PGUSER}";
+        GRANT tillflow_pos_owner TO "${PGUSER}";
+        GRANT tillflow_payments_owner TO "${PGUSER}";
+        GRANT tillflow_commission_owner TO "${PGUSER}";
+
         CREATE SCHEMA IF NOT EXISTS web AUTHORIZATION tillflow_web_owner;
         CREATE SCHEMA IF NOT EXISTS pos AUTHORIZATION tillflow_pos_owner;
         CREATE SCHEMA IF NOT EXISTS payments AUTHORIZATION tillflow_payments_owner;
         CREATE SCHEMA IF NOT EXISTS commission AUTHORIZATION tillflow_commission_owner;
 
+        -- Idempotent re-assert: CREATE SCHEMA IF NOT EXISTS is a no-op when the
+        -- schema already exists, so it would not correct ownership on a re-run
+        -- against a schema created before the owner roles existed.
         ALTER SCHEMA web OWNER TO tillflow_web_owner;
         ALTER SCHEMA pos OWNER TO tillflow_pos_owner;
         ALTER SCHEMA payments OWNER TO tillflow_payments_owner;
         ALTER SCHEMA commission OWNER TO tillflow_commission_owner;
-
-        GRANT tillflow_web_owner TO "${PGUSER}";
-        GRANT tillflow_pos_owner TO "${PGUSER}";
-        GRANT tillflow_payments_owner TO "${PGUSER}";
-        GRANT tillflow_commission_owner TO "${PGUSER}";
 
         GRANT CONNECT ON DATABASE ${DB_NAME} TO tillflow_web, tillflow_pos, tillflow_payments, tillflow_commission;
 
@@ -253,4 +262,4 @@ phases:
         PY
       - aws secretsmanager put-secret-value --secret-id "${DB_SECRET_ARN}" --secret-string file:///tmp/service-db-secret.json >/dev/null
       - shred -u /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql 2>/dev/null || rm -f /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql
-      - echo "G2 DB bootstrap completed for schemas: ${SERVICES}"
+      - 'echo "G2 DB bootstrap completed for schemas: ${SERVICES}"'

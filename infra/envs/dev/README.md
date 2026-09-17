@@ -15,25 +15,17 @@ Everything else has a defensible default. Copy `terraform.tfvars.example` to
 
 ## G2 database bootstrap
 
-The DB bootstrap is part of the Terraform-managed delivery pipeline as the
-`DbBootstrap` stage, between `BuildScanPush` and `DeployEcs`. It creates service
-schemas, creates runtime DB roles and populates `devops-g3/db` with per-service
-credentials before ECS starts new tasks.
+Terraform creates a standalone `devops-g3-db-bootstrap` CodeBuild project. Run
+it after the dev stack is applied and before the first ECS deploy that needs DB
+credentials. It creates service schemas, creates runtime DB roles and populates
+`devops-g3/db` with per-service credentials.
 
-Manual rerun of the stage:
+Run or rerun:
 
 ```bash
 AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-EXEC_ID=$(aws codepipeline list-pipeline-executions \
-  --pipeline-name devops-g3-pipeline --max-items 1 \
-  --query 'pipelineExecutionSummaries[0].pipelineExecutionId' --output text)
-
-AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
-aws codepipeline retry-stage-execution \
-  --pipeline-name devops-g3-pipeline \
-  --stage-name DbBootstrap \
-  --pipeline-execution-id "$EXEC_ID" \
-  --retry-mode FAILED_ACTIONS
+aws codebuild start-build \
+  --project-name devops-g3-db-bootstrap
 ```
 
 Check the most recent run:

@@ -133,6 +133,10 @@ locals {
   }
 }
 
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.${var.region}.s3"
+}
+
 # ---------------------------------------------------------------------------
 # Task role — per service, and this is where least privilege actually bites
 # ---------------------------------------------------------------------------
@@ -303,6 +307,19 @@ resource "aws_vpc_security_group_egress_rule" "in_vpc" {
   description       = "In-VPC egress (VPC endpoints, RDS Proxy, cache, Service Connect peers)"
   cidr_ipv4         = var.vpc_cidr
   ip_protocol       = "-1"
+}
+
+# ECR image layers are stored in S3. The route goes through the S3 gateway
+# endpoint, but the task security group still evaluates the S3 managed prefix
+# list destination. Without this, services with no internet egress can reach
+# ECR API/Docker interface endpoints but time out while downloading layers.
+resource "aws_vpc_security_group_egress_rule" "s3_gateway_https" {
+  security_group_id = aws_security_group.this.id
+  description       = "HTTPS to S3 gateway endpoint for ECR image layers"
+  prefix_list_id    = data.aws_prefix_list.s3.id
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
 }
 
 # ---------------------------------------------------------------------------
