@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tillflow-pos-db
+    environment:
+      POSTGRES_USER: tillflow
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: tillflow
+    ports:
+      # Override when 5432 is taken (e.g. a Homebrew Postgres): POS_DB_PORT=5440
+      - "${POS_DB_PORT:-5432}:5432"
+    volumes:
+      - pos_pg_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tillflow -d tillflow"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pos_pg_data:
