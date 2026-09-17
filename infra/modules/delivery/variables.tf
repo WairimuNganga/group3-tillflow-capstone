@@ -10,6 +10,9 @@ variable "services" { type = list(string) }
 variable "cluster_name" { type = string }
 variable "api_endpoint" { type = string }
 variable "desired_counts" { type = map(number) }
+variable "adot_repository_name" { type = string }
+variable "adot_source_image" { type = string }
+variable "adot_image_tag" { type = string }
 
 variable "codebuild_image" {
   description = "ARM64 CodeBuild image so Docker builds match ECS Fargate ARM64 tasks."

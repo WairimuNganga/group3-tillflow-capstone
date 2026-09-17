@@ -26,6 +26,91 @@ Procedure:
 The Terraform-managed connection and pipeline are the authoritative G1 delivery
 resources.
 
+### Automated ADOT image mirror
+
+No manual image push is required during normal deployment or a G5 rebuild.
+Terraform creates the private `devops-g3/adot` ECR repository and the
+`devops-g3-adot-mirror` CodeBuild project. CodePipeline runs `mirror-adot` as
+the first action in `BuildScanPush`; the four service builds start only after
+that action succeeds.
+
+`mirror-adot` checks for immutable tag `v0.43.3` in private ECR:
+
+- If the image exists, it is reused and nothing is pushed.
+- If the repository is empty after a rebuild, CodeBuild pulls the pinned ARM64
+  ADOT image from public ECR and pushes it into the private repository.
+
+This guarantees that ECS can pull the sidecar from private ECR before service
+deployment begins.
+
+Expected pipeline order:
+
+```text
+Source -> BuildScanPush (mirror-adot -> four service builds) -> DeployEcs -> Smoke
+```
+
+The action is visible in AWS Console under CodePipeline ->
+`devops-g3-pipeline` -> `BuildScanPush` -> `mirror-adot`. Its logs are in the
+`devops-g3-adot-mirror` CodeBuild project. A successful run logs either
+`Reusing existing ADOT mirror` or `Mirroring ... to .../devops-g3/adot:v0.43.3`.
+
+#### Manual recovery procedure
+
+Use the following procedure only if the automated mirror build cannot run.
+Run it after `terraform apply` has created `devops-g3/adot`. The source digest
+pins the upstream multi-platform release, and `--platform` selects the ARM64
+image required by the ECS task definitions. The existence check makes the
+procedure safe to rerun with the immutable destination tag.
+
+```bash
+export AWS_PROFILE=tillflow-g3-lwam
+export AWS_REGION=us-west-1
+
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+SOURCE_IMAGE="public.ecr.aws/aws-observability/aws-otel-collector@sha256:8aa9ea5f67b8d318f7d6af24677e3c70f7098bc0631147cb5fa91addbe980b06"
+DESTINATION_REPOSITORY="devops-g3/adot"
+DESTINATION_TAG="v0.43.3"
+DESTINATION_IMAGE="${REGISTRY}/${DESTINATION_REPOSITORY}:${DESTINATION_TAG}"
+
+aws ecr describe-repositories \
+  --repository-names "${DESTINATION_REPOSITORY}" >/dev/null
+
+if aws ecr describe-images \
+  --repository-name "${DESTINATION_REPOSITORY}" \
+  --image-ids imageTag="${DESTINATION_TAG}" >/dev/null 2>&1; then
+  echo "ADOT mirror already exists: ${DESTINATION_IMAGE}"
+else
+  aws ecr get-login-password --region "${AWS_REGION}" \
+  | docker login --username AWS --password-stdin "${REGISTRY}"
+
+  docker pull --platform linux/arm64 "${SOURCE_IMAGE}"
+  docker tag "${SOURCE_IMAGE}" "${DESTINATION_IMAGE}"
+  docker push "${DESTINATION_IMAGE}"
+fi
+```
+
+Verify the private image and its digest:
+
+```bash
+aws ecr describe-images \
+  --repository-name devops-g3/adot \
+  --image-ids imageTag=v0.43.3 \
+  --query 'imageDetails[0].{tags:imageTags,digest:imageDigest,pushedAt:imagePushedAt}' \
+  --output table
+```
+
+Expected destination:
+
+```text
+240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3
+```
+
+After manual recovery, retry the failed `mirror-adot` action or start a new
+`devops-g3-pipeline` execution. Each service build writes the same private ADOT
+image into its `imagedefinitions.json`, so later ECS task-definition revisions
+continue using the mirror.
+
 ### G1 smoke evidence
 
 After a release, capture evidence that the pipeline reached the end of the
