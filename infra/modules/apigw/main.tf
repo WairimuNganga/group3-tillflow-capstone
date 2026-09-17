@@ -37,6 +37,13 @@ resource "aws_apigatewayv2_integration" "alb" {
   connection_type    = "VPC_LINK"
   connection_id      = aws_apigatewayv2_vpc_link.this.id
 
+  # Private HTTP integrations include the API stage (for example, /dev) in
+  # the backend path by default. Forward only the original request path so
+  # service routes such as /health and /ready continue to match.
+  request_parameters = {
+    "overwrite:path" = "$request.path"
+  }
+
   payload_format_version = "1.0"
   timeout_milliseconds   = var.integration_timeout_ms
 }

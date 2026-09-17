@@ -25,9 +25,11 @@ phases:
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_REPO="${NAME_PREFIX}/${SERVICE_NAME}"
       - REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - ADOT_IMAGE_URI="${REGISTRY}/${NAME_PREFIX}/adot:v0.43.3"
       - IMAGE_TAG=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-dev}" | cut -c1-40)
       - IMAGE_URI="${REGISTRY}/${ECR_REPO}:${IMAGE_TAG}"
       - echo "Building ${SERVICE_NAME} for ${IMAGE_PLATFORM} -> ${IMAGE_URI}"
+      - echo "Using ADOT sidecar ${ADOT_IMAGE_URI}"
       - EXISTING_DIGEST="$(aws ecr describe-images --repository-name "${ECR_REPO}" --image-ids imageTag="${IMAGE_TAG}" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)"
       - if [ -n "${EXISTING_DIGEST}" ] && [ "${EXISTING_DIGEST}" != "None" ]; then IMAGE_ALREADY_EXISTS=true; IMAGE_DIGEST="${EXISTING_DIGEST}"; else IMAGE_ALREADY_EXISTS=false; fi
       - 'echo "Existing immutable image: ${IMAGE_ALREADY_EXISTS}"'
@@ -77,7 +79,7 @@ phases:
       - aws ssm put-parameter --name "/${NAME_PREFIX}/${SERVICE_NAME}/image-tag" --type String --value "${IMAGE_TAG}" --overwrite
       - aws ssm put-parameter --name "/${NAME_PREFIX}/${SERVICE_NAME}/image-digest" --type String --value "${IMAGE_DIGEST}" --overwrite
       - for param in image-tag image-digest; do aws ssm add-tags-to-resource --resource-type Parameter --resource-id "/${NAME_PREFIX}/${SERVICE_NAME}/${param}" --tags "Key=group,Value=${NAME_PREFIX}" "Key=owner,Value=lwam" "Key=environment,Value=dev" "Key=service,Value=${SERVICE_NAME}" "Key=managed-by,Value=terraform" "Key=capstone,Value=tillflow"; done
-      - printf '[{"name":"%s","imageUri":"%s"}]' "${SERVICE_NAME}" "${IMAGE_URI}" > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"},{"name":"adot","imageUri":"%s"}]' "${SERVICE_NAME}" "${IMAGE_URI}" "${ADOT_IMAGE_URI}" > imagedefinitions.json
       - echo "${SERVICE_NAME}=${IMAGE_URI}@${IMAGE_DIGEST}"
 
 artifacts:
