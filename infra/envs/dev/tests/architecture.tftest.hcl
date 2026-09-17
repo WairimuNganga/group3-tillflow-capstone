@@ -87,6 +87,11 @@ run "architecture_contracts" {
     error_message = "Every service needs an explicit image tag — a missing one silently defaults."
   }
 
+  assert {
+    condition     = module.delivery.codebuild_project_names["adot-mirror"] == "${var.name_prefix}-adot-mirror"
+    error_message = "The delivery lane must provision the ADOT mirror build so a fresh private ECR repository can boot ECS tasks."
+  }
+
   # --- Two containers per task (brief requirement) ------------------------
 
   assert {

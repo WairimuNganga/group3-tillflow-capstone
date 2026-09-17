@@ -10,6 +10,9 @@ output "github_connection_arn" {
 output "codebuild_project_names" {
   value = merge(
     { for k, p in aws_codebuild_project.image : k => p.name },
-    { smoke = aws_codebuild_project.smoke.name },
+    {
+      adot-mirror = aws_codebuild_project.adot_mirror.name
+      smoke       = aws_codebuild_project.smoke.name
+    },
   )
 }

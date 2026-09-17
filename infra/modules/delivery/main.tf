@@ -200,6 +200,62 @@ resource "aws_codebuild_project" "image" {
   }
 }
 
+resource "aws_codebuild_project" "adot_mirror" {
+  name          = "${var.name_prefix}-adot-mirror"
+  description   = "Mirror the pinned ARM64 ADOT collector into private ECR"
+  service_role  = aws_iam_role.codebuild.arn
+  build_timeout = 15
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.codebuild_image
+    type                        = "ARM_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "ADOT_REPOSITORY"
+      value = var.adot_repository_name
+    }
+
+    environment_variable {
+      name  = "ADOT_SOURCE_IMAGE"
+      value = var.adot_source_image
+    }
+
+    environment_variable {
+      name  = "ADOT_IMAGE_TAG"
+      value = var.adot_image_tag
+    }
+
+    environment_variable {
+      name  = "IMAGE_PLATFORM"
+      value = "linux/arm64"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspecs/mirror-adot.yml"
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/${var.name_prefix}/codebuild/adot-mirror"
+      stream_name = "image"
+    }
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-adot-mirror"
+    service = "telemetry"
+  }
+}
+
 resource "aws_codebuild_project" "smoke" {
   name          = "${var.name_prefix}-smoke"
   description   = "Scale ECS services after image deploy and run smoke checks"
@@ -289,9 +345,12 @@ data "aws_iam_policy_document" "codepipeline" {
   }
 
   statement {
-    sid       = "RunBuilds"
-    actions   = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
-    resources = concat([for p in aws_codebuild_project.image : p.arn], [aws_codebuild_project.smoke.arn])
+    sid     = "RunBuilds"
+    actions = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
+    resources = concat(
+      [for p in aws_codebuild_project.image : p.arn],
+      [aws_codebuild_project.adot_mirror.arn, aws_codebuild_project.smoke.arn],
+    )
   }
 
   # Permissions required by the ECS standard deploy action. RegisterTaskDefinition
@@ -377,6 +436,20 @@ resource "aws_codepipeline" "this" {
   stage {
     name = "BuildScanPush"
 
+    action {
+      name            = "mirror-adot"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.adot_mirror.name
+      }
+    }
+
     dynamic "action" {
       for_each = toset(var.services)
       content {
@@ -387,7 +460,7 @@ resource "aws_codepipeline" "this" {
         input_artifacts  = ["source_output"]
         output_artifacts = [local.image_artifact_names[action.key]]
         version          = "1"
-        run_order        = 1
+        run_order        = 2
 
         configuration = {
           ProjectName = aws_codebuild_project.image[action.key].name
