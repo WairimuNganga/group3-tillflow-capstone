@@ -17,6 +17,11 @@ locals {
 
   services = ["web", "pos", "payments", "commission"]
 
+  adot_image_tag = "v0.43.3"
+  # Pin the upstream multi-platform manifest; the mirror build selects the
+  # ARM64 child image required by the Fargate task definitions.
+  adot_source_image = "public.ecr.aws/aws-observability/aws-otel-collector@sha256:8aa9ea5f67b8d318f7d6af24677e3c70f7098bc0631147cb5fa91addbe980b06"
+
   # Which services the ALB fronts. `commission` is a worker driven by
   # EventBridge → SQS; it has no inbound HTTP route at all, which is also why
   # it cannot be reached from outside to trigger a payout.
@@ -255,7 +260,7 @@ module "service" {
   image_repository_url = module.ecs_platform.ecr_repository_urls[each.key]
   image_tag            = var.image_tags[each.key]
   image_digest         = lookup(var.image_digests, each.key, null)
-  adot_image           = "${aws_ecr_repository.adot.repository_url}:v0.43.3"
+  adot_image           = "${aws_ecr_repository.adot.repository_url}:${local.adot_image_tag}"
   amp_remote_write_url = var.amp_remote_write_url
 
   # Only HTTP services sit behind the ALB. commission is a worker driven by
@@ -438,6 +443,10 @@ module "delivery" {
   cluster_name   = module.ecs_platform.cluster_name
   api_endpoint   = module.apigw.api_endpoint
   desired_counts = var.desired_counts
+
+  adot_repository_name = aws_ecr_repository.adot.name
+  adot_source_image    = local.adot_source_image
+  adot_image_tag       = local.adot_image_tag
 
   depends_on = [
     module.service,

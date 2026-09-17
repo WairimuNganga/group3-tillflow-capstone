@@ -24,6 +24,7 @@ Verified in AWS account `240462142849`, region `us-west-1`
   [#25](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/25)
 - CI/CD decisions: [ADR-009](../../docs/adr/ADR-009-ci-cd-promotion-and-rollback.md)
 - Private networking decisions: [ADR-010](../../docs/adr/ADR-010-networking-topology.md)
+- G5 rebuild prerequisite: [automated ADOT image mirror and manual recovery](../../docs/runbook.md#automated-adot-image-mirror)
 
 ### Screenshot evidence
 
