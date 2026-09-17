@@ -56,6 +56,31 @@ jobs:
           MPESA_ADAPTER: fake
         run: pytest -v
 
+  payments:
+    name: payments (Phase 0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tillflow-shared
+        working-directory: services/_shared
+        run: pip install -e ".[dev]"
+
+      - name: Install tillflow-payments
+        working-directory: services/payments
+        run: pip install -e ".[dev]"
+
+      - name: Pytest
+        working-directory: services/payments
+        env:
+          MPESA_ADAPTER: fake
+          TILLFLOW_TELEMETRY_EXPORT: none
+        run: pytest -v
+
   docker-golden-path:
     name: docker golden path
     runs-on: ubuntu-latest

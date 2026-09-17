@@ -61,8 +61,21 @@ async def test_delayed_timeout(
 ) -> None:
     req = sample_stk_request.model_copy(update={"fake_scenario": FakeScenario.DELAYED_TIMEOUT})
 
-    with pytest.raises(MpesaTimeoutError):
+    with pytest.raises(MpesaTimeoutError) as exc:
         await fake_adapter.initiate_stk_push(req)
+
+    assert exc.value.checkout_request_id
+    assert exc.value.merchant_request_id
+    assert fake_adapter.drain_callbacks(exc.value.checkout_request_id) == []
+
+    query = await fake_adapter.query_transaction_status(
+        TransactionQueryRequest(
+            tenant_id=req.tenant_id,
+            idempotency_key=req.idempotency_key,
+            checkout_request_id=exc.value.checkout_request_id,
+        )
+    )
+    assert query.result_code == "0"
 
 
 @pytest.mark.asyncio

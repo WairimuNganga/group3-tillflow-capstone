@@ -7,8 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class MpesaSettings(BaseSettings):
     """Adapter configuration — never log secret values."""
 
-    model_config = SettingsConfigDict(env_prefix="", case_sensitive=False, extra="ignore")
-
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
     mpesa_adapter: Literal["fake", "sandbox"] = Field(default="fake", alias="MPESA_ADAPTER")
 
     daraja_base_url: str = Field(

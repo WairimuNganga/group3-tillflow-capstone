@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import uuid
 from dataclasses import dataclass, field
 
@@ -62,8 +61,26 @@ class FakeMpesaAdapter:
         scenario = req.fake_scenario or self._default_scenario
 
         if scenario is FakeScenario.DELAYED_TIMEOUT:
-            await asyncio.sleep(self._settings.http_read_timeout_seconds + 0.1)
-            raise MpesaTimeoutError("simulated Daraja timeout")
+            # Simulate: Daraja accepted the push (IDs exist) but the HTTP client
+            # timed out before the sync response returned. No callback is queued;
+            # STK Query later reports success so reconciliation can settle.
+            merchant_request_id = f"fake-merchant-{uuid.uuid4().hex[:12]}"
+            checkout_request_id = f"fake-checkout-{uuid.uuid4().hex[:12]}"
+            receipt = f"FAKE{uuid.uuid4().hex[:8].upper()}"
+            self._stk_records[checkout_request_id] = _StkRecord(
+                merchant_request_id=merchant_request_id,
+                checkout_request_id=checkout_request_id,
+                amount_whole_kes=req.amount_whole_kes,
+                scenario=scenario,
+                settled=True,
+                final_result_code="0",
+                mpesa_receipt_number=receipt,
+            )
+            raise MpesaTimeoutError(
+                "simulated Daraja timeout",
+                merchant_request_id=merchant_request_id,
+                checkout_request_id=checkout_request_id,
+            )
 
         merchant_request_id = f"fake-merchant-{uuid.uuid4().hex[:12]}"
         checkout_request_id = f"fake-checkout-{uuid.uuid4().hex[:12]}"
