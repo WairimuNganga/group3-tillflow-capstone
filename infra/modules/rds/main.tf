@@ -174,8 +174,11 @@ resource "aws_iam_role" "proxy" {
 
 data "aws_iam_policy_document" "proxy" {
   statement {
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_db_instance.this.master_user_secret[0].secret_arn]
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = concat(
+      [aws_db_instance.this.master_user_secret[0].secret_arn],
+      var.proxy_auth_secret_arns,
+    )
   }
   statement {
     actions   = ["kms:Decrypt"]
@@ -209,6 +212,16 @@ resource "aws_db_proxy" "this" {
     auth_scheme = "SECRETS"
     iam_auth    = "DISABLED"
     secret_arn  = aws_db_instance.this.master_user_secret[0].secret_arn
+  }
+
+  dynamic "auth" {
+    for_each = toset(var.proxy_auth_secret_arns)
+
+    content {
+      auth_scheme = "SECRETS"
+      iam_auth    = "DISABLED"
+      secret_arn  = auth.value
+    }
   }
 
   tags = { Name = "${var.name_prefix}-db-proxy" }

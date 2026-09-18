@@ -15,6 +15,12 @@ variable "client_security_group_ids" {
 
 variable "kms_key_arn" { type = string }
 
+variable "proxy_auth_secret_arns" {
+  description = "Additional Secrets Manager ARNs used by RDS Proxy to authenticate runtime DB roles."
+  type        = list(string)
+  default     = []
+}
+
 variable "engine_version" {
   description = <<-EOT
     MAJOR version only. The AWS provider treats this as a prefix and RDS picks

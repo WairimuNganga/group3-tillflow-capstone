@@ -33,6 +33,12 @@ variable "db_secret_arn" {
   type        = string
 }
 
+variable "db_proxy_secret_arns" {
+  description = "service name => RDS Proxy auth secret ARN populated with that service username/password."
+  type        = map(string)
+  default     = {}
+}
+
 variable "kms_key_arn" {
   description = "Shared CMK used for Secrets Manager and logs."
   type        = string

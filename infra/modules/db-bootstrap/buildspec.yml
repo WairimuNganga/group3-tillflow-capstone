@@ -35,6 +35,7 @@ phases:
       - test -n "${DB_NAME}"
       - test -n "${MASTER_SECRET_ARN}"
       - test -n "${DB_SECRET_ARN}"
+      - test -n "${DB_PROXY_SECRET_ARNS_JSON}"
       - MASTER_JSON="$(aws secretsmanager get-secret-value --secret-id "${MASTER_SECRET_ARN}" --query SecretString --output text)"
       - export MASTER_JSON
       - export PGUSER="$(python3 -c 'import json, os; print(json.loads(os.environ["MASTER_JSON"])["username"])')"
@@ -65,7 +66,10 @@ phases:
             sys.exit(0)
 
         try:
-            value = json.loads(raw).get(sys.argv[1], {}).get("password", "")
+            service_value = json.loads(raw).get(sys.argv[1], {})
+            if isinstance(service_value, str):
+                service_value = json.loads(service_value)
+            value = service_value.get("password", "")
         except Exception:
             value = ""
 
@@ -264,5 +268,39 @@ phases:
         print(json.dumps(payload, separators=(",", ":")))
         PY
       - aws secretsmanager put-secret-value --secret-id "${DB_SECRET_ARN}" --secret-string file:///tmp/service-db-secret.json >/dev/null
+      - |
+        python3 - <<'PY'
+        import json
+        import os
+        import subprocess
+
+        proxy_secret_arns = json.loads(os.environ["DB_PROXY_SECRET_ARNS_JSON"])
+        services = {
+            "web": ("tillflow_web", os.environ["WEB_PASSWORD"]),
+            "pos": ("tillflow_pos", os.environ["POS_PASSWORD"]),
+            "payments": ("tillflow_payments", os.environ["PAYMENTS_PASSWORD"]),
+            "commission": ("tillflow_commission", os.environ["COMMISSION_PASSWORD"]),
+        }
+
+        for service, secret_arn in proxy_secret_arns.items():
+            username, password = services[service]
+            payload = json.dumps(
+                {"username": username, "password": password},
+                separators=(",", ":"),
+            )
+            subprocess.run(
+                [
+                    "aws",
+                    "secretsmanager",
+                    "put-secret-value",
+                    "--secret-id",
+                    secret_arn,
+                    "--secret-string",
+                    payload,
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+        PY
       - shred -u /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql 2>/dev/null || rm -f /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql
       - 'echo "G2 DB bootstrap completed for schemas: ${SERVICES}"'
