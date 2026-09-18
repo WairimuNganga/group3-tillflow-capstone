@@ -166,6 +166,16 @@ module "alb" {
       path_patterns = ["/api/payments/*", "/callback/*"]
     }
   }
+
+  # POS exposes internal settlement endpoints for payments only. Public API
+  # Gateway traffic reaches this listener first, so reject those paths before
+  # the broader /api/pos/* rule can forward them.
+  blocked_path_patterns = {
+    pos_internal = {
+      priority      = 50
+      path_patterns = ["/api/pos/internal/*"]
+    }
+  }
 }
 
 module "apigw" {
@@ -292,6 +302,10 @@ module "service" {
     each.key == "payments" ? {
       RECONCILIATION_QUEUE_URL = module.messaging.queue_urls["reconciliation"]
       PAYOUT_QUEUE_URL         = module.messaging.queue_urls["payout"]
+      POS_BASE_URL             = "http://pos:8080"
+    } : {},
+    each.key == "pos" ? {
+      PAYMENTS_BASE_URL = "http://payments:8080"
     } : {},
     each.key == "commission" ? {
       PAYOUT_QUEUE_URL  = module.messaging.queue_urls["payout"]
@@ -348,6 +362,26 @@ resource "aws_vpc_security_group_ingress_rule" "commission_to_payments" {
   security_group_id            = module.service["payments"].security_group_id
   description                  = "Service Connect: commission to payments B2C endpoint"
   referenced_security_group_id = module.service["commission"].security_group_id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+# POS creates sales and calls payments to start/observe STK flows.
+resource "aws_vpc_security_group_ingress_rule" "pos_to_payments" {
+  security_group_id            = module.service["payments"].security_group_id
+  description                  = "Service Connect: pos to payments"
+  referenced_security_group_id = module.service["pos"].security_group_id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+# Payments calls POS internal settlement endpoints after callback/reconciliation.
+resource "aws_vpc_security_group_ingress_rule" "payments_to_pos" {
+  security_group_id            = module.service["pos"].security_group_id
+  description                  = "Service Connect: payments to pos internal settlement"
+  referenced_security_group_id = module.service["payments"].security_group_id
   from_port                    = 8080
   to_port                      = 8080
   ip_protocol                  = "tcp"

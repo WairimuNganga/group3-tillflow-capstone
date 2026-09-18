@@ -37,3 +37,13 @@ variable "targets" {
     path_patterns = list(string)
   }))
 }
+
+variable "blocked_path_patterns" {
+  description = "Public ALB paths that must be rejected before service forwarding."
+  type = map(object({
+    priority      = number
+    path_patterns = list(string)
+    status_code   = optional(string, "404")
+  }))
+  default = {}
+}
