@@ -13,6 +13,12 @@ variable "desired_counts" { type = map(number) }
 variable "adot_repository_name" { type = string }
 variable "adot_source_image" { type = string }
 variable "adot_image_tag" { type = string }
+variable "vpc_id" { type = string }
+variable "subnet_ids" { type = list(string) }
+variable "security_group_id" { type = string }
+variable "db_host" { type = string }
+variable "db_name" { type = string }
+variable "master_secret_arn" { type = string }
 
 variable "codebuild_image" {
   description = "ARM64 CodeBuild image so Docker builds match ECS Fargate ARM64 tasks."

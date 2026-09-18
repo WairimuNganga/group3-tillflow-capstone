@@ -482,6 +482,13 @@ module "delivery" {
   adot_source_image    = local.adot_source_image
   adot_image_tag       = local.adot_image_tag
 
+  vpc_id            = module.network.vpc_id
+  subnet_ids        = module.network.private_app_subnet_ids
+  security_group_id = aws_security_group.db_bootstrap.id
+  db_host           = module.rds.proxy_endpoint
+  db_name           = module.rds.database_name
+  master_secret_arn = module.rds.master_secret_arn
+
   depends_on = [
     module.service,
     aws_secretsmanager_secret_policy.db,

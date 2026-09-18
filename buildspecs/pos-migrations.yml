@@ -1,0 +1,53 @@
+version: 0.2
+
+# Runs POS Alembic migrations from the POS image that was just built.
+# The admin URL is assembled at runtime from the RDS-managed master secret so
+# database credentials never pass through Terraform state.
+
+env:
+  shell: bash
+  variables:
+    NAME_PREFIX: devops-g3
+    POS_REPOSITORY: devops-g3/pos
+
+phases:
+  pre_build:
+    commands:
+      - set -euo pipefail
+      - export AWS_REGION=${AWS_DEFAULT_REGION:-us-west-1}
+      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - export REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
+      - export POS_IMAGE_DIGEST="$(aws ssm get-parameter --name "/${NAME_PREFIX}/pos/image-digest" --query Parameter.Value --output text)"
+      - export POS_IMAGE_TAG="$(aws ssm get-parameter --name "/${NAME_PREFIX}/pos/image-tag" --query Parameter.Value --output text)"
+      - if [ -n "${POS_IMAGE_DIGEST}" ] && [ "${POS_IMAGE_DIGEST}" != "UNSET" ]; then export POS_IMAGE_URI="${REGISTRY}/${POS_REPOSITORY}@${POS_IMAGE_DIGEST}"; else export POS_IMAGE_URI="${REGISTRY}/${POS_REPOSITORY}:${POS_IMAGE_TAG}"; fi
+      - echo "Running POS migrations with ${POS_IMAGE_URI}"
+      - export MASTER_SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "${MASTER_SECRET_ARN}" --query SecretString --output text)"
+      - |
+        export POS_DB_ADMIN_URL="$(python - <<'PY'
+        import json
+        import os
+        from urllib.parse import quote
+
+        secret = json.loads(os.environ["MASTER_SECRET_JSON"])
+        username = quote(secret["username"], safe="")
+        password = quote(secret["password"], safe="")
+        host = os.environ["DB_HOST"]
+        db_name = os.environ["DB_NAME"]
+
+        print(f"postgresql+asyncpg://{username}:{password}@{host}:5432/{db_name}?ssl=require")
+        PY
+        )"
+      - test -n "${POS_DB_ADMIN_URL}"
+
+  build:
+    commands:
+      - |
+        docker run --rm \
+          -e POS_DB_ADMIN_URL="${POS_DB_ADMIN_URL}" \
+          "${POS_IMAGE_URI}" \
+          /opt/venv/bin/python -m alembic upgrade head
+
+  post_build:
+    commands:
+      - echo "POS Alembic migrations completed"
