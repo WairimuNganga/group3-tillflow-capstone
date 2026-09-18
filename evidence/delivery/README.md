@@ -10,6 +10,7 @@ Drop here, each with **exact reproduction commands** (screenshots alone earn no 
 - [x] Runtime proof (pipeline, ECS and endpoint results below)
 - [x] Reproduction commands (included with each result below)
 - [x] Rollback log (Drill 4): [`rollback-log.md`](rollback-log.md)
+- [x] SBOM + image scan report: [`sbom/`](sbom/)
 
 ## G1 delivery evidence
 
