@@ -7,3 +7,7 @@ Drop here, each with **exact reproduction commands** (screenshots alone earn no 
 - [ ] Tests (unit / integration / invariant / contract as applicable)
 - [ ] Runtime proof (traces, dashboards, pipeline runs, drill recordings)
 - [ ] Reproduction commands (`how-to-reproduce.md`)
+
+Gate-specific platform evidence:
+
+- [G2 deliverables checklist](./G2-deliverables.md)
