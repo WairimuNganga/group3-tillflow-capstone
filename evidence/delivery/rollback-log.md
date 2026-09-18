@@ -116,15 +116,39 @@ digest (`sha256:56d4d05e...`) is a genuinely different digest from what was runn
 (`sha256:84a7adc8592b696a771381e9dceea852546c8231db946c655ff5559a8b54d3f7`, attempt 1's pre-rollback
 image). The rollback demonstrably changed what's deployed this time.
 
-### Known, separate discrepancy — not a rollback.yml defect
+### A `/health` reading that looked like a bug, but wasn't
 
-`/health`'s `git_sha` field reads `5cfa264...`, not `b9eabd8...`, even though the ECR tag is
-correctly `b9eabd8`. This means the images tagged `b9eabd8` and an earlier `5cfa264` share the same
-underlying digest — almost certainly `buildspecs/service-image.yml`'s "image already exists, skip
-rebuild" reuse logic, applied to `web`, which has no application code of its own yet and so
-produces byte-identical layers across many commits. The `GIT_COMMIT_SHA` build-arg baked at image
-build time didn't get refreshed when the tag was reused. This is a pre-existing gap in the shared
-build/reuse path, not something this rollback mechanism causes or is responsible for fixing —
-flagged here since it means `/health`'s `git_sha` isn't a fully reliable artifact-identity check
-for a service without its own Dockerfile yet. The ECR **tag** and **digest** (what `rollback.yml`
-and `terraform plan`/`apply` actually key off) are unaffected and correct.
+Immediately after attempt 2, `curl .../health` returned `git_sha: 5cfa264...`, not the `b9eabd8`
+just rolled back to, even though the ECR tag and running container's image digest were both
+already confirmed correct at that same moment. That looked like a build-pipeline bug — the
+`GIT_COMMIT_SHA` build-arg not actually reaching the image — and was reported as one in an earlier
+version of this file. It wasn't.
+
+Investigated further before letting that stand as evidence: pulled the exact image ECS was running
+(`devops-g3/web@sha256:56d4d05e...`, i.e. the `b9eabd8` tag) directly from ECR and inspected its
+baked-in environment —
+
+```bash
+docker pull 240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web@sha256:56d4d05ee15c0916adb42a9f6be214bd182e07cfe4502f11748c3cf197cbac2f
+docker inspect 240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web@sha256:56d4d05ee15c0916adb42a9f6be214bd182e07cfe4502f11748c3cf197cbac2f \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' | grep GIT_COMMIT_SHA
+```
+
+```text
+GIT_COMMIT_SHA=b9eabd8a935c2326b9a91a1a1c5077380cefbdfe
+```
+
+Correct. Cross-checked the CodeBuild log for that exact build
+(`devops-g3-web-build:d4aa0359-...`, `resolvedSourceVersion: b9eabd8...`) too: `Existing immutable
+image: false` (a genuinely fresh build, not a stale reuse), the base image built and locally tagged
+`tillflow-base:b9eabd8...` with the correct `--build-arg GIT_COMMIT_SHA`, and the app image's `FROM`
+correctly resolved to that exact freshly-built local tag. `buildspecs/service-image.yml` has no
+defect here — the image genuinely, correctly has `b9eabd8` baked in throughout.
+
+The stray `/health` reading was most likely an ALB/target-group deregistration-delay artifact — a
+`curl` landing on an old task's still-draining connection in the seconds right after a rolling
+deploy, before it's fully removed from rotation — not a wrong image. (Also worth noting for anyone
+re-checking this later: `web` has since moved on again to a newer commit, because merging
+[PR #36](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/36) itself triggered a new
+CodePipeline release — the AWS-native pipeline watches every push to `main`, unlike the
+path-filtered GitHub Actions checks. That's expected pipeline behavior, not a rollback issue.)
