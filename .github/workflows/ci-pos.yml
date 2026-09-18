@@ -1,0 +1,119 @@
+name: ci-pos
+
+# Path-filtered so a change under services/pos/ builds & tests only POS (+
+# its shared dependency) -- not every service every time. Not on the
+# required-checks list (see ci.yml for what is), so a PR that doesn't touch
+# these paths never runs it, on purpose.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/_shared/**"
+      - "services/pos/**"
+      - ".github/workflows/ci-pos.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/_shared/**"
+      - "services/pos/**"
+      - ".github/workflows/ci-pos.yml"
+
+jobs:
+  lint:
+    name: lint (services/pos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: ruff check
+        working-directory: services/pos
+        run: |
+          pip install --quiet ruff
+          ruff check .
+
+  dependency-scan:
+    name: dependency scan (services/pos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # pos depends on tillflow-shared, which isn't on PyPI -- installing
+      # it standalone fails with "No matching distribution found for
+      # tillflow-shared". Install _shared first.
+      - name: Install tillflow-shared
+        run: pip install --quiet -e "services/_shared[dev]"
+
+      - name: Install package
+        working-directory: services/pos
+        run: pip install --quiet -e ".[dev]"
+
+      # --skip-editable, not --strict -- see ci.yml's dependency-scan job
+      # for why --strict is permanently red here regardless of real
+      # vulnerabilities.
+      - name: pip-audit
+        working-directory: services/pos
+        run: |
+          pip install --quiet pip-audit
+          pip-audit --skip-editable
+
+  # Postgres service container so the RLS-isolation suite (ADR-005's
+  # required proof) actually executes here, instead of silently skipping
+  # for want of POS_TEST_ADMIN_DSN.
+  pos:
+    name: pos (G2)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ubuntu-latest normally ships this, but conftest.py shells out to
+      # `psql` for RLS bootstrap SQL -- fail loudly and fast if a future
+      # runner image ever drops it, rather than have every Postgres-mode
+      # test fail with an opaque "psql: command not found".
+      - name: Ensure psql client is available
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends postgresql-client
+          fi
+
+      - name: Install tillflow-shared
+        working-directory: services/_shared
+        run: pip install -e ".[dev]"
+
+      - name: Install tillflow-pos
+        working-directory: services/pos
+        run: pip install -e ".[dev]"
+
+      - name: Pytest (memory mode + Postgres/RLS suite)
+        working-directory: services/pos
+        env:
+          MPESA_ADAPTER: fake
+          TILLFLOW_TELEMETRY_EXPORT: none
+          POS_TEST_ADMIN_DSN: postgresql://postgres:postgres@localhost:5432/pos_test
+        run: pytest -v
