@@ -102,9 +102,13 @@ jobs:
             echo "::warning::${{ inputs.service }} is already on ${SHA} -- this will force a fresh deployment of the same image, not a change of image."
           fi
 
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO}@${DIGEST}"
+
           echo "Rolling back ${{ inputs.service }}: ${CURRENT_TAG} -> ${SHA} (${DIGEST})"
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "previous_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
 
       # Written before the ECS update, not after: this is the same source
       # of truth terraform plan/apply reads (ADR-009 consequences). If the
@@ -121,18 +125,78 @@ jobs:
             --name "/${NAME_PREFIX}/${{ inputs.service }}/image-digest" \
             --type String --value "${{ steps.target.outputs.digest }}" --overwrite
 
-      - name: Force ECS redeploy and wait for stability
+      # `--force-new-deployment` alone (what this step used to do) restarts
+      # tasks using the SERVICE'S CURRENT task definition -- ECS does not
+      # dynamically resolve a container's image from SSM at deploy time, the
+      # image URI is a literal string baked into a specific task definition
+      # revision. Found this the hard way: Drill 4's first real run reported
+      # success end to end (SSM updated, rollout COMPLETED, health checks
+      # passed) while the running container silently stayed on the OLD
+      # image, because this step never actually changed what the task
+      # definition pointed at. Fixed by mirroring what CodePipeline's ECS
+      # deploy action does with imagedefinitions.json: read the current task
+      # definition, swap only the target service's container image to the
+      # verified digest, register that as a new revision, and explicitly
+      # point the service at it.
+      - name: Register a new task definition on the rollback image
+        id: register
+        run: |
+          set -euo pipefail
+          FAMILY="${NAME_PREFIX}-${{ inputs.service }}"
+          TARGET_IMAGE="${{ steps.target.outputs.image_uri }}"
+
+          aws ecs describe-task-definition --task-definition "${FAMILY}" \
+            --query 'taskDefinition' > current-taskdef.json
+
+          jq --arg svc "${{ inputs.service }}" --arg image "${TARGET_IMAGE}" '
+            .containerDefinitions = [.containerDefinitions[]
+              | if .name == $svc then .image = $image else . end]
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                  .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+          ' current-taskdef.json > new-taskdef.json
+
+          # Fail loudly if the service name doesn't match any container --
+          # silently registering a no-op task definition (image unchanged)
+          # is exactly the bug this step exists to fix.
+          if ! jq -e --arg image "${TARGET_IMAGE}" \
+              '.containerDefinitions[] | select(.image == $image)' new-taskdef.json >/dev/null; then
+            echo "::error::no container named '${{ inputs.service }}' in task definition ${FAMILY} ended up on ${TARGET_IMAGE} -- refusing to register a task definition that doesn't actually change the image"
+            exit 1
+          fi
+
+          NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file://new-taskdef.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Registered ${NEW_REVISION}"
+          echo "task_def_arn=${NEW_REVISION}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy the new task definition and wait for stability
         run: |
           set -euo pipefail
           aws ecs update-service \
             --cluster "${NAME_PREFIX}" \
             --service "${NAME_PREFIX}-${{ inputs.service }}" \
+            --task-definition "${{ steps.register.outputs.task_def_arn }}" \
             --force-new-deployment >/dev/null
 
           echo "Waiting for ${NAME_PREFIX}-${{ inputs.service }} to become stable..."
           aws ecs wait services-stable \
             --cluster "${NAME_PREFIX}" \
             --services "${NAME_PREFIX}-${{ inputs.service }}"
+
+          # Belt and braces after the bug above: confirm the container
+          # actually running now is the one just registered, not just that
+          # ECS says the deployment is "stable".
+          RUNNING_TASK=$(aws ecs list-tasks --cluster "${NAME_PREFIX}" \
+            --service-name "${NAME_PREFIX}-${{ inputs.service }}" \
+            --query 'taskArns[0]' --output text)
+          RUNNING_IMAGE=$(aws ecs describe-tasks --cluster "${NAME_PREFIX}" --tasks "${RUNNING_TASK}" \
+            --query "tasks[0].containers[?name=='${{ inputs.service }}'].image | [0]" --output text)
+
+          if [ "${RUNNING_IMAGE}" != "${{ steps.target.outputs.image_uri }}" ]; then
+            echo "::error::running task's image is ${RUNNING_IMAGE}, expected ${{ steps.target.outputs.image_uri }} -- deployment reported stable but did not actually converge on the rollback target"
+            exit 1
+          fi
+          echo "Confirmed: running container image is ${RUNNING_IMAGE}"
 
       # "Stable" per ECS is not the same claim as "actually serving traffic
       # correctly" -- the same reasoning buildspecs/post-deploy-smoke.yml
