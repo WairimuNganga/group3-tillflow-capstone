@@ -14,6 +14,9 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from tillflow_shared.money import from_whole_kes, to_whole_kes
+from tillflow_shared.mpesa.fake import FakeMpesaAdapter
+from tillflow_shared.mpesa.scenarios import FakeScenario
 
 from payments.config import settings
 from payments.deps import (
@@ -24,9 +27,6 @@ from payments.deps import (
     reset_runtime_state,
 )
 from payments.main import app
-from tillflow_shared.money import from_whole_kes, to_whole_kes
-from tillflow_shared.mpesa.fake import FakeMpesaAdapter
-from tillflow_shared.mpesa.scenarios import FakeScenario
 
 
 @pytest.fixture(autouse=True)

@@ -3,18 +3,19 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from payments.domain.models import PaymentLedgerEntry, Payout
-from payments.domain.state import PayoutState, assert_payout_transition, is_payout_terminal
-from payments.repositories.memory_settlement import InMemoryLedgerRepository
-from payments.repositories.payout_memory import InMemoryPayoutRepository
-from payments.repositories.payout_postgres import PostgresPayoutRepository
-from payments.repositories.postgres_settlement import PostgresLedgerRepository
 from tillflow_shared.money import from_whole_kes, to_whole_kes
 from tillflow_shared.mpesa.adapter import MpesaAdapter
 from tillflow_shared.mpesa.exceptions import MpesaTimeoutError
 from tillflow_shared.mpesa.types import B2CRequest
 from tillflow_shared.otel import business_counter
 from tillflow_shared.otel.middleware import traced
+
+from payments.domain.models import PaymentLedgerEntry, Payout
+from payments.domain.state import PayoutState, assert_payout_transition, is_payout_terminal
+from payments.repositories.memory_settlement import InMemoryLedgerRepository
+from payments.repositories.payout_memory import InMemoryPayoutRepository
+from payments.repositories.payout_postgres import PostgresPayoutRepository
+from payments.repositories.postgres_settlement import PostgresLedgerRepository
 
 b2c_initiated = business_counter(
     "payments_b2c_initiated_total",

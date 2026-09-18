@@ -3,11 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from payments.domain.models import Payment
-from payments.domain.state import PaymentState, assert_payment_transition
-from payments.outbox import InMemoryOutbox
-from payments.repositories.memory import InMemoryPaymentRepository
-from payments.repositories.postgres import PostgresPaymentRepository
 from tillflow_shared.money import to_whole_kes
 from tillflow_shared.mpesa.adapter import MpesaAdapter
 from tillflow_shared.mpesa.exceptions import MpesaTimeoutError
@@ -15,6 +10,12 @@ from tillflow_shared.mpesa.scenarios import FakeScenario
 from tillflow_shared.mpesa.types import StkPushRequest
 from tillflow_shared.otel import business_counter
 from tillflow_shared.otel.middleware import traced
+
+from payments.domain.models import Payment
+from payments.domain.state import PaymentState, assert_payment_transition
+from payments.outbox import InMemoryOutbox
+from payments.repositories.memory import InMemoryPaymentRepository
+from payments.repositories.postgres import PostgresPaymentRepository
 
 stk_initiated = business_counter(
     "payments_stk_initiated_total",

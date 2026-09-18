@@ -4,13 +4,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from tillflow_shared.money import from_whole_kes
+
 from payments.domain.models import Payment, PaymentLedgerEntry
 from payments.domain.state import PaymentState, assert_payment_transition
 from payments.repositories.memory import InMemoryPaymentRepository
 from payments.repositories.memory_settlement import InMemoryLedgerRepository
 from payments.repositories.postgres import PostgresPaymentRepository
 from payments.repositories.postgres_settlement import PostgresLedgerRepository
-from tillflow_shared.money import from_whole_kes
 
 PaymentRepository = InMemoryPaymentRepository | PostgresPaymentRepository
 LedgerRepository = InMemoryLedgerRepository | PostgresLedgerRepository

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
-from datetime import UTC, datetime
 from uuid import UUID
 
 from payments.domain.models import PaymentCallback, PaymentLedgerEntry

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from dataclasses import replace
 
-from tillflow_shared.idempotency.store import IdempotencyStore
 from tillflow_shared.idempotency.types import IdempotencyRecord, IdempotencyStatus
 
 

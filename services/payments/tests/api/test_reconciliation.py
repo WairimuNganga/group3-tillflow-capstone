@@ -5,10 +5,10 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from tillflow_shared.mpesa.scenarios import FakeScenario
 
 from payments.deps import get_ledger_repository, reset_runtime_state
 from payments.main import app
-from tillflow_shared.mpesa.scenarios import FakeScenario
 
 
 @pytest.fixture(autouse=True)

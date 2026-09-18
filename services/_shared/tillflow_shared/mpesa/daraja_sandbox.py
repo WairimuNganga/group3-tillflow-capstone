@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -69,7 +69,7 @@ class DarajaSandboxAdapter:
         return base64.b64encode(raw.encode("utf-8")).decode("utf-8")
 
     async def initiate_stk_push(self, req: StkPushRequest) -> StkPushResponse:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         payload = {
             "BusinessShortCode": self._settings.daraja_shortcode,
             "Password": self._build_stk_password(
@@ -104,7 +104,7 @@ class DarajaSandboxAdapter:
     async def query_transaction_status(
         self, req: TransactionQueryRequest
     ) -> TransactionQueryResponse:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         payload = {
             "BusinessShortCode": self._settings.daraja_shortcode,
             "Password": self._build_stk_password(

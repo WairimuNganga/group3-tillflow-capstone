@@ -20,7 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
+    "pytest>=9.0.3",
     "pytest-asyncio>=0.24,<2.0",
 ]
 
@@ -38,3 +38,17 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# UP042 (str+Enum -> enum.StrEnum) is intentionally off: it would rewrite the
+# base class of state-machine enums (PaymentState, PayoutState, ...) as a side
+# effect of a lint gate. That's a deliberate, reviewed change for whoever owns
+# the enum, not an automated one.
+ignore = ["UP042"]
+
+# FastAPI's DI pattern requires Depends(...)/Query(...)/etc as a literal default
+# argument -- that's the framework contract, not the mutable-default-argument bug
+# B008 exists to catch. Without this, every route signature is a false positive.
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends", "fastapi.Query", "fastapi.Header",
+    "fastapi.Path", "fastapi.Body", "fastapi.Cookie",
+]

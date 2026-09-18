@@ -1,14 +1,14 @@
 import os
 
 from fastapi import FastAPI
-
-from payments import db
-from payments.api import b2c_router, callbacks_router, reconcile_router, stk_router
-from payments.config import settings
 from tillflow_shared import setup_telemetry
 from tillflow_shared.health import create_health_router
 from tillflow_shared.idempotency import register_idempotency_handlers
 from tillflow_shared.otel.middleware import instrument_fastapi
+
+from payments import db
+from payments.api import b2c_router, callbacks_router, reconcile_router, stk_router
+from payments.config import settings
 
 # Disable OTLP export in CI/unit tests unless a collector is running.
 if "TILLFLOW_TELEMETRY_EXPORT" not in os.environ:

@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from tillflow_shared.mpesa.adapter import MpesaAdapter
+from tillflow_shared.mpesa.types import TransactionQueryRequest
+from tillflow_shared.otel import business_counter
+from tillflow_shared.otel.middleware import traced
+
 from payments.clients.pos import PosClient, notify_pos
 from payments.domain.state import is_payment_terminal
 from payments.outbox import InMemoryOutbox
@@ -11,10 +16,6 @@ from payments.repositories.memory_settlement import InMemoryLedgerRepository
 from payments.repositories.postgres import PostgresPaymentRepository
 from payments.repositories.postgres_settlement import PostgresLedgerRepository
 from payments.services.settlement import SettlementResult, settle_failure, settle_success
-from tillflow_shared.mpesa.adapter import MpesaAdapter
-from tillflow_shared.mpesa.types import TransactionQueryRequest
-from tillflow_shared.otel import business_counter
-from tillflow_shared.otel.middleware import traced
 
 reconcile_processed = business_counter(
     "payments_reconciliation_processed_total",

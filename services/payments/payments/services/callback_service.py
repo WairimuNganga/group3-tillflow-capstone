@@ -5,6 +5,11 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from tillflow_shared.mpesa.adapter import MpesaAdapter
+from tillflow_shared.mpesa.types import CallbackVerifyRequest
+from tillflow_shared.otel import business_counter
+from tillflow_shared.otel.middleware import traced
+
 from payments.clients.pos import PosClient, notify_pos
 from payments.domain.models import PaymentCallback
 from payments.domain.state import PaymentState
@@ -19,10 +24,6 @@ from payments.repositories.postgres_settlement import (
     PostgresLedgerRepository,
 )
 from payments.services.settlement import settle_failure, settle_success
-from tillflow_shared.mpesa.adapter import MpesaAdapter
-from tillflow_shared.mpesa.types import CallbackVerifyRequest
-from tillflow_shared.otel import business_counter
-from tillflow_shared.otel.middleware import traced
 
 callback_processed = business_counter(
     "payments_callback_processed_total",

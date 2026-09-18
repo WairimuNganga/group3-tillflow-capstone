@@ -12,11 +12,11 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from tillflow_shared.mpesa.scenarios import FakeScenario
 
 from payments.clients.pos import result_idempotency_key
 from payments.deps import get_pos_client, reset_runtime_state
 from payments.main import app
-from tillflow_shared.mpesa.scenarios import FakeScenario
 
 
 class FakePosClient:

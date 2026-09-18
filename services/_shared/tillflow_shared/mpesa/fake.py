@@ -42,7 +42,12 @@ class _B2CRecord:
 class FakeMpesaAdapter:
     """Deterministic in-memory M-Pesa double for CI, k6, and drills ([ADR-007])."""
 
-    def __init__(self, settings: MpesaSettings, *, default_scenario: FakeScenario = FakeScenario.IMMEDIATE_SUCCESS) -> None:
+    def __init__(
+        self,
+        settings: MpesaSettings,
+        *,
+        default_scenario: FakeScenario = FakeScenario.IMMEDIATE_SUCCESS,
+    ) -> None:
         self._settings = settings
         self._default_scenario = default_scenario
         self._stk_records: dict[str, _StkRecord] = {}

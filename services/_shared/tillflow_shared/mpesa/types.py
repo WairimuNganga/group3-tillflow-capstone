@@ -99,9 +99,13 @@ class MpesaCallbackPayload(BaseModel):
         if self.amount_whole_kes is not None:
             metadata_items.append({"Name": "Amount", "Value": self.amount_whole_kes})
         if self.mpesa_receipt_number is not None:
-            metadata_items.append({"Name": "MpesaReceiptNumber", "Value": self.mpesa_receipt_number})
+            metadata_items.append(
+                {"Name": "MpesaReceiptNumber", "Value": self.mpesa_receipt_number}
+            )
 
-        callback_metadata: dict[str, Any] = {"Item": metadata_items} if metadata_items else {"Item": []}
+        callback_metadata: dict[str, Any] = (
+            {"Item": metadata_items} if metadata_items else {"Item": []}
+        )
         return {
             "Body": {
                 "stkCallback": {

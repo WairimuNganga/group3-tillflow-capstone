@@ -65,11 +65,10 @@ def test_tenant_and_idempotency_key_are_forwarded(outbound):
 def test_explicit_headers_win(outbound):
     seen, transport = outbound
 
-    with request_context(tenant_id="dukawala-42"):
-        with ServiceClient(
-            service_name="commission", base_url="http://payments", transport=transport
-        ) as client:
-            client.get("/payments", headers={"X-Tenant-Id": "explicit-tenant"})
+    with request_context(tenant_id="dukawala-42"), ServiceClient(
+        service_name="commission", base_url="http://payments", transport=transport
+    ) as client:
+        client.get("/payments", headers={"X-Tenant-Id": "explicit-tenant"})
 
     assert seen["headers"]["x-tenant-id"] == "explicit-tenant"
 

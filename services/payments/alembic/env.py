@@ -1,12 +1,12 @@
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from payments.config import settings
-from payments.db import Base
 import payments.domain.models  # noqa: F401 — register models for autogenerate
 import payments.idempotency.models  # noqa: F401
+from alembic import context
+from payments.config import settings
+from payments.db import Base
 
 config = context.config
 

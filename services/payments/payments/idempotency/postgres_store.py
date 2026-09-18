@@ -3,9 +3,9 @@ from __future__ import annotations
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from tillflow_shared.idempotency.types import IdempotencyRecord, IdempotencyStatus
 
 from payments.idempotency.models import IdempotencyKeyRow
-from tillflow_shared.idempotency.types import IdempotencyRecord, IdempotencyStatus
 
 
 class PostgresIdempotencyStore:
