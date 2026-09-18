@@ -99,6 +99,31 @@ resource "aws_lb_listener" "this" {
   }
 }
 
+resource "aws_lb_listener_rule" "blocked_paths" {
+  for_each = var.blocked_path_patterns
+
+  listener_arn = aws_lb_listener.this.arn
+  priority     = each.value.priority
+
+  action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "application/json"
+      message_body = jsonencode({ error = "not found" })
+      status_code  = each.value.status_code
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = each.value.path_patterns
+    }
+  }
+
+  tags = { route = each.key }
+}
+
 resource "aws_lb_listener_rule" "this" {
   for_each = var.targets
 
