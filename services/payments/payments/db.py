@@ -25,15 +25,15 @@ SessionLocal = async_sessionmaker(engine, expire_on_commit=False) if engine else
 
 def is_db_ready() -> bool:
     """Readiness probe: Postgres reachable with a trivial query."""
-    sync_url = settings.database_sync_url
-    if not sync_url:
+    dsn = settings.database_libpq_dsn
+    if not dsn:
         _log.warning("DATABASE_URL is not configured")
         return False
 
     try:
         import psycopg
 
-        with psycopg.connect(sync_url, connect_timeout=3) as conn:
+        with psycopg.connect(dsn, connect_timeout=3) as conn:
             conn.execute("SELECT 1")
         return True
     except Exception:

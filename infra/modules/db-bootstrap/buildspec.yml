@@ -246,8 +246,12 @@ phases:
             "commission": ("tillflow_commission", os.environ["COMMISSION_PASSWORD"]),
         }
 
-        payload = {
-            service: {
+        # ECS json-key injection is reliable for strings. Nested objects can be
+        # injected in a non-JSON representation, so keep each selected service
+        # value as a JSON string that the app parses from DB_CREDENTIALS.
+        payload = {}
+        for service, (username, password) in services.items():
+            credentials = {
                 "username": username,
                 "password": password,
                 "host": host,
@@ -256,8 +260,7 @@ phases:
                 "schema": service,
                 "sslmode": "require",
             }
-            for service, (username, password) in services.items()
-        }
+            payload[service] = json.dumps(credentials, separators=(",", ":"))
         print(json.dumps(payload, separators=(",", ":")))
         PY
       - aws secretsmanager put-secret-value --secret-id "${DB_SECRET_ARN}" --secret-string file:///tmp/service-db-secret.json >/dev/null
