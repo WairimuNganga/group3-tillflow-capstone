@@ -9,6 +9,7 @@ Drop here, each with **exact reproduction commands** (screenshots alone earn no 
 - [x] Tests (5 Terraform architecture tests passed)
 - [x] Runtime proof (pipeline, ECS and endpoint results below)
 - [x] Reproduction commands (included with each result below)
+- [x] Rollback log (Drill 4): [`rollback-log.md`](rollback-log.md)
 
 ## G1 delivery evidence
 
