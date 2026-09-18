@@ -1,0 +1,169 @@
+name: rollback
+
+# Manual, explicit rollback for a bad release that reached steady state --
+# the one failure mode the ECS deployment circuit breaker can't see (it only
+# catches a deploy that never stabilizes). Per ADR-009: this redeploys an
+# already-built image, never a rebuild.
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to roll back"
+        required: true
+        type: choice
+        options: [web, pos, payments, commission]
+      sha:
+        description: "Commit SHA to roll back to. Must already exist as an ECR image tag -- check CodePipeline/ECR history, this workflow refuses to guess or rebuild."
+        required: true
+        type: string
+      reason:
+        description: "Why (e.g. a scar-log entry, or 'Drill 4' for the rehearsed drill)"
+        required: true
+        type: string
+
+concurrency:
+  # One rollback per service at a time; a second dispatch for a different
+  # service can still run concurrently.
+  group: rollback-${{ inputs.service }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-west-1
+  NAME_PREFIX: devops-g3
+  TF_VERSION: "1.15.8"
+
+jobs:
+  rollback:
+    name: rollback ${{ inputs.service }} to ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    # Same protected environment terraform.yml's apply job uses -- whatever
+    # reviewer/wait rules exist there apply here too (ADR-009).
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # OIDC -- no long-lived AWS keys (T6.1), same role terraform.yml uses
+      # to apply.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The public edge URL lives only as a Terraform output (module.apigw
+      # via infra/envs/dev) -- there is no separately maintained copy of it
+      # to drift out of sync with, so read it from the one source of truth
+      # instead of a second, stored value.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Resolve API endpoint
+        id: api
+        working-directory: infra/envs/dev
+        run: |
+          set -euo pipefail
+          terraform init -input=false >/dev/null
+          echo "endpoint=$(terraform output -raw api_endpoint)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve and verify the rollback target image
+        id: target
+        run: |
+          set -euo pipefail
+          REPO="${NAME_PREFIX}/${{ inputs.service }}"
+          SHA="${{ inputs.sha }}"
+
+          # Never trust the input SHA blindly. "Redeploy the already-built
+          # image, never a rebuild" only holds if that image actually
+          # exists -- otherwise this would either fail deep inside ECS with
+          # a confusing pull error, or (worse) silently match nothing and
+          # leave the service on its current, already-bad image.
+          DIGEST="$(aws ecr describe-images \
+            --repository-name "${REPO}" \
+            --image-ids imageTag="${SHA}" \
+            --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)"
+
+          if [ -z "${DIGEST}" ] || [ "${DIGEST}" = "None" ]; then
+            echo "::error::No image tagged '${SHA}' exists in ECR repository ${REPO}. Rollback only redeploys an already-built image -- check the CodePipeline run history or 'aws ecr describe-images --repository-name ${REPO}' for a valid target."
+            exit 1
+          fi
+
+          CURRENT_TAG="$(aws ssm get-parameter \
+            --name "/${NAME_PREFIX}/${{ inputs.service }}/image-tag" \
+            --query 'Parameter.Value' --output text)"
+
+          if [ "${CURRENT_TAG}" = "${SHA}" ]; then
+            echo "::warning::${{ inputs.service }} is already on ${SHA} -- this will force a fresh deployment of the same image, not a change of image."
+          fi
+
+          echo "Rolling back ${{ inputs.service }}: ${CURRENT_TAG} -> ${SHA} (${DIGEST})"
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${CURRENT_TAG}" >> "$GITHUB_OUTPUT"
+
+      # Written before the ECS update, not after: this is the same source
+      # of truth terraform plan/apply reads (ADR-009 consequences). If the
+      # ECS step below fails partway, SSM still reflects the intended
+      # target rather than a stale value that a later infra-only apply
+      # would silently reassert.
+      - name: Point SSM at the rollback target
+        run: |
+          set -euo pipefail
+          aws ssm put-parameter \
+            --name "/${NAME_PREFIX}/${{ inputs.service }}/image-tag" \
+            --type String --value "${{ inputs.sha }}" --overwrite
+          aws ssm put-parameter \
+            --name "/${NAME_PREFIX}/${{ inputs.service }}/image-digest" \
+            --type String --value "${{ steps.target.outputs.digest }}" --overwrite
+
+      - name: Force ECS redeploy and wait for stability
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster "${NAME_PREFIX}" \
+            --service "${NAME_PREFIX}-${{ inputs.service }}" \
+            --force-new-deployment >/dev/null
+
+          echo "Waiting for ${NAME_PREFIX}-${{ inputs.service }} to become stable..."
+          aws ecs wait services-stable \
+            --cluster "${NAME_PREFIX}" \
+            --services "${NAME_PREFIX}-${{ inputs.service }}"
+
+      # "Stable" per ECS is not the same claim as "actually serving traffic
+      # correctly" -- the same reasoning buildspecs/post-deploy-smoke.yml
+      # uses. A rollback that leaves the service ECS-stable but still
+      # unhealthy should fail loudly here, not report success.
+      - name: Verify health through the public edge
+        run: |
+          set -euo pipefail
+          ENDPOINT="${{ steps.api.outputs.endpoint }}"
+          curl -fsS "${ENDPOINT%/}/health"
+          curl -fsS "${ENDPOINT%/}/ready"
+
+      - name: Rollback log entry
+        if: always()
+        run: |
+          {
+            echo "## Rollback: ${{ inputs.service }}"
+            echo
+            echo "- **When**: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- **From**: ${{ steps.target.outputs.previous_tag || 'unknown' }}"
+            echo "- **To**: ${{ inputs.sha }} (${{ steps.target.outputs.digest || 'not resolved' }})"
+            echo "- **Reason**: ${{ inputs.reason }}"
+            echo "- **Triggered by**: @${{ github.actor }}"
+            echo "- **Outcome**: ${{ job.status }}"
+            echo "- **Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } | tee rollback-log.md
+          echo "::notice::Append this entry to evidence/delivery/rollback-log.md"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rollback-log-${{ inputs.service }}-${{ github.run_id }}
+          path: rollback-log.md
+          retention-days: 90

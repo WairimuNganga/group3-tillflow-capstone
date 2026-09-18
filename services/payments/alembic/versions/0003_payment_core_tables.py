@@ -7,16 +7,17 @@ Create Date: 2026-09-14
 Core money-path tables for the payments service ([ADR-004]).
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "0003_payment_core_tables"
-down_revision: Union[str, Sequence[str], None] = "0002_idempotency_keys"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "0002_idempotency_keys"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 SCHEMA = "payments"
 

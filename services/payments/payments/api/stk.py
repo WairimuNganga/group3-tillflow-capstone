@@ -3,12 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status
+from tillflow_shared.idempotency import IdempotencyHandle
 
 from payments.api.schemas import StkInitiateRequest, StkInitiateResponse
 from payments.deps import get_idempotency_handle, get_stk_service
 from payments.domain.models import Payment
 from payments.services.stk_service import StkService, StkValidationError
-from tillflow_shared.idempotency import IdempotencyHandle
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 

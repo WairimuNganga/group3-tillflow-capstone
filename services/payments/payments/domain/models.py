@@ -29,7 +29,9 @@ class Payment(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
     amount_minor_units: Mapped[int] = mapped_column(BigInteger, nullable=False)
     amount_whole_kes: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    state: Mapped[str] = mapped_column(String(32), nullable=False, default=PaymentState.PENDING.value)
+    state: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=PaymentState.PENDING.value
+    )
     phone_number: Mapped[str] = mapped_column(String(32), nullable=False)
     merchant_request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     checkout_request_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
@@ -68,7 +70,9 @@ class Payout(Base):
     phone_number: Mapped[str] = mapped_column(String(32), nullable=False)
     amount_minor_units: Mapped[int] = mapped_column(BigInteger, nullable=False)
     amount_whole_kes: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    state: Mapped[str] = mapped_column(String(32), nullable=False, default=PayoutState.PENDING.value)
+    state: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=PayoutState.PENDING.value
+    )
     conversation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -3,12 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status
+from tillflow_shared.idempotency import IdempotencyHandle
 
 from payments.api.schemas import B2CInitiateRequest, B2CInitiateResponse, B2CResultRequest
 from payments.deps import get_b2c_service, get_idempotency_handle
 from payments.domain.models import Payout
 from payments.services.b2c_service import B2CService, B2CValidationError
-from tillflow_shared.idempotency import IdempotencyHandle
 
 router = APIRouter(prefix="/payments", tags=["b2c"])
 

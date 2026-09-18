@@ -1,0 +1,15 @@
+title = "TillFlow gitleaks config"
+
+# Start from gitleaks' own maintained ruleset rather than redefining every
+# rule here -- only the allowlist below is project-specific.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives"
+paths = [
+  # Documented variable *names* with empty placeholder values -- see
+  # services/payments/README.md "Sandbox env vars". Real values live only in
+  # Secrets Manager (ADR-004/007), never in git.
+  '''\.env\.example$''',
+]

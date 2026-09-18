@@ -36,6 +36,100 @@ jobs:
           done
           exit $fail
 
+  # Repo-wide, not per-package: a leaked credential doesn't respect package
+  # boundaries, and this needs to see the full diff (including infra/, docs/,
+  # buildspecs/) not just the Python packages the other jobs install.
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # .gitleaks.toml at repo root is auto-detected (allowlists the empty
+      # placeholder values in services/payments/.env.example).
+      #
+      # Pinned by commit SHA, not @v2: trivy-action (below) had 76 of 77
+      # version tags force-pushed to credential-stealing commits in a March
+      # 2026 supply-chain compromise (GHSA-69fq-xp46-6x23). A mutable tag on
+      # *any* third-party action is the exact same attack surface, so every
+      # non-GitHub-authored action in this file is pinned by SHA on
+      # principle, not just the one that was actually hit. v2.3.9.
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+          GITLEAKS_ENABLE_SUMMARY: true
+
+  # ruff across every Python package that has one. New packages (web,
+  # commission) join this list the day they get a pyproject.toml.
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [services/_shared, services/payments, services/pos]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: ruff check
+        working-directory: ${{ matrix.package }}
+        run: |
+          pip install --quiet ruff
+          ruff check .
+
+  # Known-vulnerable dependency versions, per package. Separate from `lint`
+  # so a CVE and a style nit read as different kinds of failure at a glance.
+  dependency-scan:
+    name: dependency scan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [services/_shared, services/payments, services/pos]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # payments and pos both depend on tillflow-shared, which isn't on PyPI
+      # -- installing either standalone fails with "No matching distribution
+      # found for tillflow-shared" (confirmed: this exact failure on the
+      # first CI run of this job). Always install _shared first, same as
+      # the payments/pos/shared test jobs already do; a redundant install of
+      # itself for the services/_shared matrix entry is harmless.
+      - name: Install tillflow-shared
+        run: pip install --quiet -e "services/_shared[dev]"
+
+      # Installs the package with its real pinned/ranged deps first, then
+      # audits exactly what got resolved -- catching a vulnerable transitive
+      # dependency, not just what's spelled out in pyproject.toml.
+      - name: Install package
+        working-directory: ${{ matrix.package }}
+        run: pip install --quiet -e ".[dev]"
+
+      # --skip-editable, not --strict: every package here installs its own
+      # local tillflow-* package with `pip install -e`, and pip-audit can
+      # never find a local editable distribution on PyPI to audit. --strict
+      # turns that expected, harmless skip into a hard failure (tested: it
+      # fails the same way even combined with --skip-editable) -- so this
+      # job would be permanently red regardless of real vulnerabilities.
+      # --skip-editable alone correctly skips just the local package while
+      # still failing on an actual vulnerable third-party dependency.
+      - name: pip-audit
+        working-directory: ${{ matrix.package }}
+        run: |
+          pip install --quiet pip-audit
+          pip-audit --skip-editable
+
   shared:
     name: shared (Step 4)
     runs-on: ubuntu-latest
@@ -81,6 +175,62 @@ jobs:
           TILLFLOW_TELEMETRY_EXPORT: none
         run: pytest -v
 
+  # Was entirely missing: POS has shipped (G2, #28) but nothing ran its tests.
+  # The memory-mode suite always runs; the Postgres service container below
+  # means the RLS-isolation suite (ADR-005's required proof) actually
+  # executes here too, instead of silently skipping for want of
+  # POS_TEST_ADMIN_DSN.
+  pos:
+    name: pos (G2)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ubuntu-latest normally ships this, but conftest.py shells out to
+      # `psql` for RLS bootstrap SQL -- fail loudly and fast if a future
+      # runner image ever drops it, rather than have every Postgres-mode
+      # test fail with an opaque "psql: command not found".
+      - name: Ensure psql client is available
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends postgresql-client
+          fi
+
+      - name: Install tillflow-shared
+        working-directory: services/_shared
+        run: pip install -e ".[dev]"
+
+      - name: Install tillflow-pos
+        working-directory: services/pos
+        run: pip install -e ".[dev]"
+
+      - name: Pytest (memory mode + Postgres/RLS suite)
+        working-directory: services/pos
+        env:
+          MPESA_ADAPTER: fake
+          TILLFLOW_TELEMETRY_EXPORT: none
+          POS_TEST_ADMIN_DSN: postgresql://postgres:postgres@localhost:5432/pos_test
+        run: pytest -v
+
   docker-golden-path:
     name: docker golden path
     runs-on: ubuntu-latest
@@ -90,3 +240,38 @@ jobs:
       - name: Build + smoke-test the golden-path image
         working-directory: services/_shared
         run: ./docker-smoke-test.sh
+
+      # SBOM + vulnerability scan of the image built above, still tagged
+      # tillflow-golden-path:ci from the smoke test. This is deliberately
+      # separate from (and earlier than) the ECR scan in
+      # buildspecs/service-image.yml: this one runs on every PR, before an
+      # image is ever pushed anywhere, and against the *base* image every
+      # real service will build on -- not a substitute for the per-service
+      # ECR scan, a second, earlier gate on the same fail-on-fixable policy.
+      # v0.24.2, pinned by SHA (see the secret-scan job for why).
+      - name: Generate SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26
+        with:
+          image: tillflow-golden-path:ci
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom-golden-path-${{ github.sha }}
+          path: sbom.cyclonedx.json
+          retention-days: 30
+
+      # v0.36.0, pinned by SHA -- not just on the general principle above.
+      # 0.28.0 (what this line used to say, before checking) is inside the
+      # actually-compromised tag range (0.0.1-0.34.2, GHSA-69fq-xp46-6x23)
+      # AND inside a separate, unrelated command-injection range in
+      # trivy-action itself (>=0.31.0,<=0.34.0, GHSA-9p44-j4g5-cfx5, fixed
+      # >=0.34.1). v0.36.0 is past both.
+      - name: Scan image (fail on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: tillflow-golden-path:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

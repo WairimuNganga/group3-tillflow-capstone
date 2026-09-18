@@ -4,10 +4,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
+from tillflow_shared.otel.middleware import traced
 
 from payments.deps import get_callback_service
 from payments.services.callback_service import CallbackAuthError, CallbackService
-from tillflow_shared.otel.middleware import traced
 
 router = APIRouter(prefix="/callbacks/mpesa", tags=["callbacks"])
 

@@ -5,7 +5,6 @@ from copy import deepcopy
 from uuid import UUID
 
 from payments.domain.models import Payment
-from payments.domain.state import PaymentState
 
 
 class InMemoryPaymentRepository:

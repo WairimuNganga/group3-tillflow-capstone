@@ -4,6 +4,15 @@ from collections.abc import AsyncIterator
 
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
+from tillflow_shared import MpesaSettings, create_mpesa_adapter
+from tillflow_shared.idempotency import (
+    IdempotencyHandle,
+    IdempotencyRequiredError,
+    IdempotencyService,
+    InMemoryIdempotencyStore,
+)
+from tillflow_shared.idempotency.store import IdempotencyStore
+from tillflow_shared.mpesa.adapter import MpesaAdapter
 
 from payments.clients.pos import HttpPosClient, PosClient
 from payments.config import settings
@@ -15,26 +24,17 @@ from payments.repositories.memory_settlement import (
     InMemoryCallbackRepository,
     InMemoryLedgerRepository,
 )
+from payments.repositories.payout_memory import InMemoryPayoutRepository
+from payments.repositories.payout_postgres import PostgresPayoutRepository
 from payments.repositories.postgres import PostgresPaymentRepository
 from payments.repositories.postgres_settlement import (
     PostgresCallbackRepository,
     PostgresLedgerRepository,
 )
-from payments.repositories.payout_memory import InMemoryPayoutRepository
-from payments.repositories.payout_postgres import PostgresPayoutRepository
 from payments.services.b2c_service import B2CService
 from payments.services.callback_service import CallbackService
 from payments.services.reconciliation_service import ReconciliationService
 from payments.services.stk_service import StkService
-from tillflow_shared import MpesaSettings, create_mpesa_adapter
-from tillflow_shared.idempotency import (
-    IdempotencyHandle,
-    IdempotencyRequiredError,
-    IdempotencyService,
-    InMemoryIdempotencyStore,
-)
-from tillflow_shared.idempotency.store import IdempotencyStore
-from tillflow_shared.mpesa.adapter import MpesaAdapter
 
 _memory_payments = InMemoryPaymentRepository()
 _memory_payouts = InMemoryPayoutRepository()

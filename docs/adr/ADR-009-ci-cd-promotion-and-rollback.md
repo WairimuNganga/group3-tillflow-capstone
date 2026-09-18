@@ -10,30 +10,55 @@ traceable to an exact commit, deploys can be gated on health rather than hope, a
 fast, pre-rehearsed action rather than an improvised rebuild.
 
 ## Decision
-- **Artifact identity**: every push to `main` builds one container image per changed service,
-  tagged with the immutable commit SHA
-  (`<account_id>.dkr.ecr.us-west-1.amazonaws.com/devops-g3/<service>:<sha>`). **`latest` is never
-  used** — an image tag always names exactly one build.
-- **CI gate** (`.github/workflows/ci.yml`, required check on `main`): build, test, and validate on
-  every PR and push. A separate `release.yml` job on `main` builds and scans each changed service's
-  image; the pipeline **fails on any fixable HIGH/CRITICAL** vulnerability finding. A finding that's
-  not currently fixable is not a silent pass — it's logged as an accepted risk in
-  `docs/scar-log.md`, not swallowed.
-- **Promotion rule**: promotion is strictly commit-SHA-forward. Deploying an older SHA is never done
-  by rebuilding it — it's an explicit, logged rollback action (below) using the already-built image.
-  Only environments defined under `infra/envs/*` are valid deploy targets.
-- **Deploy health gate**: the ECS service updates its task definition to the new image digest and
-  deploys via `aws ecs update-service`, with the ECS **deployment circuit breaker** enabled
-  (automatic rollback if the service fails to reach steady state) plus a post-deploy check hitting
-  each service's `/healthz` for N consecutive successes before the deployment counts as promoted.
-- **Rollback trigger**: automatic when the circuit breaker trips, or when the post-deploy health
-  check fails N times within M minutes. Manual rollback is "redeploy the last-known-good SHA's
-  already-built image" — never a rebuild — run via
-  `gh workflow run rollback.yml -f sha=<previous-good-sha>`, and logged in `docs/runbook.md` plus
-  `evidence/delivery/`.
-- **Branch protection on `main`**: PR required, CODEOWNERS review required, and the `validate` job
-  in `ci.yml` (plus `release.yml`'s scan job once services exist) set as required status checks —
-  this ADR is the source of truth for which checks branch protection should require.
+- **Artifact identity**: each service has its own **immutable-tag** ECR repository
+  (`devops-g3/<service>`, `image_tag_mutability = "IMMUTABLE"` — ECR itself rejects overwriting a
+  tag, not just convention). CodePipeline's `BuildScanPush` stage tags every image with the
+  resolved commit SHA (`CODEBUILD_RESOLVED_SOURCE_VERSION`). **`latest` is never used** — an image
+  tag always names exactly one build, and re-running a build for a SHA that already has an image
+  reuses it instead of rebuilding (`buildspecs/service-image.yml`'s `IMAGE_ALREADY_EXISTS` check),
+  so promotion is idempotent.
+- **Two CI/CD lanes, per the brief**:
+  - **GitHub Actions** (`.github/workflows/ci.yml`, `terraform.yml`) — fast, pre-merge feedback:
+    layout/ADR checks, unit tests per service, lint, secret/dependency scanning, a local
+    build-and-scan of the golden-path image, and (`terraform.yml`) `fmt`/`validate`/`test` plus a
+    read-only `terraform plan` against the real account on every PR touching `infra/**`. None of
+    this lane pushes an image or touches a running service.
+  - **AWS-native release pipeline** (`infra/modules/delivery`, driving `buildspecs/*.yml`) —
+    CodeStarConnections (GitHub source) → CodePipeline → CodeBuild (`BuildScanPush`: mirror the
+    pinned ADOT sidecar, then build+push+scan each service) → `MigrateDb` (POS Alembic migrations)
+    → `DeployEcs` → `Smoke` (scale up, wait for ECS stability, then `curl` the public `/health` and
+    `/ready` routes through the real edge — API Gateway → VPC Link → ALB). This lane is what
+    actually ships to `dev`, on every push to `main`.
+- **Scan gate**: `BuildScanPush` runs `aws ecr start-image-scan` on the pushed tag and **fails the
+  build on any *fixable* HIGH/CRITICAL** finding (a finding is fixable when ECR's advisory reports a
+  `fixed_version`) — `buildspecs/service-image.yml`. A HIGH/CRITICAL finding with no fixed version
+  yet is not a silent pass; it should be recorded in `docs/scar-log.md` with an owner and a
+  re-check date, not left implicit.
+- **Promotion rule**: promotion is strictly commit-SHA-forward and only ever deploys an
+  already-built image — never a rebuild of an old commit. Each service's selected `{tag, digest}`
+  is the single source of truth in SSM (`/devops-g3/<service>/image-tag`,
+  `.../image-digest`), written by the pipeline on a successful scan+push and read by both the
+  `Smoke`/`DeployEcs` stages and every `terraform plan`/`apply` (so an infra-only change can never
+  silently roll a service's image back to the module's placeholder default). Only environments
+  under `infra/envs/*` are valid deploy targets.
+- **Deploy health gate**: ECS updates each service to the new task definition with the
+  **deployment circuit breaker enabled and `rollback = true`**
+  (`infra/modules/ecs-service`) — ECS itself detects a service that can't reach steady state and
+  rolls it back automatically, no external polling required. `Smoke` is the second, independent
+  gate on top of that: it force-deploys, waits for `services-stable`, and only then curls
+  `/health`/`/ready` through the public path — a service that's "stable" per ECS but still failing
+  application-level readiness still fails the pipeline.
+- **Rollback trigger**: automatic when the circuit breaker trips mid-deployment. For a bad release
+  that *did* reach steady state (the failure mode the circuit breaker can't see), rollback is
+  manual and explicit: `.github/workflows/rollback.yml`, dispatched with a target service and a
+  previously-built SHA. It **verifies that SHA's image already exists in ECR before doing anything
+  else** — refusing to "roll back" to a commit that was never actually built — then points that
+  service's SSM parameters at the old `{tag, digest}` and force-deploys, reusing the exact same
+  image bytes rather than rebuilding. Every run is logged in `evidence/delivery/`, per Drill 4.
+- **Branch protection on `main`**: PR required, 2 approving reviews, and `validate`, `shared (Step
+  4)`, `docker golden path` (`ci.yml`) plus `fmt / validate / test` (`terraform.yml`) set as
+  required status checks — this ADR is the source of truth for which checks matter; a check added
+  or removed here should be reflected in the ruleset in the same PR.
 
 ## Alternatives considered
 - **Deploy from a developer's laptop / local `terraform apply`** — rejected: no audit trail, no
@@ -48,16 +73,21 @@ fast, pre-rehearsed action rather than an improvised rebuild.
   most of the safety for far less infra.
 
 ## Consequences
-- ECR repos need a lifecycle policy with a **minimum retention count**, not just an age cutoff —
-  rollback depends on old images still existing, so age-only cleanup could delete the very image a
-  rollback needs.
-- `ci.yml`'s `validate` job (and `release.yml`'s scan job, once it exists) are the concrete required
-  checks referenced by the branch-protection setup described in
-  [Repo bootstrap](../../README.md) — if this ADR changes which checks matter, branch protection
-  must be updated in the same PR.
-- The team must actually rehearse a rollback before grading, to produce the rollback-log evidence
-  this ADR requires — a rollback path that's only ever been read about, not exercised, doesn't count
-  as proven.
+- ECR's lifecycle policy is **count-based** (`imageCountMoreThan`, keep the last N), not age-based —
+  confirmed in `infra/modules/ecs-platform`, with the ADR-009 reasoning quoted directly in its
+  comment: an age-only rule could expire the exact image a rollback needs.
+- SSM is now load-bearing state, not just a build artifact: `terraform plan`/`apply` reads it on
+  every run, so a manual `aws ecs update-service` that changes what's running **without** updating
+  SSM would make Terraform's next apply silently revert the manual change. `rollback.yml` updates
+  SSM for exactly this reason — it is not optional bookkeeping.
+- The scan gate only fails on *fixable* findings, by design (an unfixable HIGH/CRITICAL would
+  otherwise permanently block every release for a vulnerability nobody can act on yet) — but that
+  means an unfixable finding needs a human to actually log it in `docs/scar-log.md`. Nothing
+  currently enforces that this happens; it is a process gap, not a tooling one.
+- The team must actually rehearse a rollback before grading (Drill 4), to produce the rollback-log
+  evidence this ADR requires — a rollback path that's only ever been read about, not exercised,
+  doesn't count as proven. `rollback.yml`'s existence makes this exercisable; the exercise itself
+  is a separate, required step.
 
 ## Required proof (from brief)
 Pipeline evidence + rollback log, filed under `evidence/delivery/`.

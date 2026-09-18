@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import Header, HTTPException, Request, Response
+from fastapi import Header, Request, Response
 from fastapi.responses import JSONResponse
 from starlette import status
 

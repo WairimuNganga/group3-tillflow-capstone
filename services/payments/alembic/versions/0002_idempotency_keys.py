@@ -7,16 +7,17 @@ Create Date: 2026-09-14
 Tenant-scoped idempotency records for money-path endpoints ([ADR-004], threat model M1).
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "0002_idempotency_keys"
-down_revision: Union[str, Sequence[str], None] = "0001_create_payments_schema"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "0001_create_payments_schema"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -32,7 +33,9 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("service", "tenant_id", "key", name="uq_idempotency_service_tenant_key"),
+        sa.UniqueConstraint(
+            "service", "tenant_id", "key", name="uq_idempotency_service_tenant_key"
+        ),
         schema="payments",
     )
     op.create_index(
@@ -44,5 +47,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_idempotency_keys_expires_at", table_name="idempotency_keys", schema="payments")
+    op.drop_index(
+        "ix_idempotency_keys_expires_at", table_name="idempotency_keys", schema="payments"
+    )
     op.drop_table("idempotency_keys", schema="payments")

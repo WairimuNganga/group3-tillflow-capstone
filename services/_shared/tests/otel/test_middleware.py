@@ -124,6 +124,5 @@ def test_traced_opens_a_recording_span():
 
 
 def test_traced_does_not_swallow_exceptions():
-    with pytest.raises(RuntimeError):
-        with traced("payments.stk_push"):
-            raise RuntimeError("daraja timeout")
+    with pytest.raises(RuntimeError), traced("payments.stk_push"):
+        raise RuntimeError("daraja timeout")
