@@ -33,6 +33,17 @@ RUN find /opt/venv -type d -name '__pycache__' -prune -exec rm -rf {} +
 # Fresh from the pinned image, not from `builder` — no build tools/cache ship.
 FROM ${PYTHON_IMAGE} AS base
 
+# The digest pin above buys build reproducibility, not permanent immunity to
+# CVEs disclosed against whatever OS packages *were* current when it was
+# pinned (caught one this way: CVE-2026-86145/89157/89161 in libpcre2-8-0,
+# fixed in Debian's repo but not yet in this image). Deliberate, scoped
+# exception to keeping the final stage off any live mirror: security patches
+# to already-installed packages only, never new packages or feature
+# upgrades, so it doesn't reintroduce the drift a digest pin exists to avoid.
+RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
 ARG GIT_COMMIT_SHA=unknown
 ARG SERVICE_NAME=unknown
 

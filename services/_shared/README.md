@@ -268,8 +268,12 @@ service that `FROM`s it:
   ```
 - a **fixed non-root uid/gid** (`10001:10001`) — the image cannot run as root even if a
   service's own Dockerfile forgets to say so
-- **no `apt-get` in the final stage** — nothing is pulled from a live package mirror at
-  build/deploy time; the only thing that can change the image is this repo
+- **`apt-get upgrade` in the final stage, and only that** — the digest pin above is
+  reproducibility for the build *recipe*, not permanent immunity to CVEs disclosed
+  against whatever OS packages happened to be current when it was pinned (this is how
+  [three real HIGH findings in `libpcre2-8-0`](Dockerfile.base) got caught and fixed).
+  It upgrades already-installed packages only — no new packages, no feature changes —
+  so it stays a security-patch step, not an open door for the image to drift
 - correct behaviour under a **read-only root filesystem**
   (`PYTHONDONTWRITEBYTECODE=1`, so Python never needs to write `.pyc` files into
   site-packages) — `docker run --read-only --tmpfs /tmp` works out of the box
@@ -295,11 +299,12 @@ No `ENTRYPOINT`/init process is baked into the image. On ECS Fargate set
 `linuxParameters.initProcessEnabled = true` on the task definition instead — Fargate
 then runs the container's `CMD` as PID 1 under its own tini-equivalent, handling
 `SIGTERM` forwarding and zombie reaping for free. `docker run --init` does the same
-locally. This was a deliberate choice over vendoring `tini` into the image: `tini`
-would either need an unpinned `apt-get install` (breaking the "no live mirror at build
-time" guarantee above) or a hand-pinned Debian package build number that isn't
-guaranteed to match between the amd64 and arm64 variants of this multi-platform image —
-the platform-native flag has neither problem.
+locally. This was a deliberate choice over vendoring `tini` into the image: unlike the
+security-only `apt-get upgrade` above, installing a whole extra package would need
+either an unpinned `apt-get install tini` (a real new dependency, not a patch to one
+already there) or a hand-pinned Debian package build number that isn't guaranteed to
+match between the amd64 and arm64 variants of this multi-platform image — the
+platform-native flag has neither problem.
 
 ### Handoff to Platform (Lwam) — required task-definition env vars
 
