@@ -38,7 +38,27 @@ phases:
   build:
     commands:
       - if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then echo "Reusing ${IMAGE_URI}"; else docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/Dockerfile.base --build-arg GIT_COMMIT_SHA="${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "tillflow-base:${IMAGE_TAG}" services/_shared; fi
-      - if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then echo "Skipping app image build for existing ${IMAGE_URI}"; else docker build --platform "${IMAGE_PLATFORM}" -f services/_shared/examples/Dockerfile --build-arg BASE_IMAGE="tillflow-base:${IMAGE_TAG}" --build-arg SERVICE_NAME="${SERVICE_NAME}" -t "${IMAGE_URI}" services/_shared; fi
+      - |
+        if [ "${IMAGE_ALREADY_EXISTS}" = "true" ]; then
+          echo "Skipping app image build for existing ${IMAGE_URI}"
+        elif [ -f "services/${SERVICE_NAME}/Dockerfile" ]; then
+          docker build \
+            --platform "${IMAGE_PLATFORM}" \
+            -f "services/${SERVICE_NAME}/Dockerfile" \
+            --build-arg BASE_IMAGE="tillflow-base:${IMAGE_TAG}" \
+            --build-arg GIT_COMMIT_SHA="${IMAGE_TAG}" \
+            --build-arg SERVICE_NAME="${SERVICE_NAME}" \
+            -t "${IMAGE_URI}" \
+            "services/${SERVICE_NAME}"
+        else
+          docker build \
+            --platform "${IMAGE_PLATFORM}" \
+            -f services/_shared/examples/Dockerfile \
+            --build-arg BASE_IMAGE="tillflow-base:${IMAGE_TAG}" \
+            --build-arg SERVICE_NAME="${SERVICE_NAME}" \
+            -t "${IMAGE_URI}" \
+            services/_shared
+        fi
 
   post_build:
     commands:
