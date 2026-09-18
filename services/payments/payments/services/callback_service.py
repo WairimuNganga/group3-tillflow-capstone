@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from payments.clients.pos import PosClient, notify_pos
 from payments.domain.models import PaymentCallback
 from payments.domain.state import PaymentState
 from payments.repositories.memory import InMemoryPaymentRepository
@@ -57,12 +58,14 @@ class CallbackService:
         ledger: LedgerRepository,
         adapter: MpesaAdapter,
         expected_callback_secret: str,
+        pos: PosClient | None = None,
     ) -> None:
         self._payments = payments
         self._callbacks = callbacks
         self._ledger = ledger
         self._adapter = adapter
         self._expected_secret = expected_callback_secret
+        self._pos = pos
 
     async def handle(
         self,
@@ -124,6 +127,7 @@ class CallbackService:
                     amount_whole=amount_whole,
                     receipt=receipt,
                 )
+                await notify_pos(self._pos, settled.payment)
                 callback_processed.add(1, {"result": settled.reason})
                 return CallbackResult(
                     accepted=True,
@@ -155,6 +159,9 @@ class CallbackService:
                 payment=payment,
                 result_desc=stk.get("ResultDesc"),
             )
+
+        # POS owns sale state; it learns the outcome only from here ([ADR-004]).
+        await notify_pos(self._pos, settled.payment)
 
         callback_processed.add(1, {"result": settled.reason})
         return CallbackResult(

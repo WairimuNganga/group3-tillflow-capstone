@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     database_url: str = Field(default="", alias="DATABASE_URL")
     mpesa_adapter: str = Field(default="fake", alias="MPESA_ADAPTER")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    # POS base URL for reporting settled payments back (Service Connect in AWS).
+    # Empty means "do not notify" — payments still settles; POS is told when the
+    # URL is configured, or by the next reconciliation run.
+    pos_base_url: str = Field(default="", alias="POS_BASE_URL")
+
     # Unguessable path segment for Daraja callback URL ([ADR-007] / threat model TB5).
     mpesa_callback_secret: str = Field(
         default="local-dev-callback-secret", alias="MPESA_CALLBACK_SECRET"

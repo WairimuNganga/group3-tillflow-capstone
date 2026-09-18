@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from payments.clients.pos import PosClient, notify_pos
 from payments.domain.state import is_payment_terminal
 from payments.outbox import InMemoryOutbox
 from payments.repositories.memory import InMemoryPaymentRepository
@@ -42,11 +43,13 @@ class ReconciliationService:
         ledger: LedgerRepository,
         adapter: MpesaAdapter,
         outbox: InMemoryOutbox,
+        pos: PosClient | None = None,
     ) -> None:
         self._payments = payments
         self._ledger = ledger
         self._adapter = adapter
         self._outbox = outbox
+        self._pos = pos
 
     async def reconcile_payment(self, payment_id: UUID) -> ReconcileResult:
         with traced("payments.reconcile", payment_id=str(payment_id)):
@@ -110,6 +113,10 @@ class ReconciliationService:
                 payment=payment,
                 result_desc=query.result_desc,
             )
+
+        # Re-reporting is safe: POS applies a repeated result idempotently, so
+        # this is also how a notification lost during the callback recovers.
+        await notify_pos(self._pos, settled.payment)
 
         reconcile_processed.add(1, {"result": settled.reason})
         return ReconcileResult(
