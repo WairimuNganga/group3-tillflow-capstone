@@ -1,0 +1,22 @@
+# Suppressions for the IaC scan (terraform.yml). Each entry is a deliberate,
+# already-documented architecture decision -- not an unreviewed exception.
+# Anything not listed here still fails the gate.
+
+# AWS-0104: unrestricted (0.0.0.0/0) HTTPS egress. Security groups filter by
+# CIDR/prefix list, not hostname, so "Daraja-only" or "package-repo-only"
+# egress isn't expressible with SG primitives alone. Applies to two
+# resources, both already reasoned through:
+#   - internet_https (infra/modules/ecs-service/main.tf) -- documented as
+#     AR-7 in docs/threat-model.md and docs/scar-log.md (2026-09-09):
+#     accepted, not controlled, with compensating controls (no egress for
+#     web/pos/commission, VPC endpoints, flow-log alerting) and a listed
+#     re-evaluation trigger before production launch.
+#   - db_bootstrap_https (infra/envs/dev/main.tf) -- same AR-7 reasoning,
+#     for the one-off G2 db-bootstrap CodeBuild job.
+AWS-0104
+
+# AWS-0054: ALB listener uses HTTP, not HTTPS. This ALB is internal-only
+# (ADR-010) -- reached exclusively through the VPC Link, never given a
+# public IP or public listener. TLS terminates at the API Gateway edge;
+# traffic never crosses the public internet unencrypted.
+AWS-0054

@@ -72,6 +72,26 @@ jobs:
           terraform init -backend=false
           terraform validate
 
+  # No AWS credentials, same as validate above -- static misconfiguration
+  # analysis only. .trivyignore at repo root lists the two rule IDs already
+  # reasoned through and documented (AR-7 in docs/threat-model.md; ADR-010's
+  # internal-only ALB) -- anything else still fails the gate. Same pinned
+  # trivy-action commit the ci.yml image scan uses; see that job's comment
+  # for why this is pinned by SHA rather than a version tag.
+  iac-scan:
+    name: iac scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan Terraform for misconfigurations
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: config
+          scan-ref: infra/
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
   # Read-only plan against the real account. Runs on PRs so a reviewer sees
   # what would change; the role it assumes cannot apply.
   plan:
