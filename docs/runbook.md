@@ -217,3 +217,63 @@ ALTER TABLE <schema>.<table> FORCE ROW LEVEL SECURITY;
 
 This keeps application connections subject to tenant RLS policies, including
 when a table owner would otherwise bypass policy checks.
+
+## Rollback (Drill 4)
+
+`.github/workflows/rollback.yml` is the manual rollback path ADR-009 requires.
+It covers the failure mode the ECS deployment circuit breaker can't: a release
+that *did* reach steady state but is behaving badly (wrong response, a bad
+config value baked into the image, a bug the smoke test's `/health`+`/ready`
+checks don't happen to exercise). A release that never stabilizes is already
+handled automatically — the circuit breaker rolls it back on its own, nothing
+to do here.
+
+### Before you run it
+
+Find the last-known-good commit SHA — the pipeline only ever deploys an
+already-built image, and rollback is no different:
+
+```bash
+AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
+aws ecr describe-images \
+  --repository-name devops-g3/<service> \
+  --query 'sort_by(imageDetails,& imagePushedAt)[-10:].{tag:imageTags[0],pushedAt:imagePushedAt}' \
+  --output table
+```
+
+Or check the current, about-to-be-rolled-back-from tag:
+
+```bash
+AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1 \
+aws ssm get-parameter --name /devops-g3/<service>/image-tag --query Parameter.Value --output text
+```
+
+### Running it
+
+GitHub -> Actions -> `rollback` -> Run workflow. Inputs:
+
+- **service** -- `web` / `pos` / `payments` / `commission`
+- **sha** -- the target commit SHA from above. The workflow looks this up in
+  ECR before touching anything and **fails immediately** if that tag was
+  never built — it will not rebuild it and will not guess.
+- **reason** -- free text; goes straight into the rollback log (e.g. "Drill 4"
+  or a link to the relevant `docs/scar-log.md` row).
+
+It then: points that service's SSM image-tag/image-digest parameters at the
+target, force-deploys, waits for `services-stable`, and curls the public
+`/health` and `/ready` routes through the real edge (API Gateway -> VPC Link
+-> ALB) before calling it done.
+
+### After it runs
+
+The job uploads a `rollback-log-<service>-<run id>` artifact and prints the
+same block as a workflow annotation. Copy it into
+`evidence/delivery/rollback-log.md` (create the file on the first rollback) —
+per ADR-009, a rollback that's only ever been read about, not exercised and
+logged, doesn't count as proven.
+
+If the workflow's own health check fails after a rollback (the target image
+itself doesn't come up clean either), the service is now on neither the bad
+release nor a known-good one — treat that as its own incident, not a rollback
+that "didn't quite work": check `aws ecs describe-services` for the deployment
+state and `aws logs tail` for the task before trying a second rollback target.
