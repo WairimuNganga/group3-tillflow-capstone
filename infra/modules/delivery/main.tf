@@ -101,6 +101,8 @@ data "aws_iam_policy_document" "codebuild" {
     actions = [
       "ecr:GetAuthorizationToken",
       "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
       "ecr:InitiateLayerUpload",
       "ecr:UploadLayerPart",
       "ecr:CompleteLayerUpload",
@@ -128,6 +130,15 @@ data "aws_iam_policy_document" "codebuild" {
   }
 
   statement {
+    sid = "ReadRdsMasterSecretForMigrations"
+    actions = [
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [var.master_secret_arn]
+  }
+
+  statement {
     sid = "EcsSmokeAndScale"
     actions = [
       "ecs:DescribeServices",
@@ -142,6 +153,22 @@ data "aws_iam_policy_document" "codebuild" {
     sid       = "KmsForArtifactsAndEcr"
     actions   = ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey", "kms:DescribeKey"]
     resources = [var.kms_key_arn]
+  }
+
+  # Required for CodeBuild projects that attach to a VPC.
+  statement {
+    sid = "VpcNetworkInterfaces"
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:CreateNetworkInterfacePermission",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DescribeDhcpOptions",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeVpcs",
+    ]
+    resources = ["*"]
   }
 
   statement {
@@ -304,6 +331,73 @@ resource "aws_codebuild_project" "smoke" {
   }
 }
 
+resource "aws_codebuild_project" "pos_migrations" {
+  name          = "${var.name_prefix}-pos-migrations"
+  description   = "Run POS Alembic migrations against RDS before ECS deploy"
+  service_role  = aws_iam_role.codebuild.arn
+  build_timeout = 20
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.codebuild_image
+    type                        = "ARM_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "NAME_PREFIX"
+      value = var.name_prefix
+    }
+
+    environment_variable {
+      name  = "POS_REPOSITORY"
+      value = "${var.name_prefix}/pos"
+    }
+
+    environment_variable {
+      name  = "DB_HOST"
+      value = var.db_host
+    }
+
+    environment_variable {
+      name  = "DB_NAME"
+      value = var.db_name
+    }
+
+    environment_variable {
+      name  = "MASTER_SECRET_ARN"
+      value = var.master_secret_arn
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspecs/pos-migrations.yml"
+  }
+
+  vpc_config {
+    vpc_id             = var.vpc_id
+    subnets            = var.subnet_ids
+    security_group_ids = [var.security_group_id]
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/${var.name_prefix}/codebuild/pos-migrations"
+      stream_name = "migrate"
+    }
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-pos-migrations"
+    service = "pos"
+  }
+}
+
 data "aws_iam_policy_document" "codepipeline_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -349,7 +443,11 @@ data "aws_iam_policy_document" "codepipeline" {
     actions = ["codebuild:StartBuild", "codebuild:BatchGetBuilds"]
     resources = concat(
       [for p in aws_codebuild_project.image : p.arn],
-      [aws_codebuild_project.adot_mirror.arn, aws_codebuild_project.smoke.arn],
+      [
+        aws_codebuild_project.adot_mirror.arn,
+        aws_codebuild_project.pos_migrations.arn,
+        aws_codebuild_project.smoke.arn,
+      ],
     )
   }
 
@@ -465,6 +563,24 @@ resource "aws_codepipeline" "this" {
         configuration = {
           ProjectName = aws_codebuild_project.image[action.key].name
         }
+      }
+    }
+  }
+
+  stage {
+    name = "MigrateDb"
+
+    action {
+      name            = "pos-alembic"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.pos_migrations.name
       }
     }
   }
