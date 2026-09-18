@@ -6,7 +6,7 @@ from tillflow_shared.health import create_health_router
 from tillflow_shared.otel.middleware import instrument_fastapi
 
 from pos import db
-from pos.api import sales_router, tenants_router
+from pos.api import internal_router, sales_router, tenants_router
 from pos.config import settings
 
 # Disable OTLP export in CI/unit tests unless a collector is running.
@@ -31,4 +31,5 @@ app.include_router(
 )
 app.include_router(tenants_router)
 app.include_router(sales_router)
+app.include_router(internal_router)
 instrument_fastapi(app, service_name=settings.service_name)

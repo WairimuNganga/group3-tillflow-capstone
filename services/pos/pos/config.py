@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     # DATABASE_URL when unset.
     database_admin_url: str = Field(default="", alias="POS_DB_ADMIN_URL")
 
+    # Payments service base URL for the STK handoff (Service Connect in AWS).
+    # Empty means "not configured" — POST /sales/{id}/pay then returns 503 rather
+    # than pretending a payment was requested.
+    payments_base_url: str = Field(default="", alias="PAYMENTS_BASE_URL")
+
     # Owner role the migration switches into.
     migration_role: str = Field(default="tillflow_pos_owner", alias="POS_MIGRATION_ROLE")
 

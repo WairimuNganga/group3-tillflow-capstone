@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from payments.clients.pos import HttpPosClient, PosClient
 from payments.config import settings
 from payments.db import SessionLocal
 from payments.idempotency.postgres_store import PostgresIdempotencyStore
@@ -97,6 +98,13 @@ def get_ledger_repository(
     return PostgresLedgerRepository(session)
 
 
+def get_pos_client() -> PosClient | None:
+    """``None`` when POS_BASE_URL is unset — payments still settles, silently."""
+    if not settings.pos_base_url:
+        return None
+    return HttpPosClient(settings.pos_base_url)
+
+
 def get_outbox() -> InMemoryOutbox:
     return _memory_outbox
 
@@ -139,6 +147,7 @@ def get_callback_service(
     ),
     ledger: InMemoryLedgerRepository | PostgresLedgerRepository = Depends(get_ledger_repository),
     adapter: MpesaAdapter = Depends(get_mpesa_adapter),
+    pos: PosClient | None = Depends(get_pos_client),
 ) -> CallbackService:
     return CallbackService(
         payments=payments,
@@ -146,6 +155,7 @@ def get_callback_service(
         ledger=ledger,
         adapter=adapter,
         expected_callback_secret=settings.mpesa_callback_secret,
+        pos=pos,
     )
 
 
@@ -156,12 +166,14 @@ def get_reconciliation_service(
     ledger: InMemoryLedgerRepository | PostgresLedgerRepository = Depends(get_ledger_repository),
     adapter: MpesaAdapter = Depends(get_mpesa_adapter),
     outbox: InMemoryOutbox = Depends(get_outbox),
+    pos: PosClient | None = Depends(get_pos_client),
 ) -> ReconciliationService:
     return ReconciliationService(
         payments=payments,
         ledger=ledger,
         adapter=adapter,
         outbox=outbox,
+        pos=pos,
     )
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -98,3 +99,35 @@ class SaleResponse(BaseModel):
 
 class TransitionRequest(BaseModel):
     target: SaleStatus
+
+
+# --- payment handoff -----------------------------------------------------------
+class PayRequest(BaseModel):
+    """Ask Payments to collect. Defaults to the sale's ``customer_msisdn``."""
+
+    phone_number: str | None = Field(default=None, max_length=32)
+
+
+class PayResponse(BaseModel):
+    sale_id: uuid.UUID
+    status: SaleStatus
+    amount_minor_units: int
+    payment_id: uuid.UUID | None
+    payment_state: str | None
+
+
+class PaymentResultRequest(BaseModel):
+    """What Payments reports once M-Pesa's outcome is known ([ADR-004])."""
+
+    payment_id: uuid.UUID
+    result: Literal["paid", "failed"]
+    amount_minor_units: int | None = Field(default=None, ge=0)
+    mpesa_receipt: str | None = Field(default=None, max_length=64)
+    failure_reason: str | None = Field(default=None, max_length=500)
+    occurred_at: datetime | None = None
+
+
+class PaymentResultResponse(BaseModel):
+    sale_id: uuid.UUID
+    status: SaleStatus
+    changed: bool

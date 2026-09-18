@@ -71,41 +71,38 @@ async def test_bad_till_rejected(client):
     assert r.status_code == 400
 
 
-async def test_full_flow_to_paid(client):
+async def test_attendant_can_cancel_a_pending_sale(client):
     t = await onboard(client, **A)
     headers = {**t["headers"], "Idempotency-Key": new_key()}
     sale_id = (await client.post("/sales", headers=headers, json=sale_payload(t))).json()["id"]
+    r = await client.post(
+        f"/sales/{sale_id}/transition", headers=t["headers"], json={"target": "cancelled"}
+    )
+    assert r.status_code == 200 and r.json()["status"] == "cancelled"
 
-    async def transition(target):
-        return await client.post(
+
+async def test_cancelling_twice_is_a_noop(client):
+    t = await onboard(client, **A)
+    headers = {**t["headers"], "Idempotency-Key": new_key()}
+    sale_id = (await client.post("/sales", headers=headers, json=sale_payload(t))).json()["id"]
+    body = {"target": "cancelled"}
+    await client.post(f"/sales/{sale_id}/transition", headers=t["headers"], json=body)
+    r = await client.post(f"/sales/{sale_id}/transition", headers=t["headers"], json=body)
+    assert r.status_code == 200 and r.json()["status"] == "cancelled"
+
+
+async def test_public_caller_cannot_mark_a_sale_paid(client):
+    """Money states come only from Payments — otherwise anyone could 'pay' a sale."""
+    t = await onboard(client, **A)
+    headers = {**t["headers"], "Idempotency-Key": new_key()}
+    sale_id = (await client.post("/sales", headers=headers, json=sale_payload(t))).json()["id"]
+    for target in ("paid", "failed", "awaiting_payment"):
+        r = await client.post(
             f"/sales/{sale_id}/transition", headers=t["headers"], json={"target": target}
         )
-
-    assert (await transition("awaiting_payment")).json()["status"] == "awaiting_payment"
-    assert (await transition("paid")).json()["status"] == "paid"
-
-
-async def test_illegal_transition_409(client):
-    t = await onboard(client, **A)
-    headers = {**t["headers"], "Idempotency-Key": new_key()}
-    sale_id = (await client.post("/sales", headers=headers, json=sale_payload(t))).json()["id"]
-    r = await client.post(
-        f"/sales/{sale_id}/transition", headers=t["headers"], json={"target": "paid"}
-    )
-    assert r.status_code == 409
-
-
-async def test_same_state_transition_is_noop(client):
-    t = await onboard(client, **A)
-    headers = {**t["headers"], "Idempotency-Key": new_key()}
-    sale_id = (await client.post("/sales", headers=headers, json=sale_payload(t))).json()["id"]
-    await client.post(
-        f"/sales/{sale_id}/transition", headers=t["headers"], json={"target": "awaiting_payment"}
-    )
-    r = await client.post(
-        f"/sales/{sale_id}/transition", headers=t["headers"], json={"target": "awaiting_payment"}
-    )
-    assert r.status_code == 200 and r.json()["status"] == "awaiting_payment"
+        assert r.status_code == 400, target
+    got = await client.get(f"/sales/{sale_id}", headers=t["headers"])
+    assert got.json()["status"] == "pending"
 
 
 async def test_health(client):

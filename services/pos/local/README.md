@@ -30,6 +30,26 @@ export POS_DB_ADMIN_URL="postgresql+asyncpg://tillflow:secret@localhost:5432/til
 python3 -m alembic upgrade head
 ```
 
+## Run POS and Payments together (the G2 flow)
+
+One container, two schemas — the shape AWS uses. Add the payments role/schema to
+this database, then run both services pointing at each other:
+
+```bash
+docker exec -i tillflow-pos-db psql -U tillflow -d tillflow < ../../payments/local/init-db.sql
+(cd ../../payments && DATABASE_URL="postgresql+asyncpg://payments:secret@localhost:5440/tillflow" \
+  python -m alembic upgrade head)
+```
+
+POS needs `PAYMENTS_BASE_URL`, Payments needs `POS_BASE_URL`; without them the
+handoff 503s and no outcome is reported. Full commands and the checks the flow
+asserts: [`evidence/product/how-to-reproduce.md`](../../../evidence/product/how-to-reproduce.md).
+
+```bash
+./e2e-flow.sh        # both services: 40 assertions
+./e2e-demo.sh        # POS alone: 31 assertions
+```
+
 ## Run the API against Postgres
 
 ```bash

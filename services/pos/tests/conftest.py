@@ -105,6 +105,47 @@ def _pg() -> dict:
     return {"runtime_url": _async_url("tillflow_pos", RUNTIME_PW)}
 
 
+# --- fake payments -------------------------------------------------------------
+class FakePaymentsClient:
+    """Stands in for the Payments service in POS tests.
+
+    Records every handoff so tests can assert POS calls it once per sale with the
+    sale's own total; set ``fail=True`` to simulate Payments being unreachable.
+    """
+
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+        self.fail = False
+        self.payment_id = uuid.uuid4()
+
+    async def initiate_stk(self, *, tenant_id, sale_id, phone_number, amount_minor_units):
+        from pos.clients.payments import PaymentsUnavailableError, StkResult
+
+        self.calls.append(
+            {
+                "tenant_id": tenant_id,
+                "sale_id": sale_id,
+                "phone_number": phone_number,
+                "amount_minor_units": amount_minor_units,
+            }
+        )
+        if self.fail:
+            raise PaymentsUnavailableError("connection refused")
+        return StkResult(payment_id=self.payment_id, state="stk_sent")
+
+
+@pytest_asyncio.fixture
+async def payments_client(client: AsyncClient) -> FakePaymentsClient:
+    """Point the POS app at the fake Payments for this test."""
+    from pos.deps import get_payments_client
+    from pos.main import app
+
+    fake = FakePaymentsClient()
+    app.dependency_overrides[get_payments_client] = lambda: fake
+    yield fake
+    app.dependency_overrides.pop(get_payments_client, None)
+
+
 # --- memory mode ---------------------------------------------------------------
 @pytest_asyncio.fixture
 async def client() -> AsyncClient:

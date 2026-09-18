@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tillflow_shared.otel import get_idempotency_key, get_tenant_id
 
 from pos import db
+from pos.clients.payments import HttpPaymentsClient, PaymentsClient
+from pos.config import settings
 from pos.repositories.memory import InMemoryPosRepository
 from pos.repositories.postgres import PostgresPosRepository
 from pos.services.sale_service import SaleService
@@ -86,5 +88,15 @@ def get_tenant_service(repo: RepositoryDep) -> TenantService:
     return TenantService(repo)
 
 
-def get_sale_service(repo: RepositoryDep) -> SaleService:
-    return SaleService(repo)
+def get_payments_client() -> PaymentsClient | None:
+    """``None`` when PAYMENTS_BASE_URL is unset — the pay action then 503s."""
+    if not settings.payments_base_url:
+        return None
+    return HttpPaymentsClient(settings.payments_base_url)
+
+
+PaymentsClientDep = Annotated["PaymentsClient | None", Depends(get_payments_client)]
+
+
+def get_sale_service(repo: RepositoryDep, payments: PaymentsClientDep) -> SaleService:
+    return SaleService(repo, payments)

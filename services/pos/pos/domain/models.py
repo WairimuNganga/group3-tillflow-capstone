@@ -137,6 +137,11 @@ class Sale(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="KES")
     total_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     customer_msisdn: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Set when Payments reports the outcome: which payment settled this sale and
+    # the M-Pesa receipt behind it, so every paid sale traces back to real money.
+    payment_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    mpesa_receipt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

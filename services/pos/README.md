@@ -23,18 +23,46 @@ RLS). Sale creation requires an `Idempotency-Key` header.
 | `POST /sales` | create a sale — idempotent on `Idempotency-Key` |
 | `GET /sales/{id}` | fetch a sale (RLS-scoped; other tenants get 404) |
 | `GET /sales` | list this tenant's sales |
-| `POST /sales/{id}/transition` | drive the sale state machine |
+| `POST /sales/{id}/pay` | hand the sale to Payments for an STK push |
+| `POST /sales/{id}/transition` | attendant actions — **`cancelled` only** |
+| `POST /internal/sales/{id}/payment-result` | Payments reports the outcome (not publicly routable) |
 | `GET /health`, `GET /ready` | golden-path probes (`/ready` checks the DB) |
 
 Sale states: `pending → awaiting_payment → paid`; `→ failed`;
 `pending → cancelled`. Terminal states never transition again — the defence in
 depth that stops a replayed payments callback re-driving a `paid` sale.
 
+## Payment handoff
+
+POS never calls Daraja. It asks Payments to collect, and Payments reports the
+outcome back ([ADR-004], [ADR-007]):
+
+```
+POST /sales/{id}/pay ──► payments POST /payments/stk ──► M-Pesa (STK push)
+        ▲                                                      │ customer pays
+        │  POST /internal/sales/{id}/payment-result   ◄─────────┘ (callback)
+```
+
+- **Idempotent both ways.** The handoff carries `Idempotency-Key: stk-<sale id>`,
+  so a retried `/pay` reaches the same payment and never prompts the customer
+  twice; a replayed result returns `changed: false` and changes the sale once.
+- **A timeout is not a decline.** If Payments is unreachable, `/pay` returns 502
+  and the sale stays `awaiting_payment` — never `failed`.
+- **Only Payments sets money states.** `paid`/`failed` are refused on the public
+  transition endpoint (400) and accepted only on `/internal/*`, which is not
+  routed from API Gateway/ALB. POS also refuses a result whose
+  `amount_minor_units` is not the sale total (409).
+- **Traceable.** A settled sale stores `payment_id`, `mpesa_receipt` and `paid_at`.
+
+`PAYMENTS_BASE_URL` must be set for `/pay` to work (it 503s otherwise), and
+Payments needs `POS_BASE_URL` to report back.
+
 ## Run it
 
 ```bash
 pip install -e ../_shared -e '.[dev,prod]'
-export DATABASE_URL="postgresql+asyncpg://tillflow_pos:***@localhost:5432/tillflow"
+export DATABASE_URL="postgresql+asyncpg://tillflow_pos:***@localhost:5440/tillflow"
+export PAYMENTS_BASE_URL="http://127.0.0.1:8080"
 uvicorn pos.main:app --port 8000
 ```
 
@@ -52,8 +80,11 @@ Never put the password in `.env`, chat, or evidence.
 ## Tests
 
 See [`tests/README.md`](tests/README.md). `pytest` skips the DB-backed suites
-when `POS_TEST_ADMIN_DSN` is unset; with a Postgres it runs **32 tests** covering
-the state machine, idempotency, tenant isolation, the E2E flow, and ECS DB wiring.
+when `POS_TEST_ADMIN_DSN` is unset; with a Postgres it runs **46 tests** covering
+the state machine, idempotency, tenant isolation, the payment handoff, and ECS
+DB wiring. For the live two-service flow see
+[`local/e2e-flow.sh`](local/e2e-flow.sh) and
+[`evidence/product/how-to-reproduce.md`](../../evidence/product/how-to-reproduce.md).
 
 ## Data model (`pos` schema)
 
@@ -69,7 +100,7 @@ the runtime role `tillflow_pos` connects with `search_path = pos`. See
 | `users` | owner + attendants (phone = PII) | `tenant_id` | `UNIQUE (tenant_id, phone)`, `UNIQUE (tenant_id, id)` |
 | `tills` | M-Pesa till/shortcode(s) | `tenant_id` | `UNIQUE (tenant_id, shortcode)`, `UNIQUE (tenant_id, id)` |
 | `commission_rates` | per-attendant rate (integer bps) | `tenant_id` | FK `(tenant_id, attendant_id) → users` |
-| `sales` | sale aggregate + state machine | `tenant_id` | `UNIQUE (tenant_id, idempotency_key)`; composite FKs to `tills`/`users` |
+| `sales` | sale aggregate + state machine | `tenant_id` | `UNIQUE (tenant_id, idempotency_key)`; `UNIQUE (tenant_id, payment_id)`; composite FKs to `tills`/`users` |
 | `sale_items` | line items (minor units) | `tenant_id` | composite FK `(tenant_id, sale_id) → sales` ON DELETE CASCADE |
 
 Design invariants:
