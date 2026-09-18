@@ -76,6 +76,7 @@ module "secrets" {
   name_prefix             = var.name_prefix
   kms_key_arn             = var.kms_key_arn
   recovery_window_in_days = var.secret_recovery_window_days
+  db_proxy_services       = local.services
 }
 
 # G2 database bootstrap runner. The job runs inside the VPC, reaches RDS through
@@ -399,6 +400,9 @@ module "rds" {
   vpc_id      = module.network.vpc_id
   subnet_ids  = module.network.private_data_subnet_ids
   kms_key_arn = var.kms_key_arn
+  proxy_auth_secret_arns = [
+    for service in local.services : module.secrets.secret_arns["db-proxy-${service}"]
+  ]
 
   client_security_group_ids = merge(
     { for s in local.services : s => module.service[s].security_group_id },
@@ -448,8 +452,11 @@ module "db_bootstrap" {
   db_name           = module.rds.database_name
   master_secret_arn = module.rds.master_secret_arn
   db_secret_arn     = module.secrets.secret_arns["db"]
-  kms_key_arn       = var.kms_key_arn
-  services          = local.services
+  db_proxy_secret_arns = {
+    for service in local.services : service => module.secrets.secret_arns["db-proxy-${service}"]
+  }
+  kms_key_arn = var.kms_key_arn
+  services    = local.services
 }
 
 # ---------------------------------------------------------------------------

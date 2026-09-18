@@ -8,7 +8,7 @@
 #     --secret-string file://daraja.json   # then shred the file
 
 locals {
-  secrets = {
+  base_secrets = {
     daraja = {
       description = "Daraja sandbox: consumer key/secret, passkey, initiator credential, callback path segment"
       # Only the payments task role may read this. Enforced by the resource
@@ -25,6 +25,15 @@ locals {
       readers     = var.slack_reader_role_arns
     }
   }
+
+  db_proxy_secrets = {
+    for service in var.db_proxy_services : "db-proxy-${service}" => {
+      description = "RDS Proxy auth secret for tillflow_${service}. Value populated by db-bootstrap."
+      readers     = []
+    }
+  }
+
+  secrets = merge(local.base_secrets, local.db_proxy_secrets)
 }
 
 resource "aws_secretsmanager_secret" "this" {

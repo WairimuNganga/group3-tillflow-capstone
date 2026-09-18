@@ -23,6 +23,12 @@ variable "db_reader_role_arns" {
   default = []
 }
 
+variable "db_proxy_services" {
+  description = "Service names that need RDS Proxy-compatible username/password secrets."
+  type        = list(string)
+  default     = []
+}
+
 variable "slack_reader_role_arns" {
   type    = list(string)
   default = []

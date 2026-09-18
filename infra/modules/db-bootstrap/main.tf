@@ -61,7 +61,7 @@ data "aws_iam_policy_document" "this" {
       "secretsmanager:PutSecretValue",
       "secretsmanager:UpdateSecret",
     ]
-    resources = [var.db_secret_arn]
+    resources = concat([var.db_secret_arn], values(var.db_proxy_secret_arns))
   }
 
   statement {
@@ -154,6 +154,11 @@ resource "aws_codebuild_project" "this" {
     environment_variable {
       name  = "DB_SECRET_ARN"
       value = var.db_secret_arn
+    }
+
+    environment_variable {
+      name  = "DB_PROXY_SECRET_ARNS_JSON"
+      value = jsonencode(var.db_proxy_secret_arns)
     }
   }
 
