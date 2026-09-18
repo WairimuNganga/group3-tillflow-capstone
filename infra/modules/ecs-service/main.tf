@@ -421,10 +421,9 @@ resource "aws_ecs_service" "this" {
 
   lifecycle {
     # Application releases are owned by the Terraform-managed CodePipeline
-    # lane. It registers a new task definition revision from imagedefinitions
-    # and may scale from the first-apply placeholder count after images exist.
-    # Terraform still owns the service shell: networking, load balancer,
-    # Service Connect, circuit breaker, tags and IAM.
-    ignore_changes = [task_definition, desired_count]
+    # lane, but Terraform must still be allowed to move the service when the
+    # task-definition shape changes: env vars, secrets, sidecars, Service
+    # Connect and health checks. Desired count stays pipeline/smoke-owned.
+    ignore_changes = [desired_count]
   }
 }
