@@ -100,6 +100,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      # payments and pos both depend on tillflow-shared, which isn't on PyPI
+      # -- installing either standalone fails with "No matching distribution
+      # found for tillflow-shared" (confirmed: this exact failure on the
+      # first CI run of this job). Always install _shared first, same as
+      # the payments/pos/shared test jobs already do; a redundant install of
+      # itself for the services/_shared matrix entry is harmless.
+      - name: Install tillflow-shared
+        run: pip install --quiet -e "services/_shared[dev]"
+
       # Installs the package with its real pinned/ranged deps first, then
       # audits exactly what got resolved -- catching a vulnerable transitive
       # dependency, not just what's spelled out in pyproject.toml.
