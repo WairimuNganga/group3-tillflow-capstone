@@ -277,3 +277,15 @@ itself doesn't come up clean either), the service is now on neither the bad
 release nor a known-good one — treat that as its own incident, not a rollback
 that "didn't quite work": check `aws ecs describe-services` for the deployment
 state and `aws logs tail` for the task before trying a second rollback target.
+
+## Observability alerts
+
+**DRI:** Minage · **Webhook:** Secrets Manager `devops-g3/slack-webhook` (value never in git).
+
+| Alert (starter) | Signal (AMP / Grafana) | First action | Recovery |
+|-----------------|------------------------|--------------|----------|
+| PaymentsHigh5xxRate | `sum(rate(payments_requests_total{status="5xx"}[5m])) / sum(rate(payments_requests_total[5m]))` > 0.05 for 10m | Check recent deploy; `aws logs tail` payments; consider rollback workflow | Ratio below 0.02 for 15m |
+| EdgeProbeFailed | Synthetic `/health` or `/ready` failure (see `infra/scripts/reliability-edge-probe.sh`) | API Gateway stage, ALB target health, web service ECS events | Two consecutive probe successes |
+| PaymentsLatencyP95 | `histogram_quantile(0.95, sum(rate(payments_request_duration_seconds_bucket[5m])) by (le))` > 2s for 15m | RDS Proxy connections, Daraja sandbox status | p95 < 1s for 15m |
+
+Wire rules in Grafana when the ECS service is live ([infra/grafana/README.md](../infra/grafana/README.md)). Each firing alert should link to the panel URL (T8.2).
