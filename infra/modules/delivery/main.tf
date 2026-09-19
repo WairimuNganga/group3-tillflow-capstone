@@ -207,6 +207,12 @@ resource "aws_codebuild_project" "image" {
       name  = "SERVICE_NAME"
       value = each.key
     }
+
+    # Must match mirror-adot + Terraform task def (buildspec default was tillflow1).
+    environment_variable {
+      name  = "ADOT_IMAGE_TAG"
+      value = var.adot_image_tag
+    }
   }
 
   source {

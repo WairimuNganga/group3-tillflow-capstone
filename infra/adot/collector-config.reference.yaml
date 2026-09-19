@@ -34,13 +34,18 @@ exporters:
     region: ${AWS_REGION}
   prometheusremotewrite:
     endpoint: ${AWS_PROMETHEUS_ENDPOINT}
+    auth:
+      authenticator: sigv4auth
 
 extensions:
   health_check:
     endpoint: localhost:13133
+  sigv4auth:
+    service: aps
+    region: ${AWS_REGION}
 
 service:
-  extensions: [health_check]
+  extensions: [health_check, sigv4auth]
   pipelines:
     traces:
       receivers: [otlp]
