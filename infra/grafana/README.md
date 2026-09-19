@@ -20,7 +20,9 @@ terraform -chdir=infra/envs/dev output grafana_url grafana_admin_secret_arn amp_
 
 2. **Grafana image** — run the delivery pipeline (or CodeBuild `devops-g3-grafana-build`) so `11.4.0-tillflow1` exists in ECR before the ECS service can stay healthy.
 
-3. Open **`grafana_url`**, sign in as `admin`, confirm **Connections → Data sources → AMP** (SigV4, provisioned at task start).
+3. Open **`grafana_url`** (must be `…/v1/grafana/` — not a URL with repeated `/grafana/` segments), sign in as `admin`, confirm **Connections → Data sources → AMP** (SigV4, provisioned at task start).
+
+   Redirect loops were caused by API Gateway forwarding `/grafana/…` while `GF_SERVER_ROOT_URL` used `/v1/grafana/`. Terraform fixes that by rewriting Grafana routes to `/v1/grafana/…` at the edge (**terraform apply**, not CodePipeline).
 
 ## Dashboard-as-code
 

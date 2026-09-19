@@ -174,9 +174,10 @@ module "alb" {
     grafana = {
       port = 3000
       # Subpath URL /grafana/api/health returns 301; ALB hits the task directly on :3000.
-      health_path   = "/api/health"
-      priority      = 280
-      path_patterns = ["/grafana", "/grafana/*"]
+      health_path = "/api/health"
+      priority    = 280
+      # APIGW prepends /v1 so paths match GF_SERVER_ROOT_URL .../v1/grafana/
+      path_patterns = ["/v1/grafana", "/v1/grafana/*"]
     }
   }
 
