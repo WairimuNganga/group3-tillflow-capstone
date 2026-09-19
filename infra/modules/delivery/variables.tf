@@ -13,6 +13,14 @@ variable "desired_counts" { type = map(number) }
 variable "adot_repository_name" { type = string }
 variable "adot_source_image" { type = string }
 variable "adot_image_tag" { type = string }
+
+variable "grafana_repository_name" { type = string }
+variable "grafana_image_tag" { type = string }
+variable "grafana_version" {
+  type    = string
+  default = "11.4.0"
+}
+
 variable "vpc_id" { type = string }
 variable "subnet_ids" { type = list(string) }
 variable "security_group_id" { type = string }

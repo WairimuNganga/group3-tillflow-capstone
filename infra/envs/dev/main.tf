@@ -3,7 +3,8 @@
 #   internet → API Gateway → VPC Link → internal ALB → ECS Fargate (private)
 #                                                        ├─ web
 #                                                        ├─ pos
-#                                                        ├─ payments   ← only service with internet egress
+#                                                        ├─ payments   ← internet egress (Daraja)
+#                                                        ├─ grafana    ← internet egress (AMP query)
 #                                                        └─ commission
 #                                                             ↓
 #                                    RDS Proxy → PostgreSQL · Valkey · SQS+DLQ
@@ -19,6 +20,9 @@ locals {
 
   # Bump when infra/adot/tillflow-collector.yaml changes (immutable ECR tag).
   adot_image_tag = "v0.43.3-tillflow4"
+
+  grafana_version   = "11.4.0"
+  grafana_image_tag = "11.4.0-tillflow1"
   # Pin the upstream multi-platform manifest; the mirror build selects the
   # ARM64 child image required by the Fargate task definitions.
   adot_source_image = "public.ecr.aws/aws-observability/aws-otel-collector@sha256:8aa9ea5f67b8d318f7d6af24677e3c70f7098bc0631147cb5fa91addbe980b06"
@@ -167,6 +171,12 @@ module "alb" {
       priority      = 200
       path_patterns = ["/api/payments/*", "/callback/*"]
     }
+    grafana = {
+      port          = 3000
+      health_path   = "/grafana/api/health"
+      priority      = 280
+      path_patterns = ["/grafana", "/grafana/*"]
+    }
   }
 
   # POS exposes internal settlement endpoints for payments only. Public API
@@ -243,6 +253,42 @@ resource "aws_ecr_lifecycle_policy" "adot" {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
         countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
+resource "aws_ecr_repository" "grafana" {
+  name                 = "${var.name_prefix}/grafana"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-grafana"
+    service = "grafana"
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "grafana" {
+  repository = aws_ecr_repository.grafana.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep the last 15 Grafana images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 15
       }
       action = { type = "expire" }
     }]
@@ -440,6 +486,42 @@ module "amp" {
   alias       = var.amp_workspace_alias
 }
 
+module "grafana" {
+  source = "../../modules/grafana-service"
+
+  name_prefix = var.name_prefix
+  environment = var.environment
+  region      = var.region
+  account_id  = local.account_id
+
+  vpc_id     = module.network.vpc_id
+  vpc_cidr   = module.network.vpc_cidr
+  subnet_ids = module.network.private_app_subnet_ids
+
+  cluster_arn        = module.ecs_platform.cluster_arn
+  execution_role_arn = module.ecs_platform.execution_role_arn
+  kms_key_arn        = var.kms_key_arn
+
+  alb_security_group_id = module.alb.security_group_id
+  target_group_arn      = module.alb.target_group_arns["grafana"]
+
+  image = "${aws_ecr_repository.grafana.repository_url}:${local.grafana_image_tag}"
+
+  amp_prometheus_endpoint = module.amp.prometheus_endpoint
+  amp_workspace_arn       = module.amp.workspace_arn
+
+  grafana_root_url = "${trimsuffix(module.apigw.api_endpoint, "/")}/grafana/"
+
+  admin_password_secret_arn = module.secrets.secret_arns["grafana-admin"]
+  readable_secret_arns = [
+    module.secrets.secret_arns["grafana-admin"],
+    module.secrets.secret_arns["slack-webhook"],
+  ]
+
+  log_retention_days = var.log_retention_days
+  desired_count      = 1
+}
+
 module "messaging" {
   source = "../../modules/messaging"
 
@@ -498,6 +580,10 @@ module "delivery" {
   adot_repository_name = aws_ecr_repository.adot.name
   adot_source_image    = local.adot_source_image
   adot_image_tag       = local.adot_image_tag
+
+  grafana_repository_name = aws_ecr_repository.grafana.name
+  grafana_image_tag       = local.grafana_image_tag
+  grafana_version         = local.grafana_version
 
   vpc_id            = module.network.vpc_id
   subnet_ids        = module.network.private_app_subnet_ids
@@ -559,4 +645,44 @@ data "aws_iam_policy_document" "db_readers" {
 resource "aws_secretsmanager_secret_policy" "db" {
   secret_arn = module.secrets.secret_arns["db"]
   policy     = data.aws_iam_policy_document.db_readers.json
+}
+
+data "aws_iam_policy_document" "grafana_admin_readers" {
+  statement {
+    sid    = "GrafanaTaskRoleOnly"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [module.grafana.task_role_arn]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_secretsmanager_secret_policy" "grafana_admin" {
+  secret_arn = module.secrets.secret_arns["grafana-admin"]
+  policy     = data.aws_iam_policy_document.grafana_admin_readers.json
+}
+
+data "aws_iam_policy_document" "slack_readers" {
+  statement {
+    sid    = "GrafanaAlerting"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [module.grafana.task_role_arn]
+    }
+
+    actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_secretsmanager_secret_policy" "slack_webhook" {
+  secret_arn = module.secrets.secret_arns["slack-webhook"]
+  policy     = data.aws_iam_policy_document.slack_readers.json
 }
