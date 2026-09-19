@@ -113,6 +113,7 @@ aws logs tail /devops-g3/payments --since 10m --filter-pattern adot
 |-------|---------|---------------------|
 | AMP workspace | `aws amp list-workspaces --region us-west-1 --output table` | **`devops-g3`**, ACTIVE, `ws-40261a89-bf51-45ee-a25b-e5fdfa21b69d` |
 | ADOT env | `aws ecs describe-task-definition --task-definition devops-g3-payments --query '...adot...environment'` | `AWS_PROMETHEUS_ENDPOINT` → workspace `/api/v1/remote_write` |
+| ADOT → AMP | Sidecar `--config=/etc/ecs/tillflow-collector.yaml` in image `devops-g3/adot:v0.43.3-tillflow1` | Replaces stock `ecs-default-config` (EMF-only metrics). **Apply PR + mirror build + ECS rollout.** |
 | Slack | `aws secretsmanager get-secret-value --secret-id devops-g3/slack-webhook --query 'length(SecretString)'` | AWSCURRENT, length > 0 |
 | PR trail | — | #40 AMP; #41/#42 bootstrap IAM; terraform **#67** on `main` after bootstrap apply |
 
@@ -126,8 +127,10 @@ aws ecs update-service --cluster devops-g3 --service devops-g3-payments --force-
 ## Phase B1 — AMP + ADOT validation
 
 ```bash
+pip install boto3   # AMP query; after `aws login`, script exports CLI creds (or: pip install "botocore[crt]")
 export AWS_REGION=us-west-1
 export AMP_WORKSPACE_ID=ws-40261a89-bf51-45ee-a25b-e5fdfa21b69d
+export API_ENDPOINT="$(terraform -chdir=infra/envs/dev output -raw api_endpoint)"
 bash infra/scripts/b1-amp-validate.sh
 ```
 
@@ -145,7 +148,19 @@ Use **non-probe** routes for SLI-style traffic; `/health` and `/ready` are exclu
 |------|----------|------------|-------------------|-------|
 | | | | | |
 
-**Troubleshooting:** empty query → task def + ADOT logs; 403 on query → operator IAM for AMP query; edge 404 → web/routing vs smoke contract.
+**Troubleshooting:** empty `count({__name__=~".+"})` → ADOT still on stock config (no AMP remote write); empty RED only → probe/k6 paths or wait export interval; SigV4 403 with signature message → fixed in `amp_promql_query.py` (`%20` query encoding); edge 404 → routing vs smoke contract.
+
+**After ADOT AMP fix (merge + apply):**
+
+```bash
+aws codebuild start-build --project-name devops-g3-adot-mirror   # or pipeline mirror-adot stage
+cd infra/envs/dev && terraform apply   # task def: tillflow-collector + new adot tag
+for s in web pos payments commission; do
+  aws ecs update-service --cluster devops-g3 --service "devops-g3-${s}" --force-new-deployment
+done
+sleep 45
+python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" 'count({__name__=~".+"})'
+```
 
 ---
 

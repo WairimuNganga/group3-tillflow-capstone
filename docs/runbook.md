@@ -34,11 +34,12 @@ Terraform creates the private `devops-g3/adot` ECR repository and the
 the first action in `BuildScanPush`; the four service builds start only after
 that action succeeds.
 
-`mirror-adot` checks for immutable tag `v0.43.3` in private ECR:
+`mirror-adot` checks for the immutable ADOT tag in private ECR (see
+`adot_image_tag` in `infra/envs/dev/main.tf`, e.g. `v0.43.3-tillflow1`):
 
 - If the image exists, it is reused and nothing is pushed.
-- If the repository is empty after a rebuild, CodeBuild pulls the pinned ARM64
-  ADOT image from public ECR and pushes it into the private repository.
+- Otherwise CodeBuild `docker build`s `infra/adot/Dockerfile` (upstream ADOT +
+  `tillflow-collector.yaml` for AMP remote write) and pushes to private ECR.
 
 This guarantees that ECS can pull the sidecar from private ECR before service
 deployment begins.
@@ -52,7 +53,7 @@ Source -> BuildScanPush (mirror-adot -> four service builds) -> DeployEcs -> Smo
 The action is visible in AWS Console under CodePipeline ->
 `devops-g3-pipeline` -> `BuildScanPush` -> `mirror-adot`. Its logs are in the
 `devops-g3-adot-mirror` CodeBuild project. A successful run logs either
-`Reusing existing ADOT mirror` or `Mirroring ... to .../devops-g3/adot:v0.43.3`.
+`Reusing existing ADOT mirror` or `Building .../devops-g3/adot:<tag>`.
 
 #### Manual recovery procedure
 
@@ -70,7 +71,7 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 SOURCE_IMAGE="public.ecr.aws/aws-observability/aws-otel-collector@sha256:8aa9ea5f67b8d318f7d6af24677e3c70f7098bc0631147cb5fa91addbe980b06"
 DESTINATION_REPOSITORY="devops-g3/adot"
-DESTINATION_TAG="v0.43.3"
+DESTINATION_TAG="v0.43.3-tillflow1"
 DESTINATION_IMAGE="${REGISTRY}/${DESTINATION_REPOSITORY}:${DESTINATION_TAG}"
 
 aws ecr describe-repositories \
@@ -84,8 +85,12 @@ else
   aws ecr get-login-password --region "${AWS_REGION}" \
   | docker login --username AWS --password-stdin "${REGISTRY}"
 
-  docker pull --platform linux/arm64 "${SOURCE_IMAGE}"
-  docker tag "${SOURCE_IMAGE}" "${DESTINATION_IMAGE}"
+  docker build \
+    --platform linux/arm64 \
+    --build-arg "SOURCE_IMAGE=${SOURCE_IMAGE}" \
+    -f infra/adot/Dockerfile \
+    -t "${DESTINATION_IMAGE}" \
+    infra/adot
   docker push "${DESTINATION_IMAGE}"
 fi
 ```
@@ -95,7 +100,7 @@ Verify the private image and its digest:
 ```bash
 aws ecr describe-images \
   --repository-name devops-g3/adot \
-  --image-ids imageTag=v0.43.3 \
+  --image-ids imageTag=v0.43.3-tillflow1 \
   --query 'imageDetails[0].{tags:imageTags,digest:imageDigest,pushedAt:imagePushedAt}' \
   --output table
 ```
@@ -103,7 +108,7 @@ aws ecr describe-images \
 Expected destination:
 
 ```text
-240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3
+240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow1
 ```
 
 After manual recovery, retry the failed `mirror-adot` action or start a new

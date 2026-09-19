@@ -6,6 +6,18 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 REGION="${AWS_REGION:-us-west-1}"
 WORKSPACE_ID="${AMP_WORKSPACE_ID:-ws-40261a89-bf51-45ee-a25b-e5fdfa21b69d}"
 
+if ! python3 -c "import boto3" 2>/dev/null; then
+  echo "AMP query needs boto3: pip install boto3  (or: deactivate and use system python3-boto3)" >&2
+  exit 1
+fi
+
+# boto3 + `aws login` needs botocore[crt] unless we pass exported session keys into Python.
+if [[ -z "${AWS_ACCESS_KEY_ID:-}" ]] && command -v aws >/dev/null 2>&1; then
+  if creds="$(aws configure export-credentials --format env 2>/dev/null)"; then
+    eval "$creds"
+  fi
+fi
+
 echo "== Edge probe (synthetic traffic) =="
 bash "${ROOT}/infra/scripts/reliability-edge-probe.sh"
 
@@ -22,4 +34,4 @@ for svc in web payments pos; do
   query "sum(${svc}_requests_total) or vector(0)" | head -20
 done
 
-echo "B1 script finished — inspect JSON above; non-empty result[] means series reached AMP."
+echo "B1 script finished — look for non-zero values in result[] (or vector(0) placeholder when no series yet)."

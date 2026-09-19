@@ -46,9 +46,9 @@ variable "adot_image" {
 }
 
 variable "adot_config_file" {
-  description = "Built-in ADOT config to run."
+  description = "ADOT config under /etc/ecs/ in the mirrored sidecar image."
   type        = string
-  default     = "ecs-default-config.yaml"
+  default     = "tillflow-collector.yaml"
 }
 
 variable "adot_container_user" {

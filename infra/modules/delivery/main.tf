@@ -229,7 +229,7 @@ resource "aws_codebuild_project" "image" {
 
 resource "aws_codebuild_project" "adot_mirror" {
   name          = "${var.name_prefix}-adot-mirror"
-  description   = "Mirror the pinned ARM64 ADOT collector into private ECR"
+  description   = "Build private ADOT image (upstream pin + TillFlow AMP config)"
   service_role  = aws_iam_role.codebuild.arn
   build_timeout = 15
 
