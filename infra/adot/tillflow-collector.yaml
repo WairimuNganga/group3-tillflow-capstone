@@ -1,6 +1,8 @@
 # TillFlow ADOT config (ECS sidecar). Baked into the private ADOT ECR image.
 # Metrics: OTLP -> AMP remote write (AWS_PROMETHEUS_ENDPOINT on the task).
 # Traces: OTLP -> X-Ray with tail sampling (ADR-008 amendment).
+#
+# ADOT v0.41+ requires ${env:VAR} for ECS task environment (not ${VAR}).
 
 receivers:
   otlp:
@@ -9,6 +11,8 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+  awsecscontainermetrics:
+    collection_interval: 20s
 
 processors:
   batch:
@@ -29,19 +33,20 @@ processors:
 
 exporters:
   awsxray:
-    region: ${AWS_REGION}
+    region: ${env:AWS_REGION}
   prometheusremotewrite:
-    endpoint: ${AWS_PROMETHEUS_ENDPOINT}
+    endpoint: ${env:AWS_PROMETHEUS_ENDPOINT}
     auth:
       authenticator: sigv4auth
+    resource_to_telemetry_conversion:
+      enabled: true
 
-# sigv4auth: AMP remote write requires SigV4 (task role needs aps:RemoteWrite).
 extensions:
   health_check:
     endpoint: localhost:13133
   sigv4auth:
     service: aps
-    region: ${AWS_REGION}
+    region: ${env:AWS_REGION}
 
 service:
   extensions: [health_check, sigv4auth]
@@ -52,5 +57,9 @@ service:
       exporters: [awsxray]
     metrics:
       receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+    metrics/ecs:
+      receivers: [awsecscontainermetrics]
       processors: [batch]
       exporters: [prometheusremotewrite]
