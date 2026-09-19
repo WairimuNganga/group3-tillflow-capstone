@@ -33,3 +33,9 @@ variable "slack_reader_role_arns" {
   type    = list(string)
   default = []
 }
+
+variable "grafana_reader_role_arns" {
+  description = "Grafana task role only — admin password and optional alert secrets."
+  type        = list(string)
+  default     = []
+}

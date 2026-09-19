@@ -9,9 +9,9 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] Commits / PRs — Phase A + AMP: #40, #41, #42; bootstrap IAM applied locally 2026-09-19
 - [x] Tests — `services/_shared/tests/otel/`; `terraform test` in `infra/envs/dev`
 - [x] B0 runtime — AMP ACTIVE, ADOT remote-write URL, Slack secret value set
-- [ ] B1 — AMP query after traffic (record in §B1)
-- [ ] B3 — edge probe + k6 summaries (record in §B3; scripts: smoke/baseline/soak/spike — [how-to-reproduce.md](./how-to-reproduce.md))
-- [ ] B2 — Grafana ECS (Platform) + dashboard import from `infra/grafana/dashboards/`
+- [x] B1 — AMP query after traffic (record in §B1)
+- [x] B3 — edge probe + k6 smoke (2026-09-19); baseline/soak/spike optional — [k6-analysis.md](./k6-analysis.md)
+- [ ] B2 — Grafana ECS (Platform) + dashboard import from `infra/grafana/dashboards/` (Minage: JSON + import; Lwam: ECS URL)
 
 ## Phase status
 
@@ -19,9 +19,9 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 |-------|--------|-------------------|
 | A — instrumentation | Local + code done | §Phase A, §Telemetry walkthrough |
 | B0 — align (AMP, ADOT, Slack) | Done in AWS | §Phase B0 |
-| B1 — metrics in AMP | Scripts ready | §Phase B1 |
-| B2 — Grafana + dashboards | JSON in repo; ECS = Lwam | §Phase B2 |
-| B3 — probe + k6 | Scaffold in repo | §Phase B3 |
+| B1 — metrics in AMP | Verified 2026-09-19 | §Phase B1 |
+| B2 — Grafana + dashboards | JSON in repo; import when URL live | §Phase B2 |
+| B3 — probe + k6 | Smoke done 2026-09-19 | §Phase B3 |
 
 **Concurrency:** B1 (Minage, after traffic), B2b dashboard JSON (Minage now), B2a Grafana ECS (Lwam), B3 probe/k6 (Minage). Alert rules need B1 + B2 wired to `devops-g3/slack-webhook`.
 
@@ -91,7 +91,7 @@ aws logs tail /devops-g3/payments --since 10m --filter-pattern adot
 - [x] POS + Payments: `setup_telemetry` + `instrument_fastapi`
 - [x] Probe routes excluded from RED (tests)
 - [x] ADR-008 amendment; local collector `tail_sampling`
-- [ ] Custom ADOT config on ECS (`infra/adot/collector-config.reference.yaml`) — Platform
+- [x] Custom ADOT config on ECS (`infra/adot/tillflow-collector.yaml` → ECR **tillflow4**)
 - [ ] End-to-end AWS trace sale → payment → callback — after product deploy
 
 ---
@@ -113,7 +113,7 @@ aws logs tail /devops-g3/payments --since 10m --filter-pattern adot
 |-------|---------|---------------------|
 | AMP workspace | `aws amp list-workspaces --region us-west-1 --output table` | **`devops-g3`**, ACTIVE, `ws-40261a89-bf51-45ee-a25b-e5fdfa21b69d` |
 | ADOT env | `aws ecs describe-task-definition --task-definition devops-g3-payments --query '...adot...environment'` | `AWS_PROMETHEUS_ENDPOINT` → workspace `/api/v1/remote_write` |
-| ADOT → AMP | Sidecar `--config=/etc/ecs/tillflow-collector.yaml` in image `devops-g3/adot:v0.43.3-tillflow1` | Replaces stock `ecs-default-config` (EMF-only metrics). **Apply PR + mirror build + ECS rollout.** |
+| ADOT → AMP | Sidecar `tillflow-collector.yaml` in `devops-g3/adot:v0.43.3-tillflow4` | SigV4 + `${env:AWS_*}` (#46, #47); ECS container metrics + OTLP pipelines. **Supersedes tillflow1–3.** |
 | Slack | `aws secretsmanager get-secret-value --secret-id devops-g3/slack-webhook --query 'length(SecretString)'` | AWSCURRENT, length > 0 |
 | PR trail | — | #40 AMP; #41/#42 bootstrap IAM; terraform **#67** on `main` after bootstrap apply |
 
@@ -146,23 +146,37 @@ Use **non-probe** routes for SLI-style traffic; `/health` and `/ready` are exclu
 
 | Date | Operator | Edge probe | AMP series visible | Notes |
 |------|----------|------------|-------------------|-------|
-| | | | | |
+| 2026-09-19 | Minage | OK (`reliability-edge-probe.sh`) | **Yes** — `count({__name__=~".+"})` = **208** | ADOT **tillflow4** on all services; `ecs_task_*` in AMP; PR **#46** (SigV4 + pipeline `ADOT_IMAGE_TAG`), **#47** (`${env:...}` + `awsecscontainermetrics`). |
 
-**Troubleshooting:** empty `count({__name__=~".+"})` → ADOT still on stock config (no AMP remote write); empty RED only → probe/k6 paths or wait export interval; SigV4 403 with signature message → fixed in `amp_promql_query.py` (`%20` query encoding); edge 404 → routing vs smoke contract.
-
-**After ADOT AMP fix (merge + apply):**
+**Verification commands (2026-09-19, after apply green → CodePipeline Release change → tillflow4 in ECR):**
 
 ```bash
-# ADOT mirror is CodePipeline-only (not `codebuild start-build`):
-aws codepipeline start-pipeline-execution --name devops-g3-pipeline
-# Or Console: CodePipeline → devops-g3-pipeline → Release change (runs mirror-adot first).
-cd infra/envs/dev && terraform apply   # task def: tillflow-collector + new adot tag
-for s in web pos payments commission; do
-  aws ecs update-service --cluster devops-g3 --service "devops-g3-${s}" --force-new-deployment
-done
-sleep 45
+export AWS_REGION=us-west-1
+export AMP_WORKSPACE_ID=ws-40261a89-bf51-45ee-a25b-e5fdfa21b69d
+export API_ENDPOINT="$(terraform -chdir=infra/envs/dev output -raw api_endpoint)"
+
+aws ecr describe-images --repository-name devops-g3/adot --image-ids imageTag=v0.43.3-tillflow4 \
+  --query 'imageDetails[0].imagePushedAt' --output text
+# 2026-09-19T23:02:27+03:00
+
+# PRIMARY task defs: web :57, pos/payments :55, commission :56 → adot:v0.43.3-tillflow4
+
+bash infra/scripts/reliability-edge-probe.sh
+curl -sS -o /dev/null -w "%{http_code}\n" "${API_ENDPOINT%/}/demo/boom"   # 500 (counted route, not probe)
+
+sleep 90
 python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" 'count({__name__=~".+"})'
+# result value "208"
+
+python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" '{__name__=~"ecs_task_.*"}'
+# e.g. ecs_task_cpu_usage_usermode_Nanoseconds (payments task, devops-g3 cluster)
 ```
+
+**B1 script note:** `b1-amp-validate.sh` uses `sum({svc}_requests_total) or vector(0)` — **"0" with empty `metric` is not proof of RED series.** Probes are excluded from RED; `{service}_requests_total` was still empty in PromQL after `/demo/boom` on this run (OTLP app metrics follow-up). **B1 ingest gate:** non-empty `count({__name__=~".+"})` and `ecs_task_*` remote write.
+
+**Ops note:** On infra merges, run **terraform apply (dev) before** (or immediately then) **CodePipeline Release change**, so `mirror-adot` builds the new `adot_image_tag` (e.g. tillflow4); otherwise ECR keeps the previous tag while Terraform points at the new one.
+
+**Troubleshooting:** empty `count({__name__=~".+"})` → wrong/missing ADOT image, `${VAR}` vs `${env:VAR}` on ADOT ≥0.41, or apply/pipeline race; empty RED only → probe paths, no counted traffic, or OTLP metric naming; SigV4 403 on **query** → IAM/`amp_promql_query.py` encoding.
 
 ---
 
@@ -170,26 +184,61 @@ python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" 'count({__name__=~
 
 Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafana/provisioning/datasources/amp.yaml.example` · README: `infra/grafana/README.md`.
 
-**Platform:** Grafana on ECS (private, auth). **Reliability:** import JSON; alert rules → Slack secret (see [runbook § Observability alerts](../../docs/runbook.md)).
+**Platform:** Grafana on ECS (private, auth) — **Lwam**. **Reliability (Minage):** AMP datasource + import dashboards; alert rules → Slack secret (see [runbook § Observability alerts](../../docs/runbook.md)).
+
+### B2 checklist (run in parallel with B3 — no k6 in this terminal)
+
+- [ ] AMP query URL: `terraform -chdir=infra/envs/dev output amp_prometheus_endpoint`
+- [ ] Grafana → Prometheus datasource (SigV4, `us-west-1`)
+- [ ] Import `web-service-overview.json`, `payments-service-overview.json`
+- [ ] Screenshot or note: panel loads (RED may be empty until OTLP RED series exist; `ecs_task_*` in AMP confirms datasource)
+
+### Recorded run
+
+| Date | Grafana URL | Dashboards imported | AMP datasource OK | Notes |
+|------|-------------|---------------------|---------------------|-------|
+| | | | | |
 
 ---
 
 ## Phase B3 — Synthetic probe + k6
 
+Edge probe **passed 2026-09-19** (same session as B1 tillflow4 verification). Full k6 matrix: [how-to-reproduce.md](./how-to-reproduce.md) · analysis: [k6-analysis.md](./k6-analysis.md).
+
+**Run B3 while doing B2** (Terminal A = k6, Terminal B = Grafana UI):
+
 ```bash
+export AWS_REGION=us-west-1
 export API_ENDPOINT="$(terraform -chdir=infra/envs/dev output -raw api_endpoint)"
 bash infra/scripts/reliability-edge-probe.sh
-k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
-# baseline / soak: see evidence/reliability/how-to-reproduce.md
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js | tee evidence/reliability/k6-smoke.log
+```
+
+Longer runs (off-hours; do not overlap with `spike.js`):
+
+```bash
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js | tee evidence/reliability/k6-baseline.log
+k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
 
 Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).
 
 ### Checklist
 
-- [ ] Edge probe output (commands + OK lines, no secrets)
-- [ ] k6 smoke thresholds pass
-- [ ] Spike summary pasted below when run
+- [x] Edge probe output (2026-09-19 — OK /health, /ready)
+- [x] k6 smoke thresholds pass — 0% failed, p(95)=287.6ms, checks 100%; log `evidence/reliability/k6-smoke.log`
+- [ ] baseline + soak (optional G3 envelope; update k6-analysis table)
+- [ ] Spike summary when run
+
+### Recorded smoke run (2026-09-19)
+
+| Metric | Value |
+|--------|-------|
+| Script | `reliability/k6/smoke.js` |
+| VUs / duration | 2 / 30s |
+| Thresholds | `http_req_failed` ✓ rate&lt;0.05; `http_req_duration` ✓ p(95)&lt;2000ms |
+| http_reqs | 78 (~2.48/s) |
+| Checks | health 2xx, ready 2xx — all passed |
 
 ---
 
@@ -260,7 +309,8 @@ instrument_fastapi(app, service_name="pos")
 ### Still open (telemetry area)
 
 - [x] ADR-008 amendment; B0 AMP + ADOT endpoint
-- [ ] Mount `infra/adot/collector-config.reference.yaml` on ECS (tail_sampling)
+- [x] ADOT tillflow image on ECS (AMP remote write + tail_sampling in baked config)
+- [ ] Non-zero `{service}_requests_total` in AMP after counted edge traffic (OTLP follow-up)
 - [ ] DB driver spans when driver chosen
 - [ ] Private Grafana operator access (G0 feedback)
 - [ ] Live alert rules + k6 envelope evidence

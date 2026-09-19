@@ -32,8 +32,18 @@ output "service_containers" {
 }
 
 output "services_with_internet_egress" {
-  description = "Should be exactly [payments] (threat model T2.4 / AR-7)."
-  value       = ["payments"]
+  description = "payments (Daraja) and grafana (AMP query API). Threat model T2.4 / AR-7."
+  value       = ["payments", "grafana"]
+}
+
+output "grafana_url" {
+  description = "Public Grafana UI (admin auth; anonymous disabled)."
+  value       = "${trimsuffix(module.apigw.api_endpoint, "/")}/grafana/"
+}
+
+output "grafana_admin_secret_arn" {
+  description = "Populate with a plain-string password before the first Grafana login."
+  value       = module.secrets.secret_arns["grafana-admin"]
 }
 
 output "db_proxy_endpoint" {

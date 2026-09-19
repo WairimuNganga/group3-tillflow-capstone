@@ -289,6 +289,62 @@ resource "aws_codebuild_project" "adot_mirror" {
   }
 }
 
+resource "aws_codebuild_project" "grafana_image" {
+  name          = "${var.name_prefix}-grafana-build"
+  description   = "Build private Grafana image (TillFlow AMP provisioning + dashboards)"
+  service_role  = aws_iam_role.codebuild.arn
+  build_timeout = 15
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.codebuild_image
+    type                        = "ARM_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "GRAFANA_REPOSITORY"
+      value = var.grafana_repository_name
+    }
+
+    environment_variable {
+      name  = "GRAFANA_IMAGE_TAG"
+      value = var.grafana_image_tag
+    }
+
+    environment_variable {
+      name  = "GRAFANA_VERSION"
+      value = var.grafana_version
+    }
+
+    environment_variable {
+      name  = "IMAGE_PLATFORM"
+      value = "linux/arm64"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspecs/build-grafana.yml"
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/${var.name_prefix}/codebuild/grafana"
+      stream_name = "image"
+    }
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-grafana-build"
+    service = "grafana"
+  }
+}
+
 resource "aws_codebuild_project" "smoke" {
   name          = "${var.name_prefix}-smoke"
   description   = "Scale ECS services after image deploy and run smoke checks"
@@ -451,6 +507,7 @@ data "aws_iam_policy_document" "codepipeline" {
       [for p in aws_codebuild_project.image : p.arn],
       [
         aws_codebuild_project.adot_mirror.arn,
+        aws_codebuild_project.grafana_image.arn,
         aws_codebuild_project.pos_migrations.arn,
         aws_codebuild_project.smoke.arn,
       ],
@@ -551,6 +608,20 @@ resource "aws_codepipeline" "this" {
 
       configuration = {
         ProjectName = aws_codebuild_project.adot_mirror.name
+      }
+    }
+
+    action {
+      name            = "build-grafana"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.grafana_image.name
       }
     }
 
