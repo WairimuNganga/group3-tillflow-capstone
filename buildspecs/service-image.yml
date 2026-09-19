@@ -25,7 +25,7 @@ phases:
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_REPO="${NAME_PREFIX}/${SERVICE_NAME}"
       - REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-      - ADOT_IMAGE_TAG="${ADOT_IMAGE_TAG:-v0.43.3-tillflow1}"
+      - ADOT_IMAGE_TAG="${ADOT_IMAGE_TAG:?Set ADOT_IMAGE_TAG on the CodeBuild project (infra/modules/delivery)}"
       - ADOT_IMAGE_URI="${REGISTRY}/${NAME_PREFIX}/adot:${ADOT_IMAGE_TAG}"
       - IMAGE_TAG=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-dev}" | cut -c1-40)
       - IMAGE_URI="${REGISTRY}/${ECR_REPO}:${IMAGE_TAG}"
