@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "task_assume" {
 
 resource "aws_iam_role" "task" {
   name               = "${var.name_prefix}-grafana-task"
-  description        = "Grafana task role - AMP query and optional alert secrets"
+  description        = "Grafana task role — AMP query and optional alert secrets"
   assume_role_policy = data.aws_iam_policy_document.task_assume.json
 
   tags = {
