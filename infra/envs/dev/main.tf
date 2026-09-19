@@ -172,8 +172,9 @@ module "alb" {
       path_patterns = ["/api/payments/*", "/callback/*"]
     }
     grafana = {
-      port          = 3000
-      health_path   = "/grafana/api/health"
+      port = 3000
+      # Subpath URL /grafana/api/health returns 301; ALB hits the task directly on :3000.
+      health_path   = "/api/health"
       priority      = 280
       path_patterns = ["/grafana", "/grafana/*"]
     }
