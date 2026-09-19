@@ -18,7 +18,7 @@ terraform -chdir=infra/envs/dev output grafana_url grafana_admin_secret_arn amp_
      --secret-string 'choose-a-strong-password'
    ```
 
-2. **Grafana image** — run the delivery pipeline (or CodeBuild `devops-g3-grafana-build`) so `11.4.0-tillflow1` exists in ECR before the ECS service can stay healthy.
+2. **Grafana image** — run the delivery pipeline (or CodeBuild `devops-g3-grafana-build`) so the pinned `grafana_image_tag` in `infra/envs/dev/main.tf` exists in ECR before the ECS service can stay healthy.
 
 3. Open **`grafana_url`** (must be `…/v1/grafana/` — not a URL with repeated `/grafana/` segments), sign in as `admin`, confirm **Connections → Data sources → AMP** (SigV4, provisioned at task start).
 
@@ -34,9 +34,27 @@ terraform -chdir=infra/envs/dev output grafana_url grafana_admin_secret_arn amp_
 
 Dashboards are baked into the ECR image and loaded from `/var/lib/grafana/dashboards` (uid **AMP**).
 
-## Alerts → Slack
+## Phase E — Alerts → Slack
 
-Alert rules reference panels here; webhook lives in Secrets Manager `devops-g3/slack-webhook` (B0). The Grafana task role may read that secret for provisioned contact points. See [docs/runbook.md](../../docs/runbook.md#observability-alerts).
+**Secret:** `devops-g3/slack-webhook` (plain-string incoming webhook URL, set in B0).
+
+**Provisioned in the image** (after `11.4.0-tillflow2`+):
+
+| File | Purpose |
+|------|---------|
+| [provisioning/alerting/rules.yaml](./provisioning/alerting/rules.yaml) | Runbook starters: PaymentsHigh5xxRate, PaymentsLatencyP95, EdgeProbeFailed (AMP count proxy) |
+| [provisioning/alerting/policies.yaml](./provisioning/alerting/policies.yaml) | Default route → `slack-tillflow` |
+| [docker-entrypoint.sh](./docker-entrypoint.sh) | Writes `contact-points.yaml` from env `SLACK_WEBHOOK_URL` (injected by ECS from Secrets Manager) |
+
+**Deploy:** bump `grafana_image_tag` → **terraform apply (dev)** → CodePipeline **Release change** (`build-grafana`) → ECS rolls to new task def (Terraform).
+
+**Verify:**
+
+1. **Alerting → Contact points → slack-tillflow → Test** (should post to Slack).
+2. **Alerting → Alert rules → TillFlow Alerts** — three rules; RED rules may show **No data** until OTLP metrics exist.
+3. Record test in [evidence/reliability/reliability-and-operations.md](../../evidence/reliability/reliability-and-operations.md) §Phase E.
+
+See [docs/runbook.md](../../docs/runbook.md#observability-alerts).
 
 ## Bump image tag
 
