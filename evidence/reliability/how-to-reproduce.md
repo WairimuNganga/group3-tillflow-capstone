@@ -25,7 +25,7 @@ bash infra/scripts/b1-amp-validate.sh
 python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" 'count({__name__=~".+"})'
 ```
 
-## k6 (Phase D)
+## k6 (Phase B3 / D)
 
 ```bash
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
@@ -36,13 +36,41 @@ k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.j
 
 Analysis template: [k6-analysis.md](./k6-analysis.md).
 
+## B2 + B3 in parallel (same session)
+
+**Terminal A — B3 load (sequential: smoke first, then long runs):**
+
+```bash
+cd ~/capstone/group3-tillflow-capstone
+export AWS_REGION=us-west-1
+export API_ENDPOINT="$(terraform -chdir=infra/envs/dev output -raw api_endpoint)"
+bash infra/scripts/reliability-edge-probe.sh
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js | tee evidence/reliability/k6-smoke.log
+# Optional overnight / off-hours:
+# k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js | tee evidence/reliability/k6-baseline.log
+# k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
+```
+
+**Terminal B — B2 Grafana (after Terraform apply + pipeline `build-grafana`):**
+
+```bash
+cd ~/capstone/group3-tillflow-capstone
+terraform -chdir=infra/envs/dev output grafana_url amp_prometheus_endpoint grafana_admin_secret_arn
+# Set admin password (once): aws secretsmanager put-secret-value --secret-id <grafana_admin_secret_arn> --secret-string '…'
+# Open grafana_url → login admin → Connections → AMP should already exist (uid AMP)
+# Dashboards → TillFlow folder (provisioned from image) or re-import JSON from infra/grafana/dashboards/
+# Panels may show no RED until OTLP app metrics land in AMP; ecs_task_* still validates datasource.
+```
+
+Do **not** run `spike.js` at the same time as baseline/soak (T1.3 — notify team, run alone).
+
 ## External synthetics (Phase C — Terraform TODO)
 
 Wire CloudWatch Synthetics canary to `$API_ENDPOINT/health` (1-minute schedule). Until TF lands, edge probe script is the manual stand-in.
 
 ## Grafana (Phase B)
 
-After Grafana ECS is live: import JSON from `infra/grafana/dashboards/`, AMP datasource per [infra/grafana/README.md](../../infra/grafana/README.md).
+Terraform module `grafana-service` + ALB `/grafana/*`. See [infra/grafana/README.md](../../infra/grafana/README.md).
 
 ## Drill 3 (Phase G)
 

@@ -1,0 +1,43 @@
+version: 0.2
+
+# Private Grafana image: upstream pin + TillFlow AMP provisioning and dashboards.
+
+env:
+  shell: bash
+
+phases:
+  build:
+    commands:
+      - |
+        set -euo pipefail
+
+        AWS_REGION="${AWS_DEFAULT_REGION:-us-west-1}"
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        DESTINATION_IMAGE="${REGISTRY}/${GRAFANA_REPOSITORY}:${GRAFANA_IMAGE_TAG}"
+
+        if aws ecr describe-images \
+          --repository-name "${GRAFANA_REPOSITORY}" \
+          --image-ids imageTag="${GRAFANA_IMAGE_TAG}" >/dev/null 2>&1; then
+          echo "Reusing existing Grafana image ${DESTINATION_IMAGE}"
+        else
+          echo "Building ${DESTINATION_IMAGE}"
+
+          aws ecr get-login-password --region "${AWS_REGION}" \
+          | docker login --username AWS --password-stdin "${REGISTRY}"
+
+          docker build \
+            --platform "${IMAGE_PLATFORM}" \
+            --build-arg "GRAFANA_VERSION=${GRAFANA_VERSION}" \
+            -f infra/grafana/Dockerfile \
+            -t "${DESTINATION_IMAGE}" \
+            infra/grafana
+
+          docker push "${DESTINATION_IMAGE}"
+        fi
+
+        aws ecr describe-images \
+          --repository-name "${GRAFANA_REPOSITORY}" \
+          --image-ids imageTag="${GRAFANA_IMAGE_TAG}" \
+          --query 'imageDetails[0].{tags:imageTags,digest:imageDigest,pushedAt:imagePushedAt}' \
+          --output table

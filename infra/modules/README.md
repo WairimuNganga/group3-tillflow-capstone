@@ -13,6 +13,7 @@
 | `redis` | ElastiCache Valkey for cache-aside |
 | `messaging` | SQS + DLQ pairs and the EventBridge daily-close schedule |
 | `amp` | Amazon Managed Prometheus workspace (metrics backend for ADOT + Grafana) |
+| `grafana-service` | Self-hosted Grafana on ECS Fargate (ADR-001 Option B), ALB subpath `/grafana/` |
 
 Each module is consumed only by `envs/dev`. Adding a new service means adding
 it to `local.services` in the root module — the SG, task role, log group, ECR

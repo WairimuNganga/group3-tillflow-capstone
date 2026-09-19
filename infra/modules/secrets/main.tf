@@ -24,6 +24,10 @@ locals {
       description = "Slack incoming webhook for alerting. Never in Git, TF state, or build logs."
       readers     = var.slack_reader_role_arns
     }
+    grafana-admin = {
+      description = "Grafana administrator password (plain string). Populated out-of-band after apply."
+      readers     = var.grafana_reader_role_arns
+    }
   }
 
   db_proxy_secrets = {

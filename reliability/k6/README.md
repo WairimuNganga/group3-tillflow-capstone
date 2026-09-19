@@ -26,7 +26,7 @@ k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js
 ```
 
-## Soak (≥15m at moderate VUs)
+## Soak (≥18m at moderate VUs)
 
 ```bash
 k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
