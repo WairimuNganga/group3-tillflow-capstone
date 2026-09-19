@@ -47,7 +47,11 @@ locals {
       # Surfaced at /health so the post-deploy smoke check can assert that
       # what is running is what the pipeline built (ADR-009, T7.3).
       { name = "GIT_SHA", value = var.image_tag },
+      # Health + OTel resource attributes (ADR-008 / ADR-009). Image build also
+      # bakes GIT_COMMIT_SHA; task env keeps runtime aligned with SSM tag.
+      { name = "GIT_COMMIT_SHA", value = var.image_tag },
       { name = "IMAGE_DIGEST", value = coalesce(var.image_digest, "unset") },
+      { name = "TILLFLOW_ENVIRONMENT", value = var.environment },
       # OTLP to the sidecar on localhost — never straight to AMP (ADR-008).
       { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = "http://localhost:4317" },
       { name = "OTEL_SERVICE_NAME", value = var.service_name },
@@ -181,7 +185,7 @@ data "aws_iam_policy_document" "task" {
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
-    resources = ["*"]
+    resources = var.amp_workspace_arn != "" ? [var.amp_workspace_arn] : ["*"]
   }
 
   statement {

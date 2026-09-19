@@ -369,10 +369,12 @@ service is close to the golden-path app he needs for the first ECS deploy.
 
 ## 10. Still open in this area
 
-- **ADR-008 amendment** for the two sampling findings in §5 and for the
-  `/health`/`/ready` exclusion from the SLI denominators.
-- **Deployed ADOT sidecar config** — AMP remote-write, X-Ray, and the `tail_sampling`
-  policy that implements the always-sample-errors rule.
+- ~~**ADR-008 amendment** for the two sampling findings in §5 and for the
+  `/health`/`/ready` exclusion from the SLI denominators.~~ **Done:**
+  probes excluded in `TelemetryMiddleware`; local collector has `tail_sampling`.
+- **Deployed ADOT sidecar config** — stock `ecs-default-config.yaml` + AMP/X-Ray env
+  vars on the task. **`tail_sampling` for errors** is documented in
+  `infra/adot/collector-config.reference.yaml`; mounting it is a Platform task (Phase B).
 - **Database spans.** ADR-008 promises a child span per outbound call including DB
   queries. The Daraja and inter-service halves are covered; the Postgres driver can't
   be instrumented until a driver is chosen.

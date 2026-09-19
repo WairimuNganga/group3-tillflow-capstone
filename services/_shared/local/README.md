@@ -5,8 +5,14 @@ own instrumentation before any AWS infrastructure exists. **DRI: Minage.**
 
 ## Run it
 
+On **Intel/AMD** laptops, use amd64 images (compose sets `platform: linux/amd64`).
+If you previously pulled **arm64** images (same as ECS Fargate), run
+`docker compose down` then `docker compose pull` before `up -d`.
+
 ```bash
 cd services/_shared/local
+docker compose down
+docker compose pull
 docker compose up -d
 
 cd ..
