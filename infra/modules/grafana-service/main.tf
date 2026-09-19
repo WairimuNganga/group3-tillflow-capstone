@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "task_assume" {
 
 resource "aws_iam_role" "task" {
   name               = "${var.name_prefix}-grafana-task"
-  description        = "Grafana task role - AMP query and optional alert secrets"
+  description        = "Grafana task role — AMP query and optional alert secrets"
   assume_role_policy = data.aws_iam_policy_document.task_assume.json
 
   tags = {
@@ -165,6 +165,7 @@ resource "aws_ecs_task_definition" "this" {
       { name = "GF_SECURITY_ADMIN_USER", value = "admin" },
       { name = "GF_SERVER_SERVE_FROM_SUB_PATH", value = "true" },
       { name = "GF_SERVER_ROOT_URL", value = var.grafana_root_url },
+      { name = "GF_SERVER_ENFORCE_DOMAIN", value = "false" },
       { name = "GF_USERS_ALLOW_SIGN_UP", value = "false" },
       { name = "GF_LOG_MODE", value = "console" },
     ]

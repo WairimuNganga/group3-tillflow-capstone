@@ -42,13 +42,57 @@ resource "aws_apigatewayv2_integration" "alb" {
   # service routes such as /health and /ready continue to match.
   request_parameters = {
     "overwrite:path" = "$request.path"
-    # HTTP API stage (v1) is in the public URL but not in $request.path. Grafana
-    # needs this so root_url .../v1/grafana/ matches backend path /grafana/.
-    "append:header.x-forwarded-prefix" = "/${var.stage_name}"
   }
 
   payload_format_version = "1.0"
   timeout_milliseconds   = var.integration_timeout_ms
+}
+
+# Grafana: $request.path is /grafana/... (stage v1 is only in the public URL) but
+# GF_SERVER_ROOT_URL is .../v1/grafana/. Prepend /v1 on the ALB hop so paths match
+# and Grafana 10+ subpath redirects stop appending /grafana/ forever.
+resource "aws_apigatewayv2_integration" "alb_grafana" {
+  api_id             = aws_apigatewayv2_api.this.id
+  integration_type   = "HTTP_PROXY"
+  integration_method = "ANY"
+  integration_uri    = var.alb_listener_arn
+  connection_type    = "VPC_LINK"
+  connection_id      = aws_apigatewayv2_vpc_link.this.id
+
+  request_parameters = {
+    "overwrite:path" = "/${var.stage_name}/grafana/$request.path.proxy"
+  }
+
+  payload_format_version = "1.0"
+  timeout_milliseconds   = var.integration_timeout_ms
+}
+
+resource "aws_apigatewayv2_integration" "alb_grafana_root" {
+  api_id             = aws_apigatewayv2_api.this.id
+  integration_type   = "HTTP_PROXY"
+  integration_method = "ANY"
+  integration_uri    = var.alb_listener_arn
+  connection_type    = "VPC_LINK"
+  connection_id      = aws_apigatewayv2_vpc_link.this.id
+
+  request_parameters = {
+    "overwrite:path" = "/${var.stage_name}/grafana/"
+  }
+
+  payload_format_version = "1.0"
+  timeout_milliseconds   = var.integration_timeout_ms
+}
+
+resource "aws_apigatewayv2_route" "grafana_root" {
+  api_id    = aws_apigatewayv2_api.this.id
+  route_key = "ANY /grafana"
+  target    = "integrations/${aws_apigatewayv2_integration.alb_grafana_root.id}"
+}
+
+resource "aws_apigatewayv2_route" "grafana_proxy" {
+  api_id    = aws_apigatewayv2_api.this.id
+  route_key = "ANY /grafana/{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.alb_grafana.id}"
 }
 
 resource "aws_apigatewayv2_route" "proxy" {
