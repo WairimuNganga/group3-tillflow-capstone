@@ -10,7 +10,7 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] Tests — `services/_shared/tests/otel/`; `terraform test` in `infra/envs/dev`
 - [x] B0 runtime — AMP ACTIVE, ADOT remote-write URL, Slack secret value set
 - [ ] B1 — AMP query after traffic (record in §B1)
-- [ ] B3 — edge probe + k6 summaries (record in §B3)
+- [ ] B3 — edge probe + k6 summaries (record in §B3; scripts: smoke/baseline/soak/spike — [how-to-reproduce.md](./how-to-reproduce.md))
 - [ ] B2 — Grafana ECS (Platform) + dashboard import from `infra/grafana/dashboards/`
 
 ## Phase status
@@ -153,7 +153,9 @@ Use **non-probe** routes for SLI-style traffic; `/health` and `/ready` are exclu
 **After ADOT AMP fix (merge + apply):**
 
 ```bash
-aws codebuild start-build --project-name devops-g3-adot-mirror   # or pipeline mirror-adot stage
+# ADOT mirror is CodePipeline-only (not `codebuild start-build`):
+aws codepipeline start-pipeline-execution --name devops-g3-pipeline
+# Or Console: CodePipeline → devops-g3-pipeline → Release change (runs mirror-adot first).
 cd infra/envs/dev && terraform apply   # task def: tillflow-collector + new adot tag
 for s in web pos payments commission; do
   aws ecs update-service --cluster devops-g3 --service "devops-g3-${s}" --force-new-deployment
@@ -177,7 +179,8 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 ```bash
 export API_ENDPOINT="$(terraform -chdir=infra/envs/dev output -raw api_endpoint)"
 bash infra/scripts/reliability-edge-probe.sh
-k6 run reliability/k6/smoke.js    # see reliability/k6/README.md
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
+# baseline / soak: see evidence/reliability/how-to-reproduce.md
 ```
 
 Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).

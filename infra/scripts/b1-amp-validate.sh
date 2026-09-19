@@ -18,6 +18,11 @@ if [[ -z "${AWS_ACCESS_KEY_ID:-}" ]] && command -v aws >/dev/null 2>&1; then
   fi
 fi
 
+if [[ -z "${API_ENDPOINT:-}" ]] && command -v terraform >/dev/null 2>&1; then
+  API_ENDPOINT="$(terraform -chdir="${ROOT}/infra/envs/dev" output -raw api_endpoint 2>/dev/null || true)"
+  export API_ENDPOINT
+fi
+
 echo "== Edge probe (synthetic traffic) =="
 bash "${ROOT}/infra/scripts/reliability-edge-probe.sh"
 

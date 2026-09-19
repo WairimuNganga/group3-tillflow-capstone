@@ -35,7 +35,12 @@ exporters:
   prometheusremotewrite:
     endpoint: ${AWS_PROMETHEUS_ENDPOINT}
 
+extensions:
+  health_check:
+    endpoint: localhost:13133
+
 service:
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]

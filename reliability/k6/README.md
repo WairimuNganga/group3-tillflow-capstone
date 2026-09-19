@@ -17,13 +17,27 @@ Synthetic MSISDNs and Daraja **sandbox** only — never real subscriber numbers 
 ## Smoke (low rate)
 
 ```bash
-k6 run reliability/k6/smoke.js
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
+```
+
+## Baseline (stepped ramp ~14m)
+
+```bash
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js
+```
+
+## Soak (≥15m at moderate VUs)
+
+```bash
+k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
 
 ## Spike (brief burst — run manually, not in CI by default)
 
 ```bash
-k6 run reliability/k6/spike.js
+k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/spike.js
 ```
+
+Record results in [evidence/reliability/k6-analysis.md](../../evidence/reliability/k6-analysis.md).
 
 Metrics from k6 must not include raw MSISDNs or secrets in labels (T8.1).
