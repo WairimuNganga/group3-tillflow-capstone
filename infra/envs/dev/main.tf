@@ -18,7 +18,7 @@ locals {
   services = ["web", "pos", "payments", "commission"]
 
   # Bump when infra/adot/tillflow-collector.yaml changes (immutable ECR tag).
-  adot_image_tag = "v0.43.3-tillflow3"
+  adot_image_tag = "v0.43.3-tillflow4"
   # Pin the upstream multi-platform manifest; the mirror build selects the
   # ARM64 child image required by the Fargate task definitions.
   adot_source_image = "public.ecr.aws/aws-observability/aws-otel-collector@sha256:8aa9ea5f67b8d318f7d6af24677e3c70f7098bc0631147cb5fa91addbe980b06"
