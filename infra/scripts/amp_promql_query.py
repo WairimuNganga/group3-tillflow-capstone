@@ -13,21 +13,59 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
+import urllib.error
 import urllib.parse
+import urllib.request
 
 import boto3
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
+from botocore.exceptions import MissingDependencyException
+
+
+def _hydrate_credentials_from_aws_cli() -> None:
+    """Use `aws configure export-credentials` so boto3 avoids the login CRT provider."""
+    if os.environ.get("AWS_ACCESS_KEY_ID"):
+        return
+    try:
+        proc = subprocess.run(
+            ["aws", "configure", "export-credentials", "--format", "env"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:]
+        key, _, value = line.partition("=")
+        if key:
+            os.environ[key] = value.strip().strip('"')
 
 
 def query(workspace_id: str, promql: str, region: str | None = None) -> dict:
     region = region or os.environ.get("AWS_REGION", "us-west-1")
     base = f"https://aps-workspaces.{region}.amazonaws.com/workspaces/{workspace_id}"
-    url = f"{base}/api/v1/query?{urllib.parse.urlencode({'query': promql})}"
+    # SigV4 canonical query must use %20 for spaces, not + (default urlencode).
+    qs = urllib.parse.urlencode({"query": promql}, quote_via=urllib.parse.quote)
+    url = f"{base}/api/v1/query?{qs}"
 
+    _hydrate_credentials_from_aws_cli()
     session = boto3.Session()
-    creds = session.get_credentials()
+    try:
+        creds = session.get_credentials()
+    except MissingDependencyException:
+        raise SystemExit(
+            'AWS login in Python needs: pip install "botocore[crt]"\n'
+            "Or run: eval \"$(aws configure export-credentials --format env)\" then retry."
+        ) from None
     if creds is None:
         raise SystemExit("No AWS credentials (run aws login or set AWS_PROFILE).")
 
@@ -35,11 +73,25 @@ def query(workspace_id: str, promql: str, region: str | None = None) -> dict:
     SigV4Auth(creds.get_frozen_credentials(), "aps", region).add_auth(request)
     prepared = request.prepare()
 
-    import urllib.request
-
     req = urllib.request.Request(prepared.url, headers=dict(prepared.headers))
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode(errors="replace")[:500]
+        if exc.code == 403:
+            if "signature we calculated does not match" in body:
+                raise SystemExit(
+                    "AMP query returned 403 due to SigV4 signing mismatch (not IAM). "
+                    "Report this as a script bug.\n"
+                    f"Response: {body or exc.reason}"
+                ) from exc
+            raise SystemExit(
+                "AMP query returned 403 Forbidden — likely missing aps:QueryMetrics on "
+                f"workspace {workspace_id}.\n"
+                f"Response: {body or exc.reason}"
+            ) from exc
+        raise
 
 
 def main() -> None:

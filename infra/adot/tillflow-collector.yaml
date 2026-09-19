@@ -1,8 +1,6 @@
-# Reference copy — deployed config is tillflow-collector.yaml (baked into the
-# private ADOT ECR image via infra/adot/Dockerfile + buildspecs/mirror-adot.yml).
-#
-# Stock ecs-default-config.yaml sends metrics to CloudWatch EMF only; it does not
-# remote-write to AMP even when AWS_PROMETHEUS_ENDPOINT is set on the sidecar.
+# TillFlow ADOT config (ECS sidecar). Baked into the private ADOT ECR image.
+# Metrics: OTLP -> AMP remote write (AWS_PROMETHEUS_ENDPOINT on the task).
+# Traces: OTLP -> X-Ray with tail sampling (ADR-008 amendment).
 
 receivers:
   otlp:

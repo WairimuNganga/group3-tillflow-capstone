@@ -1,8 +1,8 @@
 version: 0.2
 
-# Mirrors the pinned ARM64 ADOT collector into private ECR before service
-# builds run. The destination repository is immutable, so an existing tag is
-# verified and reused instead of pushed again.
+# Builds a private ADOT image: pinned upstream collector + TillFlow config
+# (AMP remote write). The destination repository is immutable, so an existing
+# tag is verified and reused instead of pushed again.
 
 env:
   shell: bash
@@ -23,13 +23,18 @@ phases:
           --image-ids imageTag="${ADOT_IMAGE_TAG}" >/dev/null 2>&1; then
           echo "Reusing existing ADOT mirror ${DESTINATION_IMAGE}"
         else
-          echo "Mirroring ${ADOT_SOURCE_IMAGE} to ${DESTINATION_IMAGE}"
+          echo "Building ${DESTINATION_IMAGE} from ${ADOT_SOURCE_IMAGE}"
 
           aws ecr get-login-password --region "${AWS_REGION}" \
           | docker login --username AWS --password-stdin "${REGISTRY}"
 
-          docker pull --platform "${IMAGE_PLATFORM}" "${ADOT_SOURCE_IMAGE}"
-          docker tag "${ADOT_SOURCE_IMAGE}" "${DESTINATION_IMAGE}"
+          docker build \
+            --platform "${IMAGE_PLATFORM}" \
+            --build-arg "SOURCE_IMAGE=${ADOT_SOURCE_IMAGE}" \
+            -f infra/adot/Dockerfile \
+            -t "${DESTINATION_IMAGE}" \
+            infra/adot
+
           docker push "${DESTINATION_IMAGE}"
         fi
 
