@@ -33,7 +33,13 @@ exporters:
   prometheusremotewrite:
     endpoint: ${AWS_PROMETHEUS_ENDPOINT}
 
+# Required for ECS container healthCheck (/healthcheck) and app dependsOn: adot HEALTHY.
+extensions:
+  health_check:
+    endpoint: localhost:13133
+
 service:
+  extensions: [health_check]
   pipelines:
     traces:
       receivers: [otlp]

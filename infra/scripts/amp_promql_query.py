@@ -53,9 +53,9 @@ def _hydrate_credentials_from_aws_cli() -> None:
 def query(workspace_id: str, promql: str, region: str | None = None) -> dict:
     region = region or os.environ.get("AWS_REGION", "us-west-1")
     base = f"https://aps-workspaces.{region}.amazonaws.com/workspaces/{workspace_id}"
-    # SigV4 canonical query must use %20 for spaces, not + (default urlencode).
-    qs = urllib.parse.urlencode({"query": promql}, quote_via=urllib.parse.quote)
-    url = f"{base}/api/v1/query?{qs}"
+    url = f"{base}/api/v1/query"
+    # POST avoids SigV4/encoding bugs on regex queries (e.g. `.+` in label matchers).
+    body = urllib.parse.urlencode({"query": promql}, quote_via=urllib.parse.quote).encode()
 
     _hydrate_credentials_from_aws_cli()
     session = boto3.Session()
@@ -69,11 +69,21 @@ def query(workspace_id: str, promql: str, region: str | None = None) -> dict:
     if creds is None:
         raise SystemExit("No AWS credentials (run aws login or set AWS_PROFILE).")
 
-    request = AWSRequest(method="GET", url=url)
+    request = AWSRequest(
+        method="POST",
+        url=url,
+        data=body,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
     SigV4Auth(creds.get_frozen_credentials(), "aps", region).add_auth(request)
     prepared = request.prepare()
 
-    req = urllib.request.Request(prepared.url, headers=dict(prepared.headers))
+    req = urllib.request.Request(
+        prepared.url,
+        data=body,
+        headers=dict(prepared.headers),
+        method="POST",
+    )
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode())
@@ -91,7 +101,12 @@ def query(workspace_id: str, promql: str, region: str | None = None) -> dict:
                 f"workspace {workspace_id}.\n"
                 f"Response: {body or exc.reason}"
             ) from exc
-        raise
+        if exc.code == 404:
+            raise SystemExit(
+                f"AMP query returned 404 — check workspace id {workspace_id!r} and PromQL.\n"
+                f"Response: {body or exc.reason}"
+            ) from exc
+        raise SystemExit(f"AMP query HTTP {exc.code}: {body or exc.reason}") from exc
 
 
 def main() -> None:
