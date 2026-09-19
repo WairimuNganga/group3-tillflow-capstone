@@ -42,6 +42,9 @@ resource "aws_apigatewayv2_integration" "alb" {
   # service routes such as /health and /ready continue to match.
   request_parameters = {
     "overwrite:path" = "$request.path"
+    # HTTP API stage (v1) is in the public URL but not in $request.path. Grafana
+    # needs this so root_url .../v1/grafana/ matches backend path /grafana/.
+    "append:header.x-forwarded-prefix" = "/${var.stage_name}"
   }
 
   payload_format_version = "1.0"
