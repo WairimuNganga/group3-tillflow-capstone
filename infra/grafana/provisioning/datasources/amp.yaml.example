@@ -1,0 +1,14 @@
+# Copy to provisioning/datasources/amp.yaml on the Grafana ECS task (Platform).
+# Use terraform output amp_prometheus_endpoint for url (query base, not remote_write).
+
+apiVersion: 1
+datasources:
+  - name: AMP
+    type: prometheus
+    access: proxy
+    url: https://aps-workspaces.us-west-1.amazonaws.com/workspaces/WORKSPACE_ID
+    jsonData:
+      sigV4Auth: true
+      sigV4Region: us-west-1
+      sigV4AuthType: default
+    isDefault: true

@@ -381,6 +381,9 @@ data "aws_iam_policy_document" "ci_deploy" {
       "aps:TagResource",
       "aps:UntagResource",
       "aps:ListTagsForResource",
+      # AWS provider reads logging config after create/refresh (even when unset).
+      "aps:DescribeLoggingConfiguration",
+      "aps:UpdateLoggingConfiguration",
     ]
     resources = ["*"]
   }

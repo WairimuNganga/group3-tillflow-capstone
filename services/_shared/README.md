@@ -213,7 +213,7 @@ All importable from `tillflow_shared.otel`:
 [`local/README.md`](local/README.md) runs a collector, Prometheus, Grafana and Jaeger
 in Docker, and `examples/demo_service.py` exercises the library against them. Full
 walkthrough and the two open ADR-008 findings:
-[`evidence/reliability/telemetry-walkthrough.md`](../../evidence/reliability/telemetry-walkthrough.md).
+[`evidence/reliability/reliability-and-operations.md`](../../evidence/reliability/reliability-and-operations.md).
 
 ## Health routes (Wairimu)
 
