@@ -168,12 +168,19 @@ resource "aws_ecs_task_definition" "this" {
       { name = "GF_SERVER_ENFORCE_DOMAIN", value = "false" },
       { name = "GF_USERS_ALLOW_SIGN_UP", value = "false" },
       { name = "GF_LOG_MODE", value = "console" },
+      { name = "GF_UNIFIED_ALERTING_ENABLED", value = "true" },
     ]
 
-    secrets = [{
-      name      = "GF_SECURITY_ADMIN_PASSWORD"
-      valueFrom = var.admin_password_secret_arn
-    }]
+    secrets = [
+      {
+        name      = "GF_SECURITY_ADMIN_PASSWORD"
+        valueFrom = var.admin_password_secret_arn
+      },
+      {
+        name      = "SLACK_WEBHOOK_URL"
+        valueFrom = var.slack_webhook_secret_arn
+      },
+    ]
 
     healthCheck = {
       command     = ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1"]

@@ -72,6 +72,20 @@ Wire CloudWatch Synthetics canary to `$API_ENDPOINT/health` (1-minute schedule).
 
 Terraform module `grafana-service` + ALB `/grafana/*`. See [infra/grafana/README.md](../../infra/grafana/README.md).
 
+## Grafana alerts (Phase E)
+
+After `grafana_image_tag` **11.4.0-tillflow2** (or newer) is in ECR and ECS:
+
+```bash
+terraform -chdir=infra/envs/dev output grafana_url
+# Grafana UI → Alerting → Contact points → slack-tillflow → Test
+# Alerting → Alert rules → folder TillFlow Alerts (3 rules)
+aws secretsmanager get-secret-value --secret-id devops-g3/slack-webhook \
+  --query 'length(SecretString)' --output text   # must be > 0
+```
+
+Record results in [reliability-and-operations.md](./reliability-and-operations.md) §Phase E.
+
 ## Drill 3 (Phase G)
 
 Document timed steps here after execution (platform failure → alert → runbook → recovery).

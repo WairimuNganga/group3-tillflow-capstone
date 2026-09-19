@@ -1,0 +1,9 @@
+# Default notification policy — all provisioned rules notify Slack (contact point from entrypoint).
+apiVersion: 1
+policies:
+  - orgId: 1
+    receiver: slack-tillflow
+    group_by: ["alertname", "grafana_folder"]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h

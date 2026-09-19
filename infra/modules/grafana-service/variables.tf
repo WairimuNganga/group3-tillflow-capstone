@@ -25,6 +25,12 @@ variable "grafana_root_url" {
 }
 
 variable "admin_password_secret_arn" { type = string }
+
+variable "slack_webhook_secret_arn" {
+  description = "devops-g3/slack-webhook — plain-string incoming webhook URL for alerting."
+  type        = string
+}
+
 variable "readable_secret_arns" {
   type    = list(string)
   default = []

@@ -11,19 +11,38 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] B0 runtime — AMP ACTIVE, ADOT remote-write URL, Slack secret value set
 - [x] B1 — AMP query after traffic (record in §B1)
 - [x] B3 — edge probe + k6 smoke (2026-09-19); baseline/soak/spike optional — [k6-analysis.md](./k6-analysis.md)
-- [ ] B2 — Grafana ECS (Platform) + dashboard import from `infra/grafana/dashboards/` (Minage: JSON + import; Lwam: ECS URL)
+- [x] B2 — Grafana ECS + TillFlow dashboards (2026-09-20); AMP datasource + evidence row §B2
+- [ ] B2 follow-up — RED panels when OTLP metrics in AMP
+- [ ] E — Slack alerting provisioned (`11.4.0-tillflow2`); contact point test + evidence §Phase E
 
-## Phase status
+## Phases A–H (where we are)
+
+Letter phases map to this evidence pack and [how-to-reproduce.md](./how-to-reproduce.md). **G3/G4** in filenames = grading gates for load and resilience, not the same as letter **G**.
+
+| Phase | Scope | Status | Next action |
+|-------|--------|--------|-------------|
+| **A** | OTel instrumentation (shared lib, ADOT on ECS, local traces) | **Mostly done** — A1–A4 ✓; A5 E2E trace sale→callback open | Product path deploy + X-Ray trace capture for ADR-008 |
+| **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 UI live ✓** (RED empty) | Close B2 table; optional re-run AMP Explore `ecs_task_*` in Grafana |
+| **C** | External synthetics (CloudWatch canary on `/health`) | **Not started** (TF TODO) | Edge probe is stand-in until canary in Terraform |
+| **D** | k6 capacity envelope (**G3**) | **Smoke ✓**; baseline/soak/spike open | Off-hours: `baseline.js` / `soak.js`; fill [k6-analysis.md](./k6-analysis.md) |
+| **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **In progress** — rules in `infra/grafana/provisioning/alerting/` | Apply + pipeline + **Test contact point**; record §Phase E |
+| **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in repo**; traces partial | Export/screenshot dashboards; file trace IDs under `evidence/reliability/` |
+| **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Not recorded** | Execute Drill 3; document in how-to-reproduce §Drill 3 |
+| **H** | Resilience / rollback (**G4**, multi-AZ when enabled) | **Drill 4 log exists** in delivery evidence | Tie rollback rehearsal to reliability narrative if required |
+
+**You are here:** end of **Phase B** → start **E** (alerts) and **D** (k6 envelope) in parallel; **C** when Platform adds canary TF.
+
+## Phase status (detail)
 
 | Phase | Status | Where in this doc |
 |-------|--------|-------------------|
-| A — instrumentation | Local + code done | §Phase A, §Telemetry walkthrough |
+| A — instrumentation | Local + code done; AWS E2E trace open | §Phase A, §Telemetry walkthrough |
 | B0 — align (AMP, ADOT, Slack) | Done in AWS | §Phase B0 |
 | B1 — metrics in AMP | Verified 2026-09-19 | §Phase B1 |
-| B2 — Grafana + dashboards | JSON in repo; import when URL live | §Phase B2 |
-| B3 — probe + k6 | Smoke done 2026-09-19 | §Phase B3 |
+| B2 — Grafana + dashboards | Live 2026-09-20; RED panels empty | §Phase B2 |
+| B3 — probe + k6 smoke | Done 2026-09-19 | §Phase B3 |
 
-**Concurrency:** B1 (Minage, after traffic), B2b dashboard JSON (Minage now), B2a Grafana ECS (Lwam), B3 probe/k6 (Minage). Alert rules need B1 + B2 wired to `devops-g3/slack-webhook`.
+**Concurrency:** Alert rules (Phase **E**) need B1 + B2. k6 baseline/soak (Phase **D**) must not overlap `spike.js` (T1.3).
 
 **Account / region:** `240462142849`, `us-west-1` · SSO: `aws login` / profile `group3`.
 
@@ -188,16 +207,41 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 
 ### B2 checklist (run in parallel with B3 — no k6 in this terminal)
 
-- [ ] AMP query URL: `terraform -chdir=infra/envs/dev output amp_prometheus_endpoint`
-- [ ] Grafana → Prometheus datasource (SigV4, `us-west-1`)
-- [ ] Import `web-service-overview.json`, `payments-service-overview.json`
-- [ ] Screenshot or note: panel loads (RED may be empty until OTLP RED series exist; `ecs_task_*` in AMP confirms datasource)
+- [x] AMP query URL: `terraform -chdir=infra/envs/dev output amp_prometheus_endpoint`
+- [x] Grafana ECS (self-hosted, `…/v1/grafana/`, admin from `devops-g3/grafana-admin`)
+- [x] Prometheus datasource **AMP** (uid `AMP`, SigV4, provisioned in image)
+- [x] Dashboards **TillFlow** folder — `web-service-overview`, `payments-service-overview` (baked in ECR image)
+- [x] Panels load; RED queries show **No data** until `{service}_requests_total` in AMP (expected post–B1 note)
+- [ ] **Explore:** confirm `ecs_task_*` or `count({__name__=~".+"})` in Grafana (proves query path)
+- [ ] Phase **E:** contact point test + alert rules visible (after tillflow2 deploy)
 
 ### Recorded run
 
 | Date | Grafana URL | Dashboards imported | AMP datasource OK | Notes |
 |------|-------------|---------------------|---------------------|-------|
-| | | | | |
+| 2026-09-20 | `https://w6m0ja1aic.execute-api.us-west-1.amazonaws.com/v1/grafana/` | TillFlow / web + payments (provisioned) | Yes (login + dashboards; Save & test recommended in UI) | APIGW `/v1/grafana/` path rewrite + ALB `/v1/grafana/*` (#52+). RED empty — OTLP app metrics follow-up (same as B1). |
+
+---
+
+## Phase E — Grafana alerts → Slack
+
+**Code:** `infra/grafana/provisioning/alerting/` + Slack URL via ECS secret `SLACK_WEBHOOK_URL` → entrypoint contact point `slack-tillflow`.
+
+**Rules (runbook):** PaymentsHigh5xxRate, PaymentsLatencyP95, EdgeProbeFailed (AMP `count({__name__=~".+"})` proxy until Phase C synthetics).
+
+### Checklist
+
+- [ ] `devops-g3/slack-webhook` has AWSCURRENT URL (B0)
+- [ ] `grafana_image_tag` **11.4.0-tillflow2** applied + image in ECR + ECS on new task
+- [ ] Grafana → Alerting → Contact points → **Test** slack-tillflow
+- [ ] Alert rules in folder **TillFlow Alerts** (3 rules)
+- [ ] Evidence: Slack screenshot or message ID + date below
+
+### Recorded run
+
+| Date | Contact point test | Rules provisioned | Slack message link / note |
+|------|-------------------|-------------------|---------------------------|
+| | | | |
 
 ---
 
@@ -310,10 +354,22 @@ instrument_fastapi(app, service_name="pos")
 
 - [x] ADR-008 amendment; B0 AMP + ADOT endpoint
 - [x] ADOT tillflow image on ECS (AMP remote write + tail_sampling in baked config)
+- [x] Self-hosted Grafana on ECS + AMP datasource (Phase B2)
 - [ ] Non-zero `{service}_requests_total` in AMP after counted edge traffic (OTLP follow-up)
 - [ ] DB driver spans when driver chosen
 - [ ] Private Grafana operator access (G0 feedback)
-- [ ] Live alert rules + k6 envelope evidence
+- [ ] Live alert rules (Phase E) + k6 baseline/soak (Phase D)
+
+---
+
+## Next steps (priority order)
+
+1. **Phase E — Deploy alerts (today):** Merge `11.4.0-tillflow2` → terraform apply → pipeline `build-grafana` → Grafana **Test contact point**; fill §Phase E table.
+2. **Phase D — k6 envelope:** Run `baseline.js` then `soak.js` off-hours; update [k6-analysis.md](./k6-analysis.md) table.
+3. **OTLP RED follow-up (unblocks dashboard panels):** Debug why `{service}_requests_total` absent in AMP after `/demo/boom` while `ecs_task_*` present — ADOT OTLP pipeline or metric export naming.
+4. **Phase F:** Save Grafana dashboard JSON exports + one X-Ray trace screenshot/ID under `evidence/reliability/`.
+5. **Phase C:** Platform Terraform for CloudWatch Synthetics on `$API_ENDPOINT/health`.
+6. **Phase G / H:** Drill 3 write-up; link [evidence/delivery/rollback-log.md](../delivery/rollback-log.md) for G4 if graders ask rollback proof.
 
 ---
 

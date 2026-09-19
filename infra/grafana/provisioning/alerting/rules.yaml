@@ -1,0 +1,140 @@
+# Starter rules — docs/runbook.md § Observability alerts (Phase E).
+# RED-based rules stay No Data until OTLP {service}_requests_total exists in AMP.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: tillflow-starter
+    folder: TillFlow Alerts
+    interval: 1m
+    rules:
+      - uid: tillflow-payments-5xx
+        title: PaymentsHigh5xxRate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: AMP
+            model:
+              expr: sum(rate(payments_requests_total{status="5xx"}[5m])) / clamp_min(sum(rate(payments_requests_total[5m])), 1e-9)
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.05]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+        noDataState: NoData
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: Payments 5xx rate above 5% for 10m
+          runbook: Check recent deploy, payments logs, rollback workflow
+        labels:
+          severity: warning
+
+      - uid: tillflow-payments-latency-p95
+        title: PaymentsLatencyP95
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: AMP
+            model:
+              expr: histogram_quantile(0.95, sum(rate(payments_request_duration_seconds_bucket[5m])) by (le))
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [2]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+        noDataState: NoData
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: Payments request duration p95 above 2s for 15m
+          runbook: RDS Proxy, Daraja sandbox, payments ECS events
+        labels:
+          severity: warning
+
+      - uid: tillflow-edge-probe-failed
+        title: EdgeProbeFailed
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: AMP
+            model:
+              expr: count({__name__=~".+"})
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [50]
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: AMP series count collapsed (proxy until Phase C CloudWatch synthetics on /health)
+          runbook: API Gateway, ALB target health, web ECS, ADOT sidecar; infra/scripts/reliability-edge-probe.sh
+        labels:
+          severity: critical
