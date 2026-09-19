@@ -8,6 +8,8 @@
 #   cd infra/envs/dev && terraform test
 
 mock_provider "aws" {
+  override_during = plan
+
   mock_data "aws_caller_identity" {
     defaults = {
       account_id = "240462142849"
@@ -19,6 +21,16 @@ mock_provider "aws" {
   mock_data "aws_iam_policy_document" {
     defaults = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  mock_resource "aws_prometheus_workspace" {
+    override_during = plan
+
+    defaults = {
+      id                  = "ws-C6DCB907-F2D7-4D96-957B-66691F865D8B"
+      arn                 = "arn:aws:aps:us-west-1:240462142849:workspace/ws-C6DCB907-F2D7-4D96-957B-66691F865D8B"
+      prometheus_endpoint = "https://aps-workspaces.us-west-1.amazonaws.com/workspaces/ws-C6DCB907-F2D7-4D96-957B-66691F865D8B/"
     }
   }
 }
@@ -100,6 +112,18 @@ run "architecture_contracts" {
       length(module.service[svc].container_names) == 2 && contains(module.service[svc].container_names, "adot")
     ])
     error_message = "Every backend task runs the application PLUS an ADOT collector sidecar."
+  }
+
+  # --- Metrics backend (ADR-001 / ADR-008) ---------------------------------
+
+  assert {
+    condition     = module.amp.workspace_id != null && module.amp.workspace_id != ""
+    error_message = "AMP workspace must be Terraform-managed — ADOT remote write must not rely on a console-only workspace."
+  }
+
+  assert {
+    condition     = coalesce(var.amp_remote_write_url, module.amp.remote_write_url) != ""
+    error_message = "ADOT sidecars need a non-empty remote-write URL from module.amp (or an explicit override)."
   }
 
   # --- Adapter safety (threat model T6.7) ---------------------------------

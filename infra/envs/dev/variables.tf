@@ -128,10 +128,20 @@ variable "task_sizes" {
   }
 }
 
-variable "amp_remote_write_url" {
-  description = "Amazon Managed Prometheus remote-write endpoint (ADR-001)."
+variable "amp_workspace_alias" {
+  description = "Human-readable alias for the Terraform-managed AMP workspace."
   type        = string
-  default     = ""
+  default     = null
+}
+
+variable "amp_remote_write_url" {
+  description = <<-EOT
+    Optional override for the ADOT sidecar AWS_PROMETHEUS_ENDPOINT. Leave null
+    to use the remote-write URL from module.amp (the normal, Terraform-managed path).
+  EOT
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "mpesa_adapter" {

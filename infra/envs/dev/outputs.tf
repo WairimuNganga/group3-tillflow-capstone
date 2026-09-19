@@ -88,3 +88,19 @@ output "availability_zones" {
   description = "Pinned, not discovered. Verify against the account before first apply."
   value       = module.network.availability_zones
 }
+
+output "amp_workspace_id" {
+  description = "Amazon Managed Prometheus workspace for Grafana and ADOT remote write."
+  value       = module.amp.workspace_id
+}
+
+output "amp_prometheus_endpoint" {
+  description = "AMP query endpoint base URL (Grafana data source)."
+  value       = module.amp.prometheus_endpoint
+}
+
+output "amp_remote_write_url" {
+  description = "Injected on ADOT sidecars as AWS_PROMETHEUS_ENDPOINT after apply + ECS rollout."
+  value       = module.amp.remote_write_url
+  sensitive   = false
+}

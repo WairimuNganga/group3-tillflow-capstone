@@ -14,6 +14,19 @@ receivers:
         endpoint: 0.0.0.0:4318
 
 processors:
+  # ADR-008 amendment: head sampling in the SDK cannot "always keep errors";
+  # the collector decides after the trace completes.
+  tail_sampling:
+    decision_wait: 5s
+    num_traces: 10000
+    expected_new_traces_per_sec: 10
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: default
+        type: always_sample
   batch:
     timeout: 1s
 
@@ -39,7 +52,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [tail_sampling, batch]
       exporters: [otlp/jaeger, debug]
     metrics:
       receivers: [otlp]

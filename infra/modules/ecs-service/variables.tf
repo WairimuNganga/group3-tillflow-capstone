@@ -63,6 +63,12 @@ variable "amp_remote_write_url" {
   default     = ""
 }
 
+variable "amp_workspace_arn" {
+  description = "AMP workspace ARN for scoping aps:RemoteWrite. Empty keeps the legacy * resource (discouraged)."
+  type        = string
+  default     = ""
+}
+
 variable "container_port" {
   type    = number
   default = 8080
