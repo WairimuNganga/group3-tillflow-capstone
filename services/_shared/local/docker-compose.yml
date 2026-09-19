@@ -8,9 +8,15 @@
 
 name: tillflow-telemetry-local
 
+# Local laptops are usually amd64. ECS/Fargate images are arm64 — if
+# DOCKER_DEFAULT_PLATFORM=linux/arm64 (or a prior arm pull), Intel hosts
+# get "exec /otelcol-contrib: no such file or directory" on the collector.
 services:
   collector:
-    image: otel/opentelemetry-collector-contrib:0.116.0
+    # 0.116.0 on Docker Hub is broken (exec /otelcol-contrib: no such file or directory).
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    platform: linux/amd64
+    entrypoint: ["/otelcol-contrib"]
     command: ["--config=/etc/otel/config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel/config.yaml:ro
@@ -23,6 +29,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v3.1.0
+    platform: linux/amd64
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=6h
@@ -33,6 +40,7 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.65.0
+    platform: linux/amd64
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
@@ -40,6 +48,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.4.0
+    platform: linux/amd64
     environment:
       # Local only. Access to the deployed, private Grafana is an open question the
       # mentor requires answered before G3.

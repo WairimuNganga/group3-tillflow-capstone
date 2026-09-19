@@ -25,6 +25,10 @@ def client_and_reader():
     def health():
         return {"status": "ok"}
 
+    @app.get("/ready")
+    def ready():
+        return {"status": "ready"}
+
     @app.get("/sales/{sale_id}")
     def get_sale(sale_id: str):
         return {
@@ -92,6 +96,7 @@ def test_probe_traffic_is_not_counted(client_and_reader):
     """Counting probes would inflate every SLI denominator."""
     client, reader = client_and_reader
     client.get("/health")
+    client.get("/ready")
 
     assert data_points(reader, "pos_requests_total") == []
 

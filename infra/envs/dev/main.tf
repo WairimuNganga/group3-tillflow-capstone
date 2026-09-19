@@ -272,7 +272,8 @@ module "service" {
   image_tag            = var.image_tags[each.key]
   image_digest         = lookup(var.image_digests, each.key, null)
   adot_image           = "${aws_ecr_repository.adot.repository_url}:${local.adot_image_tag}"
-  amp_remote_write_url = var.amp_remote_write_url
+  amp_remote_write_url = coalesce(var.amp_remote_write_url, module.amp.remote_write_url)
+  amp_workspace_arn    = module.amp.workspace_arn
 
   # Only HTTP services sit behind the ALB. commission is a worker driven by
   # EventBridge → SQS and is deliberately unreachable over HTTP from outside.
@@ -428,6 +429,14 @@ module "redis" {
 
   node_type          = var.cache_node_type
   num_cache_clusters = var.cache_num_clusters
+}
+
+# Metrics backend for ADOT remote write and Grafana (ADR-001 / ADR-008).
+module "amp" {
+  source = "../../modules/amp"
+
+  name_prefix = var.name_prefix
+  alias       = var.amp_workspace_alias
 }
 
 module "messaging" {

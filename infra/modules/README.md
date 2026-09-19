@@ -12,6 +12,7 @@
 | `rds` | PostgreSQL, RDS Proxy, parameter group with the containment timeouts |
 | `redis` | ElastiCache Valkey for cache-aside |
 | `messaging` | SQS + DLQ pairs and the EventBridge daily-close schedule |
+| `amp` | Amazon Managed Prometheus workspace (metrics backend for ADOT + Grafana) |
 
 Each module is consumed only by `envs/dev`. Adding a new service means adding
 it to `local.services` in the root module — the SG, task role, log group, ECR

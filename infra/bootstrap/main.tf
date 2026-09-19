@@ -368,6 +368,23 @@ data "aws_iam_policy_document" "ci_deploy" {
     resources = ["*"]
   }
 
+  # AMP workspace for ADOT remote write (envs/dev module.amp). Create/tag APIs
+  # are not covered by the generic PlatformServices list above.
+  statement {
+    sid = "ManagedPrometheus"
+    actions = [
+      "aps:CreateWorkspace",
+      "aps:DeleteWorkspace",
+      "aps:DescribeWorkspace",
+      "aps:ListWorkspaces",
+      "aps:UpdateWorkspaceAlias",
+      "aps:TagResource",
+      "aps:UntagResource",
+      "aps:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
   # Terraform creates and attaches the per-service task roles. Restricted to
   # this project's name prefix so a compromised CI run cannot touch unrelated
   # roles in a shared account (threat model T6.2).

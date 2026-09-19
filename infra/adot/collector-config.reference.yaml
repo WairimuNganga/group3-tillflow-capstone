@@ -1,0 +1,52 @@
+# Reference ADOT collector config for TillFlow (ADR-008 amendment).
+#
+# ECS tasks today use the stock image config:
+#   --config=/etc/ecs/ecs-default-config.yaml
+# with AWS_PROMETHEUS_ENDPOINT + AWS_REGION on the sidecar container.
+#
+# This file documents the tail_sampling policy required so ERROR spans are kept
+# even when pos/web head sampling would drop them. Platform wires it by mounting
+# this file (or an S3 copy) and setting adot_config_file on the ecs-service
+# module — not applied automatically until that mount exists.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 50000
+    expected_new_traces_per_sec: 10
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: probabilistic
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 100
+
+exporters:
+  awsxray:
+    region: ${AWS_REGION}
+  prometheusremotewrite:
+    endpoint: ${AWS_PROMETHEUS_ENDPOINT}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling, batch]
+      exporters: [awsxray]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
