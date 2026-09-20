@@ -49,3 +49,75 @@ resource "aws_cloudwatch_metric_alarm" "canary_success" {
     owner   = var.owner_tag
   }
 }
+
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
+  for_each = var.ecs_service_names
+
+  alarm_name          = "${var.name_prefix}-${each.key}-ecs-cpu-high"
+  alarm_description   = "ECS CPU above 80% for ${each.key}; check recent deploy, task health and scaling."
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 5
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 80
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ClusterName = var.ecs_cluster_name
+    ServiceName = each.value
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-${each.key}-ecs-cpu-high"
+    service = each.key
+    owner   = var.owner_tag
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
+  alarm_name          = "${var.name_prefix}-rds-cpu-high"
+  alarm_description   = "RDS CPU above 80%; check DB connections, slow queries and RDS events."
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 5
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 80
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBInstanceIdentifier = var.rds_instance_identifier
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-rds-cpu-high"
+    service = "database"
+    owner   = var.owner_tag
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rds_connections_high" {
+  alarm_name          = "${var.name_prefix}-rds-connections-high"
+  alarm_description   = "RDS connections high for dev; check pool sizing, RDS Proxy and stuck tasks."
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 5
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 80
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBInstanceIdentifier = var.rds_instance_identifier
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-rds-connections-high"
+    service = "database"
+    owner   = var.owner_tag
+  }
+}
