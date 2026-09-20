@@ -29,7 +29,7 @@ case "$MODE" in
   soak)
     echo "Running soak.js (~18m) — JSON artifact for k6-analysis.md"
     k6 run -e API_ENDPOINT="$API_ENDPOINT" \
-      --out "json=${EVID}/k6-soak.json" \
+      --summary-export "${EVID}/k6-soak.json" \
       "${ROOT}/reliability/k6/soak.js" | tee "${EVID}/k6-soak.log"
     ;;
   both)

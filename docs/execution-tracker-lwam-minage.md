@@ -37,7 +37,7 @@
 |------|------|--------|----------|
 | **C1** | Slack contact point: all 9 contract fields | [x] | `infra/grafana/docker-entrypoint.sh` |
 | **C2** | Alert rule annotations (env, service, symptom, …) | [x] | `rules.yaml` |
-| **C3** | Pipeline: bump Grafana image tag + deploy | [ ] | ECS + screenshot |
+| **C3** | Pipeline: bump Grafana image tag + deploy | [x] | ECS JSON + live dashboard screenshots (2026-09-20) |
 | **C4** | Test contact point + capture firing/recovery | [ ] | `slack-alert-*.json` |
 | **C5** | Retarget EdgeProbeFailed to Synthetics metric (after A3) | [x] | CloudWatch alarm source-of-truth + rules.yaml/runbook links |
 
@@ -50,9 +50,9 @@
 | **D1** | SLO/uptime/burn dashboard JSON | [x] | `infra/grafana/dashboards/tillflow-slo-overview.json` |
 | **D2** | Business metrics on payments dashboard | [x] | payments dashboard JSON |
 | **D3** | Export to `evidence/reliability/phase-f/dashboards/` | [x] | `evidence/reliability/phase-f/dashboards/` |
-| **D4** | Run `k6 spike.js` | [ ] | `k6-spike.log` |
+| **D4** | Run `k6 spike.js` | [x] | `evidence/reliability/k6-spike-20260920.log` |
 | **D5** | Finish `k6-analysis.md` (RPS, bottleneck, cost) | [x] | `evidence/reliability/k6-analysis.md` |
-| **D6** | Commit `k6-soak.json` | [ ] | git |
+| **D6** | Commit `k6-soak.json` | [x] | `evidence/reliability/k6-soak.json` (2026-09-20) |
 
 ---
 

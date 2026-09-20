@@ -202,6 +202,7 @@ module "apigw" {
   vpc_link_security_group_id = aws_security_group.vpc_link.id
   alb_listener_arn           = module.alb.listener_arn
   kms_key_arn                = var.kms_key_arn
+  stage_name                 = var.api_stage_name
   throttle_burst             = var.api_throttle_burst
   throttle_rate              = var.api_throttle_rate
 }
@@ -363,6 +364,12 @@ module "service" {
     each.key == "commission" ? {
       PAYOUT_QUEUE_URL  = module.messaging.queue_urls["payout"]
       PAYMENTS_BASE_URL = "http://payments:8080"
+    } : {},
+    each.key == "web" ? {
+      # API Gateway exposes the UI below its named stage. Web uses this for
+      # browser-visible links, form actions, redirects and cookie paths while
+      # keeping its internal ASGI routes rooted at /.
+      WEB_BASE_PATH = "/${var.api_stage_name}"
     } : {},
   )
 

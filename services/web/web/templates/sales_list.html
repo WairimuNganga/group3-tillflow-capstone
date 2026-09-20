@@ -8,7 +8,7 @@
   (same bps math as the close worker) and only shows once the sale is paid.
 </p>
 
-<form class="filters" method="get" action="/sales">
+<form class="filters" method="get" action="{{ base_path }}/sales">
   <input type="hidden" name="page" value="1" />
   <label>Attendant
     <select name="attendant_id">
@@ -30,7 +30,7 @@
   </label>
   <div class="filter-actions">
     <button class="btn" type="submit">Apply</button>
-    <a class="btn secondary" href="/sales">Clear</a>
+    <a class="btn secondary" href="{{ base_path }}/sales">Clear</a>
   </div>
 </form>
 
@@ -54,7 +54,7 @@
         <tr>
           <td class="mono">{{ sale.created_at }}</td>
           <td>
-            <a href="/sales/{{ sale.sale_id }}">{{ sale.item_name }}</a>
+            <a href="{{ base_path }}/sales/{{ sale.sale_id }}">{{ sale.item_name }}</a>
           </td>
           <td>KES {{ sale.total_kes }}</td>
           <td>{{ sale.rate_display }}</td>
@@ -95,7 +95,7 @@
 {% endif %}
 
 <div class="actions">
-  <a class="btn" href="/sale">New sale</a>
-  <a class="btn secondary" href="/">Home</a>
+  <a class="btn" href="{{ base_path }}/sale">New sale</a>
+  <a class="btn secondary" href="{{ base_path }}/">Home</a>
 </div>
 {% endblock %}

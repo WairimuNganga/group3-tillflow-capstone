@@ -1,0 +1,7 @@
+{
+    "desired": 1,
+    "running": 1,
+    "pending": 0,
+    "rollout": "COMPLETED",
+    "taskDefinition": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-grafana:6"
+}

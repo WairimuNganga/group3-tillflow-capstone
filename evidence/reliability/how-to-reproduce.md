@@ -60,7 +60,7 @@ bash infra/scripts/reliability-edge-probe.sh
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js | tee evidence/reliability/k6-smoke.log
 # Optional overnight / off-hours:
 # k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js | tee evidence/reliability/k6-baseline.log
-# k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
+# k6 run -e API_ENDPOINT="$API_ENDPOINT" --summary-export evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
 
 **Terminal B — B2 Grafana (after Terraform apply + pipeline `build-grafana`):**

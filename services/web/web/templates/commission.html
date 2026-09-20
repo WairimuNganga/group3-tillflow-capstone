@@ -8,7 +8,7 @@
   current rate; ledgered commission and payout state come from the commission worker after close.
 </p>
 
-<form class="filters" method="get" action="/commission">
+<form class="filters" method="get" action="{{ base_path }}/commission">
   <label>Day
     <input name="period" type="date" value="{{ day.period }}" required />
   </label>
@@ -56,7 +56,7 @@
   </p>
   {% else %}
   <div class="actions" style="margin-top:1.25rem">
-    <form method="post" action="/commission/close" style="display:inline">
+    <form method="post" action="{{ base_path }}/commission/close" style="display:inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
       <input type="hidden" name="period" value="{{ day.period }}" />
       <input type="hidden" name="attendant_id" value="{{ day.attendant_id }}" />
@@ -67,7 +67,7 @@
       Payout already sent
     </button>
     {% else %}
-    <form method="post" action="/commission/payout" style="display:inline">
+    <form method="post" action="{{ base_path }}/commission/payout" style="display:inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
       <input type="hidden" name="period" value="{{ day.period }}" />
       <input type="hidden" name="attendant_id" value="{{ day.attendant_id }}" />
@@ -94,7 +94,7 @@
       {% for sale in day.paid_sales %}
       <tr>
         <td class="mono">{{ sale.created_at }}</td>
-        <td><a href="/sales/{{ sale.sale_id }}">{{ sale.item_name }}</a></td>
+        <td><a href="{{ base_path }}/sales/{{ sale.sale_id }}">{{ sale.item_name }}</a></td>
         <td>KES {{ sale.total_kes }}</td>
         <td>{{ sale.commission_display }}</td>
         <td><span class="status status-{{ sale.status }}">{{ sale.status }}</span></td>
@@ -106,8 +106,8 @@
 {% endif %}
 
 <div class="actions">
-  <a class="btn secondary" href="/payouts">All payouts</a>
-  <a class="btn secondary" href="/sales">All sales</a>
-  <a class="btn secondary" href="/">Home</a>
+  <a class="btn secondary" href="{{ base_path }}/payouts">All payouts</a>
+  <a class="btn secondary" href="{{ base_path }}/sales">All sales</a>
+  <a class="btn secondary" href="{{ base_path }}/">Home</a>
 </div>
 {% endblock %}

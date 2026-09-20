@@ -7,19 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/app.css" />
+  <link rel="stylesheet" href="{{ base_path }}/static/app.css" />
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <p class="brand">Till<span>Flow</span></p>
       <nav>
-        <a href="/">Home</a>
+        <a href="{{ base_path }}/">Home</a>
         {% if shop %}
-        · <a href="/sales">Sales</a>
-        · <a href="/commission">Commission</a>
-        · <a href="/payouts">Payouts</a>
-        · <a href="/sale">New sale</a>
+        · <a href="{{ base_path }}/sales">Sales</a>
+        · <a href="{{ base_path }}/commission">Commission</a>
+        · <a href="{{ base_path }}/payouts">Payouts</a>
+        · <a href="{{ base_path }}/sale">New sale</a>
         {% endif %}
       </nav>
     </header>

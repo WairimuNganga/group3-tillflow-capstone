@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field(default="tillflow_session", alias="WEB_SESSION_COOKIE")
     csrf_cookie_name: str = Field(default="tillflow_csrf", alias="WEB_CSRF_COOKIE")
     cookie_secure: bool = Field(default=False, alias="WEB_COOKIE_SECURE")
+    # Browser-visible prefix when hosted behind a named API Gateway stage.
+    # Empty locally; /v1 in the dev AWS environment.
+    base_path: str = Field(default="", alias="WEB_BASE_PATH")
 
 
 settings = Settings()
