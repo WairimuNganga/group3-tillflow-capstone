@@ -30,3 +30,12 @@ output "private_data_route_table_id" {
   description = "Data-tier route table. Has no 0.0.0.0/0 route by design (T2.2)."
   value       = aws_route_table.private_data.id
 }
+
+# Exposed so architecture tests can assert the ADOT sidecar's telemetry
+# backends are reachable privately. Only `payments` has internet egress
+# (AR-7), so without xray/aps-workspaces endpoints the other three sidecars
+# fail with `context deadline exceeded` and export nothing.
+output "interface_endpoint_services" {
+  value       = sort(var.interface_endpoints)
+  description = "AWS services reachable over PrivateLink from the app subnets."
+}

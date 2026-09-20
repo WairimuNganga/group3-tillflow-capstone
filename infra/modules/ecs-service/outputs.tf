@@ -18,3 +18,17 @@ output "container_names" {
   description = "Proof of the two-container requirement: app + adot."
   value       = [var.service_name, "adot"]
 }
+
+# Telemetry IAM statements, exposed so architecture tests can assert that the
+# X-Ray actions are never scoped to a named resource. aws_iam_policy_document
+# is mocked under `terraform test`, so asserting on the rendered JSON would
+# pass against an empty document and prove nothing.
+output "telemetry_statements" {
+  value       = local.telemetry_statements
+  description = "Telemetry statements rendered into the task role policy."
+}
+
+output "resourceless_telemetry_actions" {
+  value       = local.resourceless_telemetry_actions
+  description = "Actions AWS rejects resource-level permissions for."
+}

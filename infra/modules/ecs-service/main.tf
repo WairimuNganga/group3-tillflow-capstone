@@ -171,21 +171,76 @@ resource "aws_iam_role" "task" {
   }
 }
 
+# Telemetry permissions for the ADOT sidecar.
+#
+# These were previously ONE statement whose resource was the AMP workspace ARN.
+# Only aps:RemoteWrite accepts that ARN, so the moment AMP was configured the
+# sidecar began failing with `xray:PutTraceSegments AccessDenied`. They are
+# split here because each action family takes a different resource form.
+#
+# Declared as a local (rather than inline statement blocks) so
+# tests/architecture.tftest.hcl can assert the invariant directly:
+# aws_iam_policy_document is mocked under `terraform test`, so a rendered-JSON
+# assertion would pass against an empty document and prove nothing.
+locals {
+  telemetry_statements = concat(
+    [
+      # X-Ray ingestion does not support resource-level permissions: the API
+      # names no resource and AWS documents "*" as the only valid value. These
+      # two write actions are scoped by being the only ones granted.
+      {
+        sid       = "XrayTraceIngestion"
+        actions   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"]
+        resources = ["*"]
+      },
+      # Read-only sampling lookups, likewise resourceless.
+      {
+        sid       = "XraySampling"
+        actions   = ["xray:GetSamplingRules", "xray:GetSamplingTargets"]
+        resources = ["*"]
+      },
+      # Scoped to this service's own log group, which is what the awslogs
+      # driver and the sidecar actually write to.
+      {
+        sid     = "WriteOwnLogs"
+        actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        resources = [
+          "arn:aws:logs:${var.region}:${var.account_id}:log-group:${var.log_group_name}",
+          "arn:aws:logs:${var.region}:${var.account_id}:log-group:${var.log_group_name}:log-stream:*",
+        ]
+      },
+    ],
+    # The one action the workspace ARN was ever correct for.
+    var.amp_workspace_arn != "" ? [{
+      sid       = "PrometheusRemoteWrite"
+      actions   = ["aps:RemoteWrite"]
+      resources = [var.amp_workspace_arn]
+    }] : [],
+  )
+
+  # Actions that must never be scoped to a named resource, because AWS rejects
+  # resource-level permissions for them. Asserted in architecture tests.
+  resourceless_telemetry_actions = [
+    "xray:PutTraceSegments",
+    "xray:PutTelemetryRecords",
+    "xray:GetSamplingRules",
+    "xray:GetSamplingTargets",
+  ]
+}
+
 data "aws_iam_policy_document" "task" {
-  # Telemetry: every task's sidecar writes metrics and traces.
-  statement {
-    sid = "Telemetry"
-    actions = [
-      "xray:PutTraceSegments",
-      "xray:PutTelemetryRecords",
-      "xray:GetSamplingRules",
-      "xray:GetSamplingTargets",
-      "aps:RemoteWrite",
-      "cloudwatch:PutMetricData",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-    ]
-    resources = var.amp_workspace_arn != "" ? [var.amp_workspace_arn] : ["*"]
+  # cloudwatch:PutMetricData is deliberately NOT granted. infra/adot's deployed
+  # collector config exports metrics to AMP via prometheusremotewrite and
+  # traces via awsxray -- there is no awsemf/cloudwatch exporter, and no
+  # service calls PutMetricData directly. Add it back only alongside an
+  # exporter that needs it, with a cloudwatch:namespace condition.
+  dynamic "statement" {
+    for_each = { for s in local.telemetry_statements : s.sid => s }
+    content {
+      sid       = statement.value.sid
+      actions   = statement.value.actions
+      resources = statement.value.resources
+    }
   }
 
   statement {

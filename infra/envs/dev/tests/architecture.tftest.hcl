@@ -126,6 +126,70 @@ run "architecture_contracts" {
     error_message = "POS, Payments and Commission must each have an Alembic migration build in the delivery lane, run before DeployEcs."
   }
 
+  # --- ADOT can actually publish traces (Phase F) -------------------------
+  #
+  # The telemetry statement was once a single grant scoped to the AMP workspace
+  # ARN. Only aps:RemoteWrite accepts that ARN, so live ADOT logs showed
+  # `xray:PutTraceSegments AccessDenied` and no trace ever reached X-Ray. The
+  # failure is invisible in a plan diff, hence this assertion.
+  assert {
+    condition = alltrue([
+      for svc in ["web", "pos", "payments", "commission"] : alltrue([
+        for st in module.service[svc].telemetry_statements :
+        st.resources == ["*"]
+        if length(setintersection(
+          toset(st.actions), toset(module.service[svc].resourceless_telemetry_actions)
+        )) > 0
+      ])
+    ])
+    error_message = "X-Ray actions must be granted on \"*\". AWS rejects resource-level permissions for PutTraceSegments/PutTelemetryRecords, so scoping them (e.g. to the AMP workspace ARN) yields AccessDenied at runtime."
+  }
+
+  # The converse: "*" must not leak to the one action that can be scoped.
+  assert {
+    condition = alltrue([
+      for svc in ["web", "pos", "payments", "commission"] : alltrue([
+        for st in module.service[svc].telemetry_statements :
+        st.resources == [module.amp.workspace_arn]
+        if contains(st.actions, "aps:RemoteWrite")
+      ])
+    ])
+    error_message = "aps:RemoteWrite must stay scoped to the AMP workspace ARN — it is the one telemetry action that supports resource-level permissions."
+  }
+
+  # --- ADOT can reach its backends without internet egress (AR-7) ---------
+  #
+  # Correct IAM is not enough. Only `payments` may reach the internet, so the
+  # other three sidecars need PrivateLink to export at all -- live logs showed
+  # `context deadline exceeded` against xray.<region>.amazonaws.com (web, pos)
+  # and the AMP remote-write endpoint (web, pos, commission) while IAM was
+  # perfectly valid. The alternative fix -- granting them internet egress --
+  # would breach AR-7, so this assertion pins the private route.
+  assert {
+    condition = alltrue([
+      for svc in ["xray", "aps-workspaces"] :
+      contains(module.network.interface_endpoint_services, svc)
+    ])
+    error_message = "VPC interface endpoints for xray and aps-workspaces are required: web/pos/commission have no internet egress (AR-7), so without them the mandatory ADOT sidecar cannot publish traces or metrics."
+  }
+
+  # --- Web talks to commission (daily close / payouts) ---------------------
+  #
+  # web/deps.py only builds HttpCommissionClient when COMMISSION_BASE_URL is
+  # set; without the SG rule the env var turns a "not configured" page into a
+  # timeout. Both halves or neither.
+  # The SG ids themselves are unknown until apply, so this asserts the ports
+  # and the description literal; which groups it joins is fixed in config.
+  assert {
+    condition = (
+      aws_vpc_security_group_ingress_rule.web_to_commission.from_port == 8080 &&
+      aws_vpc_security_group_ingress_rule.web_to_commission.to_port == 8080 &&
+      aws_vpc_security_group_ingress_rule.web_to_commission.ip_protocol == "tcp" &&
+      aws_vpc_security_group_ingress_rule.web_to_commission.description == "Service Connect: web to commission"
+    )
+    error_message = "Web must reach commission on 8080/tcp over Service Connect, or the daily close and payout screens cannot load."
+  }
+
   # --- Two containers per task (brief requirement) ------------------------
 
   assert {

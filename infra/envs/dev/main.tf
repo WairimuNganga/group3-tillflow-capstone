@@ -373,6 +373,9 @@ module "service" {
       # The browser only reaches Web. Web calls POS privately through ECS
       # Service Connect to create and retrieve real sales.
       POS_BASE_URL = "http://pos:8080"
+      # Without this, web/deps.py builds no HttpCommissionClient and the daily
+      # close and payout history screens render their "not configured" state.
+      COMMISSION_BASE_URL = "http://commission:8080"
     } : {},
   )
 
@@ -459,6 +462,18 @@ resource "aws_vpc_security_group_ingress_rule" "payments_to_pos" {
 resource "aws_vpc_security_group_ingress_rule" "web_to_pos" {
   security_group_id            = module.service["pos"].security_group_id
   description                  = "Service Connect: web to pos"
+  referenced_security_group_id = module.service["web"].security_group_id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+# Web calls commission over Service Connect for the daily close and payout
+# history screens. Pairs with COMMISSION_BASE_URL on the web task: the env var
+# without this rule would just turn a "not configured" page into a timeout.
+resource "aws_vpc_security_group_ingress_rule" "web_to_commission" {
+  security_group_id            = module.service["commission"].security_group_id
+  description                  = "Service Connect: web to commission"
   referenced_security_group_id = module.service["web"].security_group_id
   from_port                    = 8080
   to_port                      = 8080

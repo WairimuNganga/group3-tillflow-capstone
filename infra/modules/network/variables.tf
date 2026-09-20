@@ -64,6 +64,14 @@ variable "interface_endpoints" {
     "ssmmessages", # ECS Exec
     "sqs",
     "kms",
+    # Telemetry backends for the mandatory ADOT sidecar. Without these, only
+    # `payments` (the one service with internet egress, AR-7) can export:
+    # web/pos/commission sidecars fail with `context deadline exceeded`
+    # against xray.<region>.amazonaws.com and the AMP remote-write endpoint.
+    # PrivateLink is the AR-7-consistent fix -- it keeps those three off the
+    # internet rather than widening egress to make telemetry work.
+    "xray",
+    "aps-workspaces",
   ]
 }
 
