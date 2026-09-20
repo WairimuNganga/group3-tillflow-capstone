@@ -24,6 +24,7 @@ set -euo pipefail
 
 POS_URL="${POS_URL:-http://localhost:8000}"
 PAY_URL="${PAY_URL:-http://localhost:8080}"
+COMMISSION_URL="${COMMISSION_URL:-http://localhost:8090}"
 CALLBACK_SECRET="${CALLBACK_SECRET:-local-dev-callback-secret}"
 DB_CONTAINER="${DB_CONTAINER:-tillflow-pos-db}"
 RUN="$(date +%s)"
@@ -69,6 +70,8 @@ TILL="$(jq -r .id "$BODY")"
 req POST "$POS_URL/attendants" "{\"phone\":\"2547111$SUFFIX\",\"display_name\":\"Amina\"}" -H "X-Tenant-Id: $TID"
 expect 201 "add attendant"
 ATT="$(jq -r .id "$BODY")"
+req POST "$POS_URL/commission-rates" "{\"attendant_id\":\"$ATT\",\"rate_bps\":200}" -H "X-Tenant-Id: $TID"
+expect 201 "set attendant commission rate (2%)"
 
 new_sale() { # new_sale KEY AMOUNT_MINOR -> sets $SALE_ID and $CODE (not a subshell:
   # command substitution would swallow $CODE and make expect check a stale one)
@@ -149,8 +152,14 @@ check "$(jq -r .ledger_written "$BODY")" true "ledger written once, on reconcile
 check "$(sale_status "$TID" "$SALE2")" paid "reconciliation reported the outcome to POS — sale 'paid'"
 
 # ------------------------------------------------------------- commission
-step "5. Commission payout to the attendant (B2C), 2% of KES 145.00"
-PAYOUT_KEY="$TID:$(date +%F):$ATT"
+step "5. Commission daily close → B2C (via commission worker when up)"
+PERIOD="$(date -u +%F)"
+if curl -sf "$COMMISSION_URL/health" >/dev/null 2>&1; then
+  note "Commission service reachable — seeding in-memory close is demo-only;"
+  note "full Postgres join needs v_paid_sales + POS views. Falling through to B2C contract."
+fi
+# Contract still proven at Payments boundary (commission calls this exact shape):
+PAYOUT_KEY="$TID:$PERIOD:$ATT"
 B2C_BODY="{\"attendant_id\":\"$ATT\",\"phone_number\":\"2547111$SUFFIX\",\"amount_minor_units\":290,
   \"originator_conversation_id\":\"$PAYOUT_KEY\"}"
 req POST "$PAY_URL/payments/b2c" "$B2C_BODY" -H "X-Tenant-Id: $TID" -H "Idempotency-Key: $PAYOUT_KEY"
@@ -165,6 +174,13 @@ check "$(jq -r .payout_id "$BODY")" "$PAYOUT_ID" "re-running the daily close doe
 req POST "$PAY_URL/payments/b2c/result" "{\"conversation_id\":\"$CONV\",\"success\":true}"
 expect 200 "M-Pesa confirms the payout"
 check "$(jq -r .state "$BODY")" completed "payout 'completed' — attendant paid"
+
+# When commission is up with shared DB, also exercise /internal/close:
+if curl -sf "$COMMISSION_URL/health" >/dev/null 2>&1; then
+  req POST "$COMMISSION_URL/internal/close" "{\"payout_period\":\"$PERIOD\"}"
+  # 200 even with zero sales in commission's in-memory store is fine for smoke
+  if [[ "$CODE" == "200" ]]; then ok "commission /internal/close responds (HTTP $CODE)"; else note "commission close HTTP $CODE (optional smoke)"; fi
+fi
 
 # -------------------------------------------------------------- isolation
 step "6. Another shop cannot touch this one's sale"

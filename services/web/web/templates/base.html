@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}TillFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <p class="brand">Till<span>Flow</span></p>
+      <nav>
+        <a href="/">Home</a>
+        {% if shop %}
+        · <a href="/sales">Sales</a>
+        · <a href="/commission">Commission</a>
+        · <a href="/payouts">Payouts</a>
+        · <a href="/sale">New sale</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    {% if flash %}
+    <div class="flash {{ flash.kind }}">{{ flash.message }}</div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    Group3 TillFlow Demo
+  </footer>
+</body>
+</html>

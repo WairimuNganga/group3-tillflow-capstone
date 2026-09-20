@@ -14,14 +14,14 @@ import uuid
 from copy import deepcopy
 from datetime import UTC, datetime
 
-from pos.domain.models import Sale, Tenant, Till, User
+from pos.domain.models import CommissionRate, Sale, Tenant, Till, User
 from pos.repositories.errors import AlreadyExistsError, InvalidReferenceError
 
 
 def _fill_timestamps(obj: object) -> None:
     """Emulate the Postgres server defaults the memory double doesn't get."""
     now = datetime.now(UTC)
-    for attr in ("created_at", "updated_at"):
+    for attr in ("created_at", "updated_at", "effective_from"):
         if hasattr(obj, attr) and getattr(obj, attr) is None:
             setattr(obj, attr, now)
 
@@ -32,6 +32,7 @@ class InMemoryPosRepository:
         self._users: dict[uuid.UUID, User] = {}
         self._tills: dict[uuid.UUID, Till] = {}
         self._sales: dict[uuid.UUID, Sale] = {}
+        self._rates: dict[uuid.UUID, CommissionRate] = {}
         self._lock = asyncio.Lock()
 
     async def set_tenant(self, tenant_id: uuid.UUID) -> None:  # noqa: D401 - no GUC in memory
@@ -124,8 +125,40 @@ class InMemoryPosRepository:
             self._sales[sale.id] = deepcopy(sale)
             return deepcopy(sale)
 
+    async def create_commission_rate(self, rate: CommissionRate) -> CommissionRate:
+        async with self._lock:
+            attendant = self._users.get(rate.attendant_id)
+            if attendant is None or attendant.tenant_id != rate.tenant_id:
+                raise InvalidReferenceError("attendant not found for tenant")
+            if attendant.role != "attendant":
+                raise InvalidReferenceError("commission rate requires an attendant")
+            for existing in self._rates.values():
+                if (
+                    existing.tenant_id == rate.tenant_id
+                    and existing.attendant_id == rate.attendant_id
+                    and existing.effective_from == rate.effective_from
+                ):
+                    raise AlreadyExistsError("rate already exists for attendant/effective_from")
+            rate.id = rate.id or uuid.uuid4()
+            _fill_timestamps(rate)
+            self._rates[rate.id] = deepcopy(rate)
+            return deepcopy(rate)
+
+    async def list_commission_rates(
+        self, tenant_id: uuid.UUID, attendant_id: uuid.UUID | None = None
+    ) -> list[CommissionRate]:
+        async with self._lock:
+            rows = [
+                deepcopy(r)
+                for r in self._rates.values()
+                if r.tenant_id == tenant_id
+                and (attendant_id is None or r.attendant_id == attendant_id)
+            ]
+            return sorted(rows, key=lambda r: r.effective_from or datetime.min.replace(tzinfo=UTC))
+
     def clear(self) -> None:
         self._tenants.clear()
         self._users.clear()
         self._tills.clear()
         self._sales.clear()
+        self._rates.clear()

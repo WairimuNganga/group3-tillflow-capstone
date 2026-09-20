@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}TillFlow · Demo shell{% endblock %}
+{% block content %}
+<p class="eyebrow">Kiosk demo</p>
+<h1>Take a sale. Watch it settle.</h1>
+<p class="lede">
+  This shell talks to POS over the private network. POS asks Payments for STK.
+  Sales show estimated commission from POS rates; B2C payout stays on the commission worker.
+</p>
+
+<div class="panel">
+  {% if shop %}
+    <h2>{{ shop.shop_name }}</h2>
+    <div class="meta">
+      <div><strong>Tenant</strong> {{ shop.tenant_id }}</div>
+      <div><strong>Attendant</strong> {{ shop.attendant_name }} · {{ shop.attendant_phone }}</div>
+    </div>
+    <div class="actions hero-cta">
+      <a class="btn" href="/sale">Start a sale</a>
+      <a class="btn secondary" href="/sales">View sales</a>
+      <a class="btn secondary" href="/commission">Commission</a>
+      <form method="post" action="/reset" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button class="btn secondary" type="submit">Reset shop</button>
+      </form>
+    </div>
+  {% else %}
+    <h2>Open a demo shop</h2>
+    <p class="lede">Creates a tenant, till, attendant, and 2% commission rate via POS.</p>
+    <form method="post" action="/setup">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <div class="grid two">
+        <label>Shop name
+          <input name="shop_name" value="Mama Mboga" required maxlength="80" />
+        </label>
+        <label>Till shortcode
+          <input name="shortcode" value="174379" required maxlength="16" />
+        </label>
+        <label>Attendant name
+          <input name="attendant_name" value="Amina" required maxlength="80" />
+        </label>
+        <label>Attendant phone
+          <input name="attendant_phone" value="254712345678" required maxlength="32" />
+        </label>
+        <label>Owner phone
+          <input name="owner_phone" value="254700000001" required maxlength="32" />
+        </label>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit">Open shop</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+
+{% if not pos_configured %}
+<div class="flash ok">
+  Running in <strong>local fake-POS</strong> mode (no <code>POS_BASE_URL</code>).
+  UI and session work; wire POS for a real STK path.
+</div>
+{% endif %}
+{% endblock %}

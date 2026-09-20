@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}TillFlow · New sale{% endblock %}
+{% block content %}
+<p class="eyebrow">{{ shop.shop_name }}</p>
+<h1>New sale</h1>
+<p class="lede">Enter the amount in whole Kenya shillings (KES).</p>
+
+<div class="panel">
+  <form method="post" action="/sale">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <div class="grid two">
+      <label>Item
+        <input name="item_name" value="Shopping" required maxlength="80" />
+      </label>
+      <label>Amount (KES)
+        <input name="amount_kes" type="number" min="1" step="1" value="145" required />
+      </label>
+      <label>Customer phone
+        <input name="customer_phone" value="254712345678" required maxlength="32" />
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">Charge via M-Pesa STK</button>
+      <a class="btn secondary" href="/">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

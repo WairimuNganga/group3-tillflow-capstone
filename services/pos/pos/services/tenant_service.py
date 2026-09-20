@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from pos.domain.models import Tenant, Till, User
+from pos.domain.models import CommissionRate, Tenant, Till, User
 from pos.repositories.memory import InMemoryPosRepository
 from pos.repositories.postgres import PostgresPosRepository
 
@@ -40,3 +41,25 @@ class TenantService:
         return await self._repo.create_user(
             User(tenant_id=tenant_id, phone=phone, display_name=display_name, role="attendant")
         )
+
+    async def set_commission_rate(
+        self,
+        *,
+        tenant_id: uuid.UUID,
+        attendant_id: uuid.UUID,
+        rate_bps: int,
+        effective_from: datetime | None = None,
+    ) -> CommissionRate:
+        rate = CommissionRate(
+            tenant_id=tenant_id,
+            attendant_id=attendant_id,
+            rate_bps=rate_bps,
+        )
+        if effective_from is not None:
+            rate.effective_from = effective_from
+        return await self._repo.create_commission_rate(rate)
+
+    async def list_commission_rates(
+        self, *, tenant_id: uuid.UUID, attendant_id: uuid.UUID | None = None
+    ) -> list[CommissionRate]:
+        return await self._repo.list_commission_rates(tenant_id, attendant_id)
