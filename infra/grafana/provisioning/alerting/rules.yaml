@@ -1,5 +1,7 @@
-# Starter rules — docs/runbook.md § Observability alerts (Phase E).
-# RED-based rules stay No Data until OTLP {service}_requests_total exists in AMP.
+# Provisioned Grafana rules — docs/runbook.md § Observability alerts (Phase E).
+# Slack messages use the 9-field TillFlow alert contract from docker-entrypoint.sh.
+# EdgeProbeFailed is backed by the CloudWatch Synthetics canary alarm in Terraform;
+# this Grafana rule remains a dashboard-side guard for AMP/telemetry visibility.
 apiVersion: 1
 groups:
   - orgId: 1
@@ -46,10 +48,19 @@ groups:
         execErrState: Error
         for: 10m
         annotations:
-          summary: Payments 5xx rate above 5% for 10m
-          runbook: Check recent deploy, payments logs, rollback workflow
+          summary: Payments 5xx ratio above 5% for 10 minutes.
+          env: dev
+          service: payments
+          symptom: Valid payment routes are returning elevated 5xx responses.
+          user_impact: Tenants may be unable to start or complete STK payments.
+          first_safe_action: Check payments ECS events/logs and recent deployments; rollback payments if the new image caused the spike.
+          recovery_signal: 5xx ratio below 2% for 15 minutes and /ready returns 200.
+          owner: Minage / Payments DRI
+          runbook_url: docs/runbook.md#observability-alerts
+          dashboard_url: /d/tillflow-payments/payments-service-overview
         labels:
           severity: warning
+          team: reliability
 
       - uid: tillflow-payments-latency-p95
         title: PaymentsLatencyP95
@@ -90,10 +101,19 @@ groups:
         execErrState: Error
         for: 15m
         annotations:
-          summary: Payments request duration p95 above 2s for 15m
-          runbook: RDS Proxy, Daraja sandbox, payments ECS events
+          summary: Payments p95 latency above 2 seconds for 15 minutes.
+          env: dev
+          service: payments
+          symptom: Payment API latency is above the SLO guardrail.
+          user_impact: Customers may wait longer for STK initiation/callback handling.
+          first_safe_action: Check RDS Proxy connections, Daraja sandbox latency, and payments task CPU/memory.
+          recovery_signal: p95 below 1 second for 15 minutes with no growing callback backlog.
+          owner: Minage / Payments DRI
+          runbook_url: docs/runbook.md#observability-alerts
+          dashboard_url: /d/tillflow-payments/payments-service-overview
         labels:
           severity: warning
+          team: reliability
 
       - uid: tillflow-edge-probe-failed
         title: EdgeProbeFailed
@@ -134,7 +154,16 @@ groups:
         execErrState: Error
         for: 5m
         annotations:
-          summary: AMP series count collapsed (proxy until Phase C CloudWatch synthetics on /health)
-          runbook: API Gateway, ALB target health, web ECS, ADOT sidecar; infra/scripts/reliability-edge-probe.sh
+          summary: Edge health or telemetry visibility failed; CloudWatch alarm devops-g3-edge-health-canary is source of truth.
+          env: dev
+          service: edge/web
+          symptom: External /health canary is failing or AMP visibility collapsed.
+          user_impact: Users may not reach the TillFlow API edge reliably.
+          first_safe_action: Check CloudWatch alarm devops-g3-edge-health-canary, API Gateway, VPC Link/ALB target health, and web ECS events.
+          recovery_signal: CloudWatch Synthetics SuccessPercent returns to 100% for two consecutive runs and /health curls 200.
+          owner: Minage / Platform
+          runbook_url: docs/runbook.md#observability-alerts
+          dashboard_url: /d/tillflow-slo/tillflow-slo-uptime-burn
         labels:
           severity: critical
+          team: reliability

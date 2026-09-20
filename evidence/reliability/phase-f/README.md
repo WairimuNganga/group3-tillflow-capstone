@@ -8,6 +8,7 @@
 |----------|--------|
 | [payments-service-overview.json](./dashboards/payments-service-overview.json) | Copy of `infra/grafana/dashboards/payments-service-overview.json` (dashboard-as-code) |
 | [web-service-overview.json](./dashboards/web-service-overview.json) | Copy of `infra/grafana/dashboards/web-service-overview.json` |
+| [tillflow-slo-overview.json](./dashboards/tillflow-slo-overview.json) | SLO uptime, burn-rate, latency, and money-safety dashboard-as-code |
 
 **Live proof (add after capture):**
 
