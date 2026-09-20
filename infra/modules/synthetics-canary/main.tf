@@ -157,10 +157,7 @@ resource "aws_synthetics_canary" "edge_health" {
 
   run_config {
     timeout_in_seconds = 60
-  }
-
-  environment {
-    variables = {
+    environment_variables = {
       HEALTH_URL = local.health_url
       READY_URL  = local.ready_url
     }
