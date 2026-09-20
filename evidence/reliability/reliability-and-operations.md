@@ -10,10 +10,10 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] Tests — `services/_shared/tests/otel/`; `terraform test` in `infra/envs/dev`
 - [x] B0 runtime — AMP ACTIVE, ADOT remote-write URL, Slack secret value set
 - [x] B1 — AMP query after traffic (record in §B1)
-- [x] B3 — edge probe + k6 smoke (2026-09-19); baseline/soak/spike optional — [k6-analysis.md](./k6-analysis.md)
+- [x] B3 — edge probe + k6 smoke (2026-09-19); **baseline + soak (2026-09-20)** — [k6-analysis.md](./k6-analysis.md); spike optional
 - [x] B2 — Grafana ECS + TillFlow dashboards (2026-09-20); AMP datasource + evidence row §B2
-- [ ] B2 follow-up — RED panels when OTLP metrics in AMP
-- [ ] E — Slack alerting provisioned (`11.4.0-tillflow2`); contact point test + evidence §Phase E
+- [x] B2 follow-up — **payments** RED in AMP (2026-09-20); refresh Grafana panels; **web/pos** RED still 0 until counted traffic
+- [ ] E — Slack secret + CLI webhook OK; Grafana **Test contact point** + §Phase E row after tillflow2 ECS roll
 
 ## Phases A–H (where we are)
 
@@ -22,11 +22,11 @@ Letter phases map to this evidence pack and [how-to-reproduce.md](./how-to-repro
 | Phase | Scope | Status | Next action |
 |-------|--------|--------|-------------|
 | **A** | OTel instrumentation (shared lib, ADOT on ECS, local traces) | **Mostly done** — A1–A4 ✓; A5 E2E trace sale→callback open | Product path deploy + X-Ray trace capture for ADR-008 |
-| **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 UI live ✓** (RED empty) | Close B2 table; optional re-run AMP Explore `ecs_task_*` in Grafana |
+| **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 ✓**; **payments RED in AMP ✓** (2026-09-20) | Grafana screenshot with payments RED; pos/web traffic follow-up |
 | **C** | External synthetics (CloudWatch canary on `/health`) | **Not started** (TF TODO) | Edge probe is stand-in until canary in Terraform |
-| **D** | k6 capacity envelope (**G3**) | **Smoke ✓**; baseline/soak/spike open | Off-hours: `baseline.js` / `soak.js`; fill [k6-analysis.md](./k6-analysis.md) |
+| **D** | k6 capacity envelope (**G3**) | **Smoke, baseline, soak ✓** (2026-09-20) | Optional: `spike.js`; cite logs in [k6-analysis.md](./k6-analysis.md) |
 | **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **In progress** — rules in `infra/grafana/provisioning/alerting/` | Apply + pipeline + **Test contact point**; record §Phase E |
-| **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in repo**; traces partial | Export/screenshot dashboards; file trace IDs under `evidence/reliability/` |
+| **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in** `evidence/reliability/phase-f/` | Screenshots + X-Ray trace ID table in phase-f README |
 | **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Not recorded** | Execute Drill 3; document in how-to-reproduce §Drill 3 |
 | **H** | Resilience / rollback (**G4**, multi-AZ when enabled) | **Drill 4 log exists** in delivery evidence | Tie rollback rehearsal to reliability narrative if required |
 
@@ -166,6 +166,7 @@ Use **non-probe** routes for SLI-style traffic; `/health` and `/ready` are exclu
 | Date | Operator | Edge probe | AMP series visible | Notes |
 |------|----------|------------|-------------------|-------|
 | 2026-09-19 | Minage | OK (`reliability-edge-probe.sh`) | **Yes** — `count({__name__=~".+"})` = **208** | ADOT **tillflow4** on all services; `ecs_task_*` in AMP; PR **#46** (SigV4 + pipeline `ADOT_IMAGE_TAG`), **#47** (`${env:...}` + `awsecscontainermetrics`). |
+| 2026-09-20 | Minage | OK (edge + `otlp-red-amp-verify.sh`) | **Yes** — `count` = **358**; `sum(payments_requests_total)` = **15** | Non-probe traffic via `/api/payments/stk`; `pos`/`web` RED **0** (no counted routes hit). Use script, not `/demo/boom` (web scaffold). |
 
 **Verification commands (2026-09-19, after apply green → CodePipeline Release change → tillflow4 in ECR):**
 
@@ -191,7 +192,7 @@ python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" '{__name__=~"ecs_t
 # e.g. ecs_task_cpu_usage_usermode_Nanoseconds (payments task, devops-g3 cluster)
 ```
 
-**B1 script note:** `b1-amp-validate.sh` uses `sum({svc}_requests_total) or vector(0)` — **"0" with empty `metric` is not proof of RED series.** Probes are excluded from RED; `{service}_requests_total` was still empty in PromQL after `/demo/boom` on this run (OTLP app metrics follow-up). **B1 ingest gate:** non-empty `count({__name__=~".+"})` and `ecs_task_*` remote write.
+**B1 script note:** `b1-amp-validate.sh` uses `sum({svc}_requests_total) or vector(0)` — **"0" with empty `metric` is not proof of RED series.** Probes are excluded from RED. **2026-09-19:** RED looked empty after `/demo/boom` (route not on prod web). **2026-09-20:** `bash infra/scripts/otlp-red-amp-verify.sh` → `payments_requests_total` present. **B1 ingest gate:** non-empty `count({__name__=~".+"})` and `ecs_task_*` remote write; RED proof needs non-probe API traffic.
 
 **Ops note:** On infra merges, run **terraform apply (dev) before** (or immediately then) **CodePipeline Release change**, so `mirror-adot` builds the new `adot_image_tag` (e.g. tillflow4); otherwise ECR keeps the previous tag while Terraform points at the new one.
 
@@ -211,15 +212,15 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 - [x] Grafana ECS (self-hosted, `…/v1/grafana/`, admin from `devops-g3/grafana-admin`)
 - [x] Prometheus datasource **AMP** (uid `AMP`, SigV4, provisioned in image)
 - [x] Dashboards **TillFlow** folder — `web-service-overview`, `payments-service-overview` (baked in ECR image)
-- [x] Panels load; RED queries show **No data** until `{service}_requests_total` in AMP (expected post–B1 note)
-- [ ] **Explore:** confirm `ecs_task_*` or `count({__name__=~".+"})` in Grafana (proves query path)
-- [ ] Phase **E:** contact point test + alert rules visible (after tillflow2 deploy)
+- [x] Panels load; **payments** RED should populate after 2026-09-20 AMP verify (re-open dashboard)
+- [ ] **Explore:** `sum(rate(payments_requests_total[5m]))` or `count({__name__=~".+"})` screenshot for Phase F
+- [ ] Phase **E:** Grafana contact point **Test** (CLI webhook to `# group-3-alerts` OK 2026-09-20); rules after tillflow2
 
 ### Recorded run
 
 | Date | Grafana URL | Dashboards imported | AMP datasource OK | Notes |
 |------|-------------|---------------------|---------------------|-------|
-| 2026-09-20 | `https://w6m0ja1aic.execute-api.us-west-1.amazonaws.com/v1/grafana/` | TillFlow / web + payments (provisioned) | Yes (login + dashboards; Save & test recommended in UI) | APIGW `/v1/grafana/` path rewrite + ALB `/v1/grafana/*` (#52+). RED empty — OTLP app metrics follow-up (same as B1). |
+| 2026-09-20 | `https://w6m0ja1aic.execute-api.us-west-1.amazonaws.com/v1/grafana/` | TillFlow / web + payments (provisioned) | Yes | APIGW `/v1/grafana/` (#52+). **Payments RED in AMP** after `otlp-red-amp-verify.sh` — confirm panels + screenshot (Phase F). |
 
 ---
 
@@ -231,9 +232,10 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 
 ### Checklist
 
-- [ ] `devops-g3/slack-webhook` has AWSCURRENT URL (B0)
+- [x] `devops-g3/slack-webhook` AWSCURRENT full incoming webhook (posts to `# group-3-alerts`)
 - [ ] `grafana_image_tag` **11.4.0-tillflow2** applied + image in ECR + ECS on new task
-- [ ] Grafana → Alerting → Contact points → **Test** slack-tillflow
+- [ ] Force new Grafana ECS deployment after secret update
+- [ ] Grafana → Alerting → Contact points → **Test** slack-tillflow (CLI webhook test OK 2026-09-20)
 - [ ] Alert rules in folder **TillFlow Alerts** (3 rules)
 - [ ] Evidence: Slack screenshot or message ID + date below
 
@@ -241,7 +243,7 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 
 | Date | Contact point test | Rules provisioned | Slack message link / note |
 |------|-------------------|-------------------|---------------------------|
-| | | | |
+| 2026-09-20 | CLI incoming-webhook → `# group-3-alerts` | Pending tillflow2 ECS | Grafana UI Test pending; Phase E merged **main @5746ab0** |
 
 ---
 
@@ -358,7 +360,7 @@ instrument_fastapi(app, service_name="pos")
 - [ ] Non-zero `{service}_requests_total` in AMP after counted edge traffic (OTLP follow-up)
 - [ ] DB driver spans when driver chosen
 - [ ] Private Grafana operator access (G0 feedback)
-- [ ] Live alert rules (Phase E) + k6 baseline/soak (Phase D)
+- [ ] Live alert rules (Phase E); k6 baseline/soak **done** (Phase D)
 
 ---
 

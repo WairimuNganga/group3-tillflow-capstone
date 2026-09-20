@@ -1,3 +1,4 @@
+**/.canary.zip
 .terraform/
 *.tfstate
 *.tfstate.*

@@ -29,10 +29,22 @@ python3 infra/scripts/amp_promql_query.py "$AMP_WORKSPACE_ID" 'count({__name__=~
 
 ```bash
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/smoke.js
-k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js
+# Or wrapper (logs under evidence/reliability/):
+bash infra/scripts/k6-phase-d.sh baseline   # ~14m
+bash infra/scripts/k6-phase-d.sh soak       # ~18m
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/spike.js
-k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
+
+## OTLP RED → AMP (B1 follow-up / dashboards)
+
+```bash
+bash infra/scripts/otlp-red-amp-verify.sh
+# Grafana Explore: sum(rate(payments_requests_total[5m]))
+```
+
+## Phase F (dashboards + traces)
+
+See [phase-f/README.md](./phase-f/README.md). Dashboard JSON copies live under `phase-f/dashboards/`.
 
 Analysis template: [k6-analysis.md](./k6-analysis.md).
 
@@ -64,9 +76,17 @@ terraform -chdir=infra/envs/dev output grafana_url amp_prometheus_endpoint grafa
 
 Do **not** run `spike.js` at the same time as baseline/soak (T1.3 — notify team, run alone).
 
-## External synthetics (Phase C — Terraform TODO)
+## External synthetics (Phase C)
 
-Wire CloudWatch Synthetics canary to `$API_ENDPOINT/health` (1-minute schedule). Until TF lands, edge probe script is the manual stand-in.
+Terraform module `infra/modules/synthetics-canary` — canary `${NAME_PREFIX}-edge-health`, schedule `rate(1 minute)`.
+
+```bash
+CANARY="$(terraform -chdir=infra/envs/dev output -raw synthetics_canary_name)"
+aws synthetics describe-canaries --names "$CANARY" --region "$AWS_REGION"
+aws synthetics get-canary-runs --name "$CANARY" --region "$AWS_REGION" --max-results 3
+```
+
+Until apply completes, `infra/scripts/reliability-edge-probe.sh` remains the manual stand-in.
 
 ## Grafana (Phase B)
 

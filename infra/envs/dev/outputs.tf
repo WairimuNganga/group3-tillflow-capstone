@@ -114,3 +114,24 @@ output "amp_remote_write_url" {
   value       = module.amp.remote_write_url
   sensitive   = false
 }
+
+output "synthetics_canary_name" {
+  description = "CloudWatch Synthetics canary for public edge /health + /ready (G3)."
+  value       = module.synthetics_canary.canary_name
+}
+
+output "synthetics_probe_urls" {
+  description = "URLs probed every minute by the external canary."
+  value = {
+    health = module.synthetics_canary.health_url
+    ready  = module.synthetics_canary.ready_url
+  }
+}
+
+output "cloudwatch_alarm_names" {
+  description = "Starter DLQ + synthetics alarms for drills and runbook."
+  value = {
+    dlq    = module.observability_alarms.dlq_alarm_names
+    canary = module.observability_alarms.canary_alarm_name
+  }
+}

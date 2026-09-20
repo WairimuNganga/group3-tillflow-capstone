@@ -33,6 +33,15 @@ mock_provider "aws" {
       prometheus_endpoint = "https://aps-workspaces.us-west-1.amazonaws.com/workspaces/ws-C6DCB907-F2D7-4D96-957B-66691F865D8B/"
     }
   }
+
+  mock_resource "aws_synthetics_canary" {
+    override_during = plan
+
+    defaults = {
+      name = "devops-g3-edge-health"
+      arn  = "arn:aws:synthetics:us-west-1:240462142849:canary:devops-g3-edge-health"
+    }
+  }
 }
 
 variables {
@@ -166,6 +175,13 @@ run "architecture_contracts" {
   assert {
     condition     = var.db_backup_retention_days >= 7
     error_message = "Backup retention must cover the stated RPO with margin (ADR-002)."
+  }
+
+  # --- External probe (G3) -------------------------------------------------
+
+  assert {
+    condition     = module.synthetics_canary.canary_name == "${var.name_prefix}-edge-health"
+    error_message = "A 1-minute external synthetics canary must probe the public edge (G3 blocked-if)."
   }
 }
 
