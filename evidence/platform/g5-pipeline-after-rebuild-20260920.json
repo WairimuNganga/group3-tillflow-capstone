@@ -1,0 +1,224 @@
+{
+    "pipelineName": "devops-g3-pipeline",
+    "pipelineVersion": 1,
+    "stageStates": [
+        {
+            "stageName": "Source",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "GitHub",
+                    "currentRevision": {
+                        "revisionId": "7c5cb91bc37fa00cdd20822bafa939f734463a6e"
+                    },
+                    "latestExecution": {
+                        "actionExecutionId": "aecfdf55-da98-4163-90d1-0ea688719467",
+                        "status": "Succeeded",
+                        "summary": "{\"ProviderType\":\"GitHub\",\"CommitMessage\":\"Add commission service and TillFlow web demo for daily close and B2C payouts (#57)\\n\\n* Add commission service and TillFlow web demo for daily close and B2C payouts\\n\\n* fix: lint issues in commission\"}",
+                        "lastStatusChange": "2026-09-20T19:27:05.024000+03:00",
+                        "externalExecutionId": "7c5cb91bc37fa00cdd20822bafa939f734463a6e"
+                    },
+                    "entityUrl": "https://us-west-1.console.aws.amazon.com/codesuite/settings/connections/redirect?connectionArn=arn:aws:codestar-connections:us-west-1:240462142849:connection/578148d4-3b23-46a2-97e8-619d6c1f9012&referenceType=BRANCH&FullRepositoryId=WairimuNganga/group3-tillflow-capstone&Branch=main",
+                    "revisionUrl": "https://us-west-1.console.aws.amazon.com/codesuite/settings/connections/redirect?connectionArn=arn:aws:codestar-connections:us-west-1:240462142849:connection/578148d4-3b23-46a2-97e8-619d6c1f9012&referenceType=COMMIT&FullRepositoryId=WairimuNganga/group3-tillflow-capstone&Commit=7c5cb91bc37fa00cdd20822bafa939f734463a6e"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "9e3dcd3e-9d1c-49d2-9e73-13fa298c9920",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "BuildScanPush",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "mirror-adot",
+                    "latestExecution": {
+                        "actionExecutionId": "27888cde-ab5c-4d78-bd96-e2fa4f0701eb",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:28:07.787000+03:00",
+                        "externalExecutionId": "devops-g3-adot-mirror:1ff6263d-5d2b-4759-a90b-6c9098da763d",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-adot-mirror:1ff6263d-5d2b-4759-a90b-6c9098da763d/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-adot-mirror/view"
+                },
+                {
+                    "actionName": "build-grafana",
+                    "latestExecution": {
+                        "actionExecutionId": "2245a4a6-0012-424c-bf9c-ac7ce1e9e037",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:28:08.055000+03:00",
+                        "externalExecutionId": "devops-g3-grafana-build:8a6b3072-152c-41cb-88da-6c73d6fd688b",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-grafana-build:8a6b3072-152c-41cb-88da-6c73d6fd688b/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-grafana-build/view"
+                },
+                {
+                    "actionName": "build-commission",
+                    "latestExecution": {
+                        "actionExecutionId": "07b25e55-e494-4ede-b4bd-08b6c1e0731e",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:30:11.903000+03:00",
+                        "externalExecutionId": "devops-g3-commission-build:db1365d9-0ff3-4771-842f-c430581b6f2d",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-commission-build:db1365d9-0ff3-4771-842f-c430581b6f2d/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-commission-build/view"
+                },
+                {
+                    "actionName": "build-payments",
+                    "latestExecution": {
+                        "actionExecutionId": "0dbcb5d2-b42d-4480-b892-332590594685",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:30:42.918000+03:00",
+                        "externalExecutionId": "devops-g3-payments-build:f750255b-4d8b-406d-a119-db70e7a0b134",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-payments-build:f750255b-4d8b-406d-a119-db70e7a0b134/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-payments-build/view"
+                },
+                {
+                    "actionName": "build-pos",
+                    "latestExecution": {
+                        "actionExecutionId": "d394cf6f-a03e-4058-930f-e73cc492d9a6",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:31:13.920000+03:00",
+                        "externalExecutionId": "devops-g3-pos-build:11a4eb0c-b5f1-489e-943b-fd40fa810040",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-pos-build:11a4eb0c-b5f1-489e-943b-fd40fa810040/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-pos-build/view"
+                },
+                {
+                    "actionName": "build-web",
+                    "latestExecution": {
+                        "actionExecutionId": "4157635d-1ed3-4c7b-ac2f-70d9a2bc7325",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:31:14.158000+03:00",
+                        "externalExecutionId": "devops-g3-web-build:8dc2b792-a3fc-44f5-866f-5a8682c82a4e",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-web-build:8dc2b792-a3fc-44f5-866f-5a8682c82a4e/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-web-build/view"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "9e3dcd3e-9d1c-49d2-9e73-13fa298c9920",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "MigrateDb",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "pos-alembic",
+                    "latestExecution": {
+                        "actionExecutionId": "315b2487-c539-4485-8656-b5a832f308ac",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:34:19.511000+03:00",
+                        "externalExecutionId": "devops-g3-pos-migrations:17ba3ed8-aeab-48a9-8db0-f8cc42ee3a95",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-pos-migrations:17ba3ed8-aeab-48a9-8db0-f8cc42ee3a95/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-pos-migrations/view"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "9e3dcd3e-9d1c-49d2-9e73-13fa298c9920",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "DeployEcs",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "deploy-commission",
+                    "latestExecution": {
+                        "actionExecutionId": "5838ca73-968e-47f8-9952-2ceb2e8d4ec9",
+                        "status": "Succeeded",
+                        "summary": "Cluster: devops-g3 service: devops-g3-commission status: FINISHED",
+                        "lastStatusChange": "2026-09-20T19:36:25.041000+03:00",
+                        "externalExecutionId": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-commission:81",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-commission/deployments"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-commission/details"
+                },
+                {
+                    "actionName": "deploy-payments",
+                    "latestExecution": {
+                        "actionExecutionId": "d90e4bdb-b808-404e-b428-75ed6d30dadf",
+                        "status": "Succeeded",
+                        "summary": "Cluster: devops-g3 service: devops-g3-payments status: FINISHED",
+                        "lastStatusChange": "2026-09-20T19:35:54.353000+03:00",
+                        "externalExecutionId": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments:80",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-payments/deployments"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-payments/details"
+                },
+                {
+                    "actionName": "deploy-pos",
+                    "latestExecution": {
+                        "actionExecutionId": "0db91c88-bcb7-4d7a-9bea-ee4aefb9dcb7",
+                        "status": "Succeeded",
+                        "summary": "Cluster: devops-g3 service: devops-g3-pos status: FINISHED",
+                        "lastStatusChange": "2026-09-20T19:35:54.725000+03:00",
+                        "externalExecutionId": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos:80",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-pos/deployments"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-pos/details"
+                },
+                {
+                    "actionName": "deploy-web",
+                    "latestExecution": {
+                        "actionExecutionId": "478d7da4-0f6c-47dc-bb0b-f50c82b17c2d",
+                        "status": "Succeeded",
+                        "summary": "Cluster: devops-g3 service: devops-g3-web status: FINISHED",
+                        "lastStatusChange": "2026-09-20T19:35:54.912000+03:00",
+                        "externalExecutionId": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web:82",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-web/deployments"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/ecs/home?region=us-west-1#/clusters/devops-g3/services/devops-g3-web/details"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "9e3dcd3e-9d1c-49d2-9e73-13fa298c9920",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "Smoke",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "scale-and-smoke",
+                    "latestExecution": {
+                        "actionExecutionId": "d1b2ee10-631d-41a1-9868-a8f66485fad7",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-09-20T19:43:35.875000+03:00",
+                        "externalExecutionId": "devops-g3-smoke:f401e1e5-ee86-4af5-988b-e38e62865fc3",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/builds/devops-g3-smoke:f401e1e5-ee86-4af5-988b-e38e62865fc3/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=us-west-1#/projects/devops-g3-smoke/view"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "9e3dcd3e-9d1c-49d2-9e73-13fa298c9920",
+                "status": "Succeeded"
+            }
+        }
+    ],
+    "created": "2026-09-20T19:05:05.994000+03:00",
+    "updated": "2026-09-20T19:05:05.994000+03:00"
+}

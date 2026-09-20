@@ -12,5 +12,5 @@ output "dlq_arns" {
 
 output "dlq_names" {
   description = "For the DLQ-depth alarm — stuck work must be visible (ADR-004)."
-  value       = { for k, q in aws_sqs_queue.dlq : k => q.name }
+  value       = { for k, _ in local.queues : k => aws_sqs_queue.dlq[k].name }
 }

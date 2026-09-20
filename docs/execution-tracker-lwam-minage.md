@@ -14,9 +14,9 @@
 |------|------|-------|--------|----------------|
 | **A1** | `synthetics-canary` Terraform module + wire in `envs/dev` | Lwam | [x] | PR: platform synthetics |
 | **A2** | `observability-alarms` module (DLQ depth + canary SuccessPercent) | Lwam | [x] | same PR |
-| **A3** | `terraform test` + plan locally; apply in dev | Lwam | [ ] | `evidence/platform/terraform-plan-*.json` |
+| **A3** | `terraform test` + apply in dev | Lwam | [x] | GitHub Terraform apply passed; see platform README |
 | **A4** | Capture naming/tag audit log after plan | Lwam | [ ] | `evidence/platform/naming-tag-audit-*.log` |
-| **A5** | `aws synthetics describe-canaries` + one run log | Lwam | [ ] | `evidence/platform/synthetics-*.log` |
+| **A5** | `aws synthetics describe-canaries` + one run log | Lwam | [x] | `evidence/platform/synthetics-describe-20260920.json`, `synthetics-runs-20260920.json` |
 
 ---
 
@@ -27,7 +27,7 @@
 | **B1** | `evidence/platform/how-to-reproduce.md` | [x] | this file |
 | **B2** | DB bootstrap build log (rerun if needed) | [ ] | `db-bootstrap-build-*.log` |
 | **B3** | Schema/roles/RLS proof (no passwords) | [ ] | `db-roles-rls-*.log` |
-| **B4** | `evidence/platform/README.md` checkboxes + PR links | [ ] | README |
+| **B4** | `evidence/platform/README.md` checkboxes + PR links | [x] | `evidence/platform/README.md` |
 
 ---
 
@@ -49,9 +49,9 @@
 |------|------|--------|----------|
 | **D1** | SLO/uptime/burn dashboard JSON | [ ] | `infra/grafana/dashboards/tillflow-slo-overview.json` |
 | **D2** | Business metrics on payments dashboard | [ ] | dashboard JSON |
-| **D3** | Export to `evidence/reliability/phase-f/dashboards/` | [ ] | phase-f README |
+| **D3** | Export to `evidence/reliability/phase-f/dashboards/` | [x] | `evidence/reliability/phase-f/dashboards/` |
 | **D4** | Run `k6 spike.js` | [ ] | `k6-spike.log` |
-| **D5** | Finish `k6-analysis.md` (RPS, bottleneck, cost) | [ ] | analysis md |
+| **D5** | Finish `k6-analysis.md` (RPS, bottleneck, cost) | [x] | `evidence/reliability/k6-analysis.md` |
 | **D6** | Commit `k6-soak.json` | [ ] | git |
 
 ---

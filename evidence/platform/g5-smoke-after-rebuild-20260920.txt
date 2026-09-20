@@ -1,0 +1,30 @@
+GET https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1/health
+HTTP/2 200 
+date: Sun, 20 Sep 2026 16:48:57 GMT
+content-type: application/json
+content-length: 54
+server: envoy
+content-security-policy: default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+x-content-type-options: nosniff
+x-frame-options: DENY
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: geolocation=(), microphone=(), camera=()
+x-envoy-upstream-service-time: 1
+apigw-requestid: REDACTED
+
+{"status":"ok","service":"web","git_sha":"REPLACE_ME"}
+GET https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1/ready
+HTTP/2 200 
+date: Sun, 20 Sep 2026 16:48:58 GMT
+content-type: application/json
+content-length: 34
+server: envoy
+content-security-policy: default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+x-content-type-options: nosniff
+x-frame-options: DENY
+referrer-policy: strict-origin-when-cross-origin
+permissions-policy: geolocation=(), microphone=(), camera=()
+x-envoy-upstream-service-time: 1
+apigw-requestid: REDACTED
+
+{"status":"ready","service":"web"}

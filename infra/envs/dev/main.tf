@@ -228,6 +228,7 @@ module "ecs_platform" {
 resource "aws_ecr_repository" "adot" {
   name                 = "${var.name_prefix}/adot"
   image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -264,6 +265,7 @@ resource "aws_ecr_lifecycle_policy" "adot" {
 resource "aws_ecr_repository" "grafana" {
   name                 = "${var.name_prefix}/grafana"
   image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -550,8 +552,9 @@ module "observability_alarms" {
   name_prefix             = var.name_prefix
   dlq_names               = module.messaging.dlq_names
   canary_name             = module.synthetics_canary.canary_name
+  canary_alarm_enabled    = true
   ecs_cluster_name        = module.ecs_platform.cluster_name
-  ecs_service_names       = { for service, mod in module.service : service => mod.service_name }
+  ecs_service_names       = { for service in local.services : service => module.service[service].service_name }
   rds_instance_identifier = module.rds.instance_identifier
 }
 

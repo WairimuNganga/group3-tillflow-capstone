@@ -74,9 +74,9 @@ resource "aws_s3_bucket" "this" {
 }
 
 resource "aws_s3_bucket_versioning" "this" {
-  for_each = aws_s3_bucket.this
+  for_each = local.buckets
 
-  bucket = each.value.id
+  bucket = aws_s3_bucket.this[each.key].id
   versioning_configuration {
     status = "Enabled"
   }
@@ -97,9 +97,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {
-  for_each = aws_s3_bucket.this
+  for_each = local.buckets
 
-  bucket                  = each.value.id
+  bucket                  = aws_s3_bucket.this[each.key].id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -146,7 +146,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 # ---------------------------------------------------------------------------
 
 data "aws_iam_policy_document" "deny_insecure" {
-  for_each = aws_s3_bucket.this
+  for_each = local.buckets
 
   statement {
     sid    = "DenyInsecureTransport"
@@ -157,8 +157,11 @@ data "aws_iam_policy_document" "deny_insecure" {
       identifiers = ["*"]
     }
 
-    actions   = ["s3:*"]
-    resources = [each.value.arn, "${each.value.arn}/*"]
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.this[each.key].arn,
+      "${aws_s3_bucket.this[each.key].arn}/*",
+    ]
 
     condition {
       test     = "Bool"
@@ -213,9 +216,9 @@ data "aws_iam_policy_document" "alb_logs" {
 }
 
 resource "aws_s3_bucket_policy" "this" {
-  for_each = aws_s3_bucket.this
+  for_each = local.buckets
 
-  bucket = each.value.id
+  bucket = aws_s3_bucket.this[each.key].id
   policy = each.key == "alb-logs" ? data.aws_iam_policy_document.alb_logs.json : data.aws_iam_policy_document.deny_insecure[each.key].json
 
   depends_on = [aws_s3_bucket_public_access_block.this]

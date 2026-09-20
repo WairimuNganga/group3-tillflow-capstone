@@ -1,0 +1,1506 @@
+{
+    "tasks": [
+        {
+            "attachments": [
+                {
+                    "id": "8633d92f-0eb8-4e99-b392-4ee2170d795c",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-Bvey9wG"
+                        }
+                    ]
+                },
+                {
+                    "id": "93920f08-1683-4e8b-9a5c-7dbdc4b25515",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-0327830d332cfbb1f"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-0bfe197ee736a706b"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "06:ff:e2:1c:ea:a3"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-92-196.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.92.196"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1c",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:37:40.892000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b/7df8016b-9de8-494c-91d8-1b620e6ae5bb",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "0d5634cde6fb49f5928cdf2e13a4f87b-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "93920f08-1683-4e8b-9a5c-7dbdc4b25515",
+                            "privateIpv4Address": "10.20.92.196"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b/922a7eee-2736-4081-8f18-e29671e61a07",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b",
+                    "name": "pos",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/pos:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:8a17a1d13629a8f64e5193ab29cbf48e057d56fe3c4912db0a35d90e15935e03",
+                    "runtimeId": "0d5634cde6fb49f5928cdf2e13a4f87b-1412654217",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "93920f08-1683-4e8b-9a5c-7dbdc4b25515",
+                            "privateIpv4Address": "10.20.92.196"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b/950c4db0-eed5-4cbb-b8b1-63d374fc0401",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b",
+                    "name": "ecs-service-connect-Bvey9wG",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "93920f08-1683-4e8b-9a5c-7dbdc4b25515",
+                            "privateIpv4Address": "10.20.92.196"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T19:37:35.887000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-pos",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "pos"
+                    },
+                    {
+                        "name": "ecs-service-connect-Bvey9wG",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-pos/ecs-svc/7341379951440253443"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:37:48.682000+03:00",
+            "pullStoppedAt": "2026-09-20T19:37:53.653000+03:00",
+            "startedAt": "2026-09-20T19:39:35.843000+03:00",
+            "startedBy": "ecs-svc/7341379951440253443",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/0d5634cde6fb49f5928cdf2e13a4f87b",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos:80",
+            "version": 6,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "11101e3b-02cc-458a-8d45-052f4f737845",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-oSSwatf"
+                        }
+                    ]
+                },
+                {
+                    "id": "f3ddeb5a-e0ba-4adb-b9b3-b49c85981e58",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-06b0cbcbf13389a85"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-05351c6ade8ee87d3"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "02:78:7f:f3:4f:51"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-71-245.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.71.245"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1a",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:38:06.124000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/4318f475f1474e31bf71716b2bdff6e7/42e6ebd4-7f32-4964-9b5a-5300c3e97024",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/4318f475f1474e31bf71716b2bdff6e7",
+                    "name": "ecs-service-connect-oSSwatf",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "f3ddeb5a-e0ba-4adb-b9b3-b49c85981e58",
+                            "privateIpv4Address": "10.20.71.245"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/4318f475f1474e31bf71716b2bdff6e7/a5c914ec-f8ae-4b73-9f40-12d94a6a2caa",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/4318f475f1474e31bf71716b2bdff6e7",
+                    "name": "payments",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/payments:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:4cc948cae09eed97ab58fe660e15cea148e13c8bd5886892c4eec948888aa2f7",
+                    "runtimeId": "4318f475f1474e31bf71716b2bdff6e7-3392796198",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "f3ddeb5a-e0ba-4adb-b9b3-b49c85981e58",
+                            "privateIpv4Address": "10.20.71.245"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/4318f475f1474e31bf71716b2bdff6e7/d451480f-c2b7-4829-9544-be5bcf318bd1",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/4318f475f1474e31bf71716b2bdff6e7",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "4318f475f1474e31bf71716b2bdff6e7-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "f3ddeb5a-e0ba-4adb-b9b3-b49c85981e58",
+                            "privateIpv4Address": "10.20.71.245"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                }
+            ],
+            "cpu": "1024",
+            "createdAt": "2026-09-20T19:38:02.805000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-payments",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "2048",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "payments"
+                    },
+                    {
+                        "name": "ecs-service-connect-oSSwatf",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-payments/ecs-svc/0878721501032210530"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:38:13.556000+03:00",
+            "pullStoppedAt": "2026-09-20T19:38:17.823000+03:00",
+            "startedAt": "2026-09-20T19:39:16.950000+03:00",
+            "startedBy": "ecs-svc/0878721501032210530",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/4318f475f1474e31bf71716b2bdff6e7",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments:80",
+            "version": 4,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "366cc5f4-82fd-4bdd-88cb-1121f0b45310",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-wBYNZUE"
+                        }
+                    ]
+                },
+                {
+                    "id": "db45a751-f113-406e-8aa7-d83e369f31f3",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-0327830d332cfbb1f"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-0e9347968461715e1"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "06:ff:d2:47:62:0f"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-88-147.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.88.147"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1c",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:37:48.322000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13/1b5e95b6-1d1f-453e-aa57-339d8a9accac",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "45e3b7f75dad4f9583dd32f5e3cf1b13-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "db45a751-f113-406e-8aa7-d83e369f31f3",
+                            "privateIpv4Address": "10.20.88.147"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13/2e493973-f292-44e4-9c88-f12d03395f6d",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13",
+                    "name": "commission",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/commission:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:efe459ac84db288ee314f620aaea15fdb1554da1d8ecff7fdc7f2f70952be777",
+                    "runtimeId": "45e3b7f75dad4f9583dd32f5e3cf1b13-0966788752",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "db45a751-f113-406e-8aa7-d83e369f31f3",
+                            "privateIpv4Address": "10.20.88.147"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13/4c94a5d8-659e-4d80-80a0-388432cbd662",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13",
+                    "name": "ecs-service-connect-wBYNZUE",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "db45a751-f113-406e-8aa7-d83e369f31f3",
+                            "privateIpv4Address": "10.20.88.147"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T19:37:45.148000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-commission",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "ecs-service-connect-wBYNZUE",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-commission/ecs-svc/2706615207873895098"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "commission"
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:37:55.745000+03:00",
+            "pullStoppedAt": "2026-09-20T19:38:00.666000+03:00",
+            "startedAt": "2026-09-20T19:39:36.665000+03:00",
+            "startedBy": "ecs-svc/2706615207873895098",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/45e3b7f75dad4f9583dd32f5e3cf1b13",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-commission:81",
+            "version": 7,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "d72f3b51-75d5-418e-a896-c83127cda6e7",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-0327830d332cfbb1f"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-00a629a0ab388acdf"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "06:ff:c5:a5:7f:0b"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-89-157.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.89.157"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1c",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T18:53:33.978000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/66d1d7fd3dda4c15a9b9c0f0f2018219/be3285d1-1772-463f-b1a0-b66580eba608",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/66d1d7fd3dda4c15a9b9c0f0f2018219",
+                    "name": "grafana",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/grafana:11.4.0-tillflow2",
+                    "imageDigest": "sha256:3cc7440d2b1e4f476d634d565306a3f971332b3e246033a7f23688ee4f281339",
+                    "runtimeId": "66d1d7fd3dda4c15a9b9c0f0f2018219-1099699051",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "d72f3b51-75d5-418e-a896-c83127cda6e7",
+                            "privateIpv4Address": "10.20.89.157"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "lastStartedAt": "2026-09-20T18:54:09.123000+03:00",
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "RUNNING"
+                        }
+                    ],
+                    "cpu": "0"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T18:53:30.066000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-grafana",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "grafana"
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T18:53:41.623000+03:00",
+            "pullStoppedAt": "2026-09-20T18:53:46.067000+03:00",
+            "startedAt": "2026-09-20T18:54:02.476000+03:00",
+            "startedBy": "ecs-svc/3830506041651858789",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/66d1d7fd3dda4c15a9b9c0f0f2018219",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-grafana:5",
+            "version": 6,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "4db29b98-cd1d-415e-9de2-399b5176b07c",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-oSSwatf"
+                        }
+                    ]
+                },
+                {
+                    "id": "6a899f13-1d93-4297-abef-145c33baa4f2",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-0327830d332cfbb1f"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-0fb7e5a3309d90fcd"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "06:ff:dd:48:3b:d7"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-81-68.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.81.68"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1c",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:37:46.599000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/996e812ce597408781448943e1b57858/0e8754de-1c1d-43c1-94c8-08b370db8974",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/996e812ce597408781448943e1b57858",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "996e812ce597408781448943e1b57858-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "6a899f13-1d93-4297-abef-145c33baa4f2",
+                            "privateIpv4Address": "10.20.81.68"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/996e812ce597408781448943e1b57858/52315735-8a4c-4f5f-81e5-c6ceb6716bc0",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/996e812ce597408781448943e1b57858",
+                    "name": "payments",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/payments:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:4cc948cae09eed97ab58fe660e15cea148e13c8bd5886892c4eec948888aa2f7",
+                    "runtimeId": "996e812ce597408781448943e1b57858-3392796198",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "6a899f13-1d93-4297-abef-145c33baa4f2",
+                            "privateIpv4Address": "10.20.81.68"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/996e812ce597408781448943e1b57858/78db3a76-fb55-4b62-b689-34e0139c1be4",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/996e812ce597408781448943e1b57858",
+                    "name": "ecs-service-connect-oSSwatf",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "6a899f13-1d93-4297-abef-145c33baa4f2",
+                            "privateIpv4Address": "10.20.81.68"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                }
+            ],
+            "cpu": "1024",
+            "createdAt": "2026-09-20T19:37:43.316000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-payments",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "2048",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "payments"
+                    },
+                    {
+                        "name": "ecs-service-connect-oSSwatf",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-payments/ecs-svc/0878721501032210530"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:37:57.537000+03:00",
+            "pullStoppedAt": "2026-09-20T19:38:01.931000+03:00",
+            "startedAt": "2026-09-20T19:39:00.047000+03:00",
+            "startedBy": "ecs-svc/0878721501032210530",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/996e812ce597408781448943e1b57858",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments:80",
+            "version": 6,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "1575c390-caf7-436e-a6d6-ff821a792787",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-Bvey9wG"
+                        }
+                    ]
+                },
+                {
+                    "id": "c4646d61-07c7-470d-acca-f81269483c38",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-06b0cbcbf13389a85"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-09f250c0a0d3f5dab"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "02:78:5d:b5:d3:69"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-78-8.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.78.8"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1a",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:38:09.332000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/a26299bbb6a043cebb0d795fe2500570/5490327f-91b3-4aad-b673-3b0947dcfed8",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/a26299bbb6a043cebb0d795fe2500570",
+                    "name": "pos",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/pos:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:8a17a1d13629a8f64e5193ab29cbf48e057d56fe3c4912db0a35d90e15935e03",
+                    "runtimeId": "a26299bbb6a043cebb0d795fe2500570-1412654217",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "c4646d61-07c7-470d-acca-f81269483c38",
+                            "privateIpv4Address": "10.20.78.8"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/a26299bbb6a043cebb0d795fe2500570/5711687f-dd4c-47fa-81c7-0f60c79be496",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/a26299bbb6a043cebb0d795fe2500570",
+                    "name": "ecs-service-connect-Bvey9wG",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "c4646d61-07c7-470d-acca-f81269483c38",
+                            "privateIpv4Address": "10.20.78.8"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/a26299bbb6a043cebb0d795fe2500570/a163773c-1a7b-4fe4-ab11-754b1284c67e",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/a26299bbb6a043cebb0d795fe2500570",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "a26299bbb6a043cebb0d795fe2500570-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "c4646d61-07c7-470d-acca-f81269483c38",
+                            "privateIpv4Address": "10.20.78.8"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T19:38:05.633000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-pos",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "pos"
+                    },
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "ecs-service-connect-Bvey9wG",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-pos/ecs-svc/7341379951440253443"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:38:16.239000+03:00",
+            "pullStoppedAt": "2026-09-20T19:38:21.178000+03:00",
+            "startedAt": "2026-09-20T19:39:59.079000+03:00",
+            "startedBy": "ecs-svc/7341379951440253443",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/a26299bbb6a043cebb0d795fe2500570",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos:80",
+            "version": 5,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "e0203ef5-b06f-4ecc-93ad-389b81729ee8",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-06b0cbcbf13389a85"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-0dc7fd45b84e5fe1a"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "02:78:66:a6:be:6d"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-74-135.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.74.135"
+                        }
+                    ]
+                },
+                {
+                    "id": "e2f7da17-5abc-4415-a058-e63c74d29574",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-PFXuxxY"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1a",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:38:07.837000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c2a065ae87c24ebb92f28c2a19465365/6b5d09d1-48d8-4bad-809e-95a78bbbdc8b",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c2a065ae87c24ebb92f28c2a19465365",
+                    "name": "web",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:d665bf2d0a9cfeec11db9b54c52d77eec894df650b46f79cb1f2d604540a2417",
+                    "runtimeId": "c2a065ae87c24ebb92f28c2a19465365-0265927825",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "e0203ef5-b06f-4ecc-93ad-389b81729ee8",
+                            "privateIpv4Address": "10.20.74.135"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c2a065ae87c24ebb92f28c2a19465365/c93f9d4a-7fbb-4f6a-87e6-5cd1da9255ef",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c2a065ae87c24ebb92f28c2a19465365",
+                    "name": "ecs-service-connect-PFXuxxY",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "e0203ef5-b06f-4ecc-93ad-389b81729ee8",
+                            "privateIpv4Address": "10.20.74.135"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c2a065ae87c24ebb92f28c2a19465365/ce915f74-96b0-46de-8a93-617bf3807dde",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c2a065ae87c24ebb92f28c2a19465365",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "c2a065ae87c24ebb92f28c2a19465365-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "e0203ef5-b06f-4ecc-93ad-389b81729ee8",
+                            "privateIpv4Address": "10.20.74.135"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T19:38:04.367000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-web",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "web"
+                    },
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "ecs-service-connect-PFXuxxY",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-web/ecs-svc/4359292856228436699"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:38:15.742000+03:00",
+            "pullStoppedAt": "2026-09-20T19:38:20.050000+03:00",
+            "startedAt": "2026-09-20T19:39:58.901000+03:00",
+            "startedBy": "ecs-svc/4359292856228436699",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c2a065ae87c24ebb92f28c2a19465365",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web:82",
+            "version": 5,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        },
+        {
+            "attachments": [
+                {
+                    "id": "53720e61-b138-42be-a52f-e93b579c9a00",
+                    "type": "ElasticNetworkInterface",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-0327830d332cfbb1f"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-02bb8bf85804c4f32"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "06:ff:d9:4d:21:b1"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-10-20-84-134.us-west-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "10.20.84.134"
+                        }
+                    ]
+                },
+                {
+                    "id": "b685b50b-bcb5-4c22-afb7-2f502aa6be7e",
+                    "type": "ServiceConnect",
+                    "status": "ATTACHED",
+                    "details": [
+                        {
+                            "name": "ContainerName",
+                            "value": "ecs-service-connect-PFXuxxY"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "arm64"
+                }
+            ],
+            "availabilityZone": "us-west-1c",
+            "clusterArn": "arn:aws:ecs:us-west-1:240462142849:cluster/devops-g3",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-09-20T19:37:36.189000+03:00",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c4df648a4afe47419a85da58b592ff51/99b3b9c1-5c5d-4a46-9395-2470e46366e8",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c4df648a4afe47419a85da58b592ff51",
+                    "name": "adot",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/adot:v0.43.3-tillflow4",
+                    "imageDigest": "sha256:d9ef39dd6027b43a21434a2930accc8d2e33a516fdba4bebb4d7285df46d10ab",
+                    "runtimeId": "c4df648a4afe47419a85da58b592ff51-1020010547",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "53720e61-b138-42be-a52f-e93b579c9a00",
+                            "privateIpv4Address": "10.20.84.134"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c4df648a4afe47419a85da58b592ff51/aa9aea7d-b484-4869-8fb3-4d79fa51b385",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c4df648a4afe47419a85da58b592ff51",
+                    "name": "web",
+                    "image": "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web:7c5cb91bc37fa00cdd20822bafa939f734463a6e",
+                    "imageDigest": "sha256:d665bf2d0a9cfeec11db9b54c52d77eec894df650b46f79cb1f2d604540a2417",
+                    "runtimeId": "c4df648a4afe47419a85da58b592ff51-0265927825",
+                    "lastStatus": "RUNNING",
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "53720e61-b138-42be-a52f-e93b579c9a00",
+                            "privateIpv4Address": "10.20.84.134"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY",
+                    "managedAgents": [
+                        {
+                            "name": "ExecuteCommandAgent",
+                            "lastStatus": "STOPPED"
+                        }
+                    ],
+                    "cpu": "0"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-west-1:240462142849:container/devops-g3/c4df648a4afe47419a85da58b592ff51/fa03bc71-7cf0-4b3e-9574-f1fdd7621ac2",
+                    "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c4df648a4afe47419a85da58b592ff51",
+                    "name": "ecs-service-connect-PFXuxxY",
+                    "lastStatus": "RUNNING",
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "53720e61-b138-42be-a52f-e93b579c9a00",
+                            "privateIpv4Address": "10.20.84.134"
+                        }
+                    ],
+                    "healthStatus": "HEALTHY"
+                }
+            ],
+            "cpu": "512",
+            "createdAt": "2026-09-20T19:37:32.884000+03:00",
+            "desiredStatus": "RUNNING",
+            "enableExecuteCommand": true,
+            "group": "service:devops-g3-web",
+            "healthStatus": "HEALTHY",
+            "lastStatus": "RUNNING",
+            "launchType": "FARGATE",
+            "memory": "1024",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "adot"
+                    },
+                    {
+                        "name": "web"
+                    },
+                    {
+                        "name": "ecs-service-connect-PFXuxxY",
+                        "environment": [
+                            {
+                                "name": "ENVOY_CONCURRENCY",
+                                "value": "2"
+                            },
+                            {
+                                "name": "ENVOY_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "AWS_REGION",
+                                "value": "us-west-1"
+                            },
+                            {
+                                "name": "ENABLE_STATS_SNAPSHOT",
+                                "value": "true"
+                            },
+                            {
+                                "name": "APPMESH_METRIC_EXTENSION_VERSION",
+                                "value": "1"
+                            },
+                            {
+                                "name": "APPNET_ENVOY_RESTART_COUNT",
+                                "value": "3"
+                            },
+                            {
+                                "name": "HC_DISCONNECTED_TIMEOUT_S",
+                                "value": "10800"
+                            },
+                            {
+                                "name": "APPNET_AGENT_ADMIN_MODE",
+                                "value": "UDS"
+                            },
+                            {
+                                "name": "APPMESH_RESOURCE_ARN",
+                                "value": "arn:aws:ecs:us-west-1:240462142849:task-set/devops-g3/devops-g3-web/ecs-svc/4359292856228436699"
+                            },
+                            {
+                                "name": "NAMESPACE_NAME",
+                                "value": "tillflow.local"
+                            },
+                            {
+                                "name": "NAMESPACE_ARN",
+                                "value": "arn:aws:servicediscovery:us-west-1:240462142849:namespace/ns-m3b22vodi4nakqzz"
+                            }
+                        ]
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-09-20T19:37:46.281000+03:00",
+            "pullStoppedAt": "2026-09-20T19:37:50.488000+03:00",
+            "startedAt": "2026-09-20T19:39:23.163000+03:00",
+            "startedBy": "ecs-svc/4359292856228436699",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-west-1:240462142849:task/devops-g3/c4df648a4afe47419a85da58b592ff51",
+            "taskDefinitionArn": "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web:82",
+            "version": 6,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        }
+    ],
+    "failures": []
+}

@@ -1,0 +1,233 @@
+{
+    "builds": [
+        {
+            "id": "devops-g3-db-bootstrap:745f7c6e-971d-440e-a3f6-a7b28e96b019",
+            "arn": "arn:aws:codebuild:us-west-1:240462142849:build/devops-g3-db-bootstrap:745f7c6e-971d-440e-a3f6-a7b28e96b019",
+            "buildNumber": 1,
+            "startTime": "2026-09-20T19:25:04.715000+03:00",
+            "endTime": "2026-09-20T19:26:21.175000+03:00",
+            "currentPhase": "COMPLETED",
+            "buildStatus": "SUCCEEDED",
+            "projectName": "devops-g3-db-bootstrap",
+            "phases": [
+                {
+                    "phaseType": "SUBMITTED",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:04.715000+03:00",
+                    "endTime": "2026-09-20T19:25:04.805000+03:00",
+                    "durationInSeconds": 0
+                },
+                {
+                    "phaseType": "QUEUED",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:04.805000+03:00",
+                    "endTime": "2026-09-20T19:25:06.159000+03:00",
+                    "durationInSeconds": 1
+                },
+                {
+                    "phaseType": "PROVISIONING",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:06.159000+03:00",
+                    "endTime": "2026-09-20T19:25:27.227000+03:00",
+                    "durationInSeconds": 21,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "DOWNLOAD_SOURCE",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:27.227000+03:00",
+                    "endTime": "2026-09-20T19:25:28.162000+03:00",
+                    "durationInSeconds": 0,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "INSTALL",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:28.162000+03:00",
+                    "endTime": "2026-09-20T19:25:56.506000+03:00",
+                    "durationInSeconds": 28,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "PRE_BUILD",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:56.506000+03:00",
+                    "endTime": "2026-09-20T19:25:56.593000+03:00",
+                    "durationInSeconds": 0,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "BUILD",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:25:56.593000+03:00",
+                    "endTime": "2026-09-20T19:26:20.677000+03:00",
+                    "durationInSeconds": 24,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "POST_BUILD",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:26:20.677000+03:00",
+                    "endTime": "2026-09-20T19:26:20.725000+03:00",
+                    "durationInSeconds": 0,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "UPLOAD_ARTIFACTS",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:26:20.725000+03:00",
+                    "endTime": "2026-09-20T19:26:20.825000+03:00",
+                    "durationInSeconds": 0,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "FINALIZING",
+                    "phaseStatus": "SUCCEEDED",
+                    "startTime": "2026-09-20T19:26:20.825000+03:00",
+                    "endTime": "2026-09-20T19:26:21.175000+03:00",
+                    "durationInSeconds": 0,
+                    "contexts": [
+                        {
+                            "statusCode": "",
+                            "message": ""
+                        }
+                    ]
+                },
+                {
+                    "phaseType": "COMPLETED",
+                    "startTime": "2026-09-20T19:26:21.175000+03:00"
+                }
+            ],
+            "source": {
+                "type": "NO_SOURCE",
+                "gitCloneDepth": 0,
+                "buildspec": "version: 0.2\n\n# One-off G2 database bootstrap. Run this project after the dev stack exists.\n# It creates per-service owner/runtime role pairs, then stores only runtime\n# credentials in the application DB secret. The master password is read from\n# the RDS-managed secret at runtime and is never printed.\n\nenv:\n  shell: bash\n\nphases:\n  install:\n    commands:\n      - set -euo pipefail\n      - |\n        if ! command -v psql >/dev/null 2>&1; then\n          if command -v apt-get >/dev/null 2>&1; then\n            find /etc/apt -type f -name '*.list' -exec sed -i 's|http://|https://|g' {} +\n            apt-get update\n            apt-get install -y postgresql-client\n          elif command -v dnf >/dev/null 2>&1; then\n            dnf install -y postgresql15\n          elif command -v yum >/dev/null 2>&1; then\n            yum install -y postgresql15\n          else\n            echo \"No supported package manager found for installing psql\" >&2\n            exit 2\n          fi\n        fi\n\n  build:\n    commands:\n      - set -euo pipefail\n      - test -n \"${DB_HOST}\"\n      - test -n \"${DB_NAME}\"\n      - test -n \"${MASTER_SECRET_ARN}\"\n      - test -n \"${DB_SECRET_ARN}\"\n      - test -n \"${DB_PROXY_SECRET_ARNS_JSON}\"\n      - MASTER_JSON=\"$(aws secretsmanager get-secret-value --secret-id \"${MASTER_SECRET_ARN}\" --query SecretString --output text)\"\n      - export MASTER_JSON\n      - export PGUSER=\"$(python3 -c 'import json, os; print(json.loads(os.environ[\"MASTER_JSON\"])[\"username\"])')\"\n      - export PGPASSWORD=\"$(python3 -c 'import json, os; print(json.loads(os.environ[\"MASTER_JSON\"])[\"password\"])')\"\n      - export PGHOST=\"${DB_HOST}\"\n      - export PGPORT=\"5432\"\n      - export PGDATABASE=\"${DB_NAME}\"\n      - export PGSSLMODE=\"require\"\n      - |\n        export ROTATE_PASSWORDS=\"${ROTATE_PASSWORDS:-false}\"\n        EXISTING_DB_JSON=\"\"\n        if [ \"${ROTATE_PASSWORDS}\" != \"true\" ]; then\n          EXISTING_DB_JSON=\"$(aws secretsmanager get-secret-value --secret-id \"${DB_SECRET_ARN}\" --query SecretString --output text 2>/dev/null || true)\"\n        fi\n        export EXISTING_DB_JSON\n\n        password_for() {\n          local service=\"$1\"\n          local existing\n          existing=\"$(\n            python3 - \"${service}\" <<'PY' || true\n        import json\n        import os\n        import sys\n\n        raw = os.environ.get(\"EXISTING_DB_JSON\", \"\")\n        if not raw:\n            sys.exit(0)\n\n        try:\n            service_value = json.loads(raw).get(sys.argv[1], {})\n            if isinstance(service_value, str):\n                service_value = json.loads(service_value)\n            value = service_value.get(\"password\", \"\")\n        except Exception:\n            value = \"\"\n\n        if value:\n            print(value)\n        PY\n          )\"\n\n          if [ -n \"${existing}\" ]; then\n            printf '%s' \"${existing}\"\n          else\n            # Passwords are interpolated into SQL literals below. Excluding\n            # punctuation keeps the generated values free of quotes and\n            # backslashes.\n            aws secretsmanager get-random-password \\\n              --password-length 40 \\\n              --exclude-punctuation \\\n              --query RandomPassword \\\n              --output text\n          fi\n        }\n\n        WEB_PASSWORD=\"$(password_for web)\"\n        POS_PASSWORD=\"$(password_for pos)\"\n        PAYMENTS_PASSWORD=\"$(password_for payments)\"\n        COMMISSION_PASSWORD=\"$(password_for commission)\"\n        export WEB_PASSWORD POS_PASSWORD PAYMENTS_PASSWORD COMMISSION_PASSWORD\n      - |\n        cat > /tmp/g2-db-bootstrap.sql <<SQL\n        REVOKE CREATE ON SCHEMA public FROM PUBLIC;\n        REVOKE ALL ON DATABASE ${DB_NAME} FROM PUBLIC;\n\n        DO \\$\\$\n        BEGIN\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_web_owner') THEN\n            CREATE ROLE tillflow_web_owner NOLOGIN NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_web_owner WITH NOLOGIN NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_web') THEN\n            CREATE ROLE tillflow_web LOGIN PASSWORD '${WEB_PASSWORD}' NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_web WITH LOGIN PASSWORD '${WEB_PASSWORD}' NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_pos_owner') THEN\n            CREATE ROLE tillflow_pos_owner NOLOGIN NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_pos_owner WITH NOLOGIN NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_pos') THEN\n            CREATE ROLE tillflow_pos LOGIN PASSWORD '${POS_PASSWORD}' NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_pos WITH LOGIN PASSWORD '${POS_PASSWORD}' NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_payments_owner') THEN\n            CREATE ROLE tillflow_payments_owner NOLOGIN NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_payments_owner WITH NOLOGIN NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_payments') THEN\n            CREATE ROLE tillflow_payments LOGIN PASSWORD '${PAYMENTS_PASSWORD}' NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_payments WITH LOGIN PASSWORD '${PAYMENTS_PASSWORD}' NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_commission_owner') THEN\n            CREATE ROLE tillflow_commission_owner NOLOGIN NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_commission_owner WITH NOLOGIN NOBYPASSRLS;\n          END IF;\n\n          IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tillflow_commission') THEN\n            CREATE ROLE tillflow_commission LOGIN PASSWORD '${COMMISSION_PASSWORD}' NOBYPASSRLS;\n          ELSE\n            ALTER ROLE tillflow_commission WITH LOGIN PASSWORD '${COMMISSION_PASSWORD}' NOBYPASSRLS;\n          END IF;\n        END\n        \\$\\$;\n\n        -- Membership must come FIRST. CREATE SCHEMA ... AUTHORIZATION <role>\n        -- and ALTER SCHEMA ... OWNER TO <role> both require the executing user\n        -- to be able to SET ROLE to that role. The RDS master user is\n        -- rds_superuser, not a true superuser, so it is not exempt: granting\n        -- these after the CREATE statements fails with\n        --   ERROR: must be able to SET ROLE \"tillflow_web_owner\"\n        GRANT tillflow_web_owner TO \"${PGUSER}\";\n        GRANT tillflow_pos_owner TO \"${PGUSER}\";\n        GRANT tillflow_payments_owner TO \"${PGUSER}\";\n        GRANT tillflow_commission_owner TO \"${PGUSER}\";\n\n        CREATE SCHEMA IF NOT EXISTS web AUTHORIZATION tillflow_web_owner;\n        CREATE SCHEMA IF NOT EXISTS pos AUTHORIZATION tillflow_pos_owner;\n        CREATE SCHEMA IF NOT EXISTS payments AUTHORIZATION tillflow_payments_owner;\n        CREATE SCHEMA IF NOT EXISTS commission AUTHORIZATION tillflow_commission_owner;\n\n        -- Idempotent re-assert: CREATE SCHEMA IF NOT EXISTS is a no-op when the\n        -- schema already exists, so it would not correct ownership on a re-run\n        -- against a schema created before the owner roles existed.\n        ALTER SCHEMA web OWNER TO tillflow_web_owner;\n        ALTER SCHEMA pos OWNER TO tillflow_pos_owner;\n        ALTER SCHEMA payments OWNER TO tillflow_payments_owner;\n        ALTER SCHEMA commission OWNER TO tillflow_commission_owner;\n\n        GRANT CONNECT ON DATABASE ${DB_NAME} TO tillflow_web, tillflow_pos, tillflow_payments, tillflow_commission;\n\n        GRANT USAGE ON SCHEMA web TO tillflow_web;\n        GRANT USAGE ON SCHEMA pos TO tillflow_pos;\n        GRANT USAGE ON SCHEMA payments TO tillflow_payments;\n        GRANT USAGE ON SCHEMA commission TO tillflow_commission;\n\n        -- These grants are a no-op on the first run because the schemas are\n        -- empty. They make the bootstrap safe to rerun after migrations exist;\n        -- the default privileges below cover future objects.\n        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA web TO tillflow_web;\n        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA pos TO tillflow_pos;\n        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA payments TO tillflow_payments;\n        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA commission TO tillflow_commission;\n\n        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA web TO tillflow_web;\n        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA pos TO tillflow_pos;\n        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA payments TO tillflow_payments;\n        GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA commission TO tillflow_commission;\n\n        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA web TO tillflow_web;\n        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA pos TO tillflow_pos;\n        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA payments TO tillflow_payments;\n        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA commission TO tillflow_commission;\n\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web\n          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_web;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos\n          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_pos;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments\n          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_payments;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission\n          GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tillflow_commission;\n\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web\n          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_web;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos\n          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_pos;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments\n          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_payments;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission\n          GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO tillflow_commission;\n\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_web_owner IN SCHEMA web\n          GRANT EXECUTE ON FUNCTIONS TO tillflow_web;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_pos_owner IN SCHEMA pos\n          GRANT EXECUTE ON FUNCTIONS TO tillflow_pos;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_payments_owner IN SCHEMA payments\n          GRANT EXECUTE ON FUNCTIONS TO tillflow_payments;\n        ALTER DEFAULT PRIVILEGES FOR ROLE tillflow_commission_owner IN SCHEMA commission\n          GRANT EXECUTE ON FUNCTIONS TO tillflow_commission;\n\n        ALTER ROLE tillflow_web SET search_path = web;\n        ALTER ROLE tillflow_pos SET search_path = pos;\n        ALTER ROLE tillflow_payments SET search_path = payments;\n        ALTER ROLE tillflow_commission SET search_path = commission;\n        SQL\n      - psql -v ON_ERROR_STOP=1 -f /tmp/g2-db-bootstrap.sql\n      - |\n        python3 - <<'PY' > /tmp/service-db-secret.json\n        import json\n        import os\n\n        host = os.environ[\"DB_HOST\"]\n        db_name = os.environ[\"DB_NAME\"]\n        services = {\n            \"web\": (\"tillflow_web\", os.environ[\"WEB_PASSWORD\"]),\n            \"pos\": (\"tillflow_pos\", os.environ[\"POS_PASSWORD\"]),\n            \"payments\": (\"tillflow_payments\", os.environ[\"PAYMENTS_PASSWORD\"]),\n            \"commission\": (\"tillflow_commission\", os.environ[\"COMMISSION_PASSWORD\"]),\n        }\n\n        # ECS json-key injection is reliable for strings. Nested objects can be\n        # injected in a non-JSON representation, so keep each selected service\n        # value as a JSON string that the app parses from DB_CREDENTIALS.\n        payload = {}\n        for service, (username, password) in services.items():\n            credentials = {\n                \"username\": username,\n                \"password\": password,\n                \"host\": host,\n                \"port\": 5432,\n                \"dbname\": db_name,\n                \"schema\": service,\n                \"sslmode\": \"require\",\n            }\n            payload[service] = json.dumps(credentials, separators=(\",\", \":\"))\n        print(json.dumps(payload, separators=(\",\", \":\")))\n        PY\n      - aws secretsmanager put-secret-value --secret-id \"${DB_SECRET_ARN}\" --secret-string file:///tmp/service-db-secret.json >/dev/null\n      - |\n        python3 - <<'PY'\n        import json\n        import os\n        import subprocess\n\n        proxy_secret_arns = json.loads(os.environ[\"DB_PROXY_SECRET_ARNS_JSON\"])\n        services = {\n            \"web\": (\"tillflow_web\", os.environ[\"WEB_PASSWORD\"]),\n            \"pos\": (\"tillflow_pos\", os.environ[\"POS_PASSWORD\"]),\n            \"payments\": (\"tillflow_payments\", os.environ[\"PAYMENTS_PASSWORD\"]),\n            \"commission\": (\"tillflow_commission\", os.environ[\"COMMISSION_PASSWORD\"]),\n        }\n\n        for service, secret_arn in proxy_secret_arns.items():\n            username, password = services[service]\n            payload = json.dumps(\n                {\"username\": username, \"password\": password},\n                separators=(\",\", \":\"),\n            )\n            subprocess.run(\n                [\n                    \"aws\",\n                    \"secretsmanager\",\n                    \"put-secret-value\",\n                    \"--secret-id\",\n                    secret_arn,\n                    \"--secret-string\",\n                    payload,\n                ],\n                check=True,\n                stdout=subprocess.DEVNULL,\n            )\n        PY\n      - shred -u /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql 2>/dev/null || rm -f /tmp/service-db-secret.json /tmp/g2-db-bootstrap.sql\n      - 'echo \"G2 DB bootstrap completed for schemas: ${SERVICES}\"'\n",
+                "insecureSsl": false
+            },
+            "secondarySources": [],
+            "secondarySourceVersions": [],
+            "artifacts": {
+                "location": "",
+                "overrideArtifactName": false
+            },
+            "cache": {
+                "type": "NO_CACHE"
+            },
+            "environment": {
+                "type": "LINUX_CONTAINER",
+                "image": "aws/codebuild/standard:7.0",
+                "computeType": "BUILD_GENERAL1_SMALL",
+                "environmentVariables": [
+                    {
+                        "name": "NAME_PREFIX",
+                        "value": "devops-g3",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "SERVICES",
+                        "value": "web pos payments commission",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "DB_HOST",
+                        "value": "devops-g3-db-proxy.proxy-chgiwkc8muat.us-west-1.rds.amazonaws.com",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "DB_NAME",
+                        "value": "tillflow",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "MASTER_SECRET_ARN",
+                        "value": "arn:aws:secretsmanager:us-west-1:240462142849:secret:rds!db-6ece8cb8-2546-4aae-8fbb-9cc5bc1f8830-zhxlY5",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "DB_SECRET_ARN",
+                        "value": "arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/db-I364XC",
+                        "type": "PLAINTEXT"
+                    },
+                    {
+                        "name": "DB_PROXY_SECRET_ARNS_JSON",
+                        "value": "{\"commission\":\"arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/db-proxy-commission-O3w8qA\",\"payments\":\"arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/db-proxy-payments-H5SL8D\",\"pos\":\"arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/db-proxy-pos-L7bCoD\",\"web\":\"arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/db-proxy-web-1bqHbE\"}",
+                        "type": "PLAINTEXT"
+                    }
+                ],
+                "privilegedMode": false,
+                "imagePullCredentialsType": "CODEBUILD"
+            },
+            "serviceRole": "arn:aws:iam::240462142849:role/devops-g3-db-bootstrap",
+            "logs": {
+                "groupName": "/devops-g3/codebuild/db-bootstrap",
+                "streamName": "db/745f7c6e-971d-440e-a3f6-a7b28e96b019",
+                "deepLink": "https://console.aws.amazon.com/cloudwatch/home?region=us-west-1#logsV2:log-groups/log-group/$252Fdevops-g3$252Fcodebuild$252Fdb-bootstrap/log-events/db$252F745f7c6e-971d-440e-a3f6-a7b28e96b019",
+                "cloudWatchLogsArn": "arn:aws:logs:us-west-1:240462142849:log-group:/devops-g3/codebuild/db-bootstrap:log-stream:db/745f7c6e-971d-440e-a3f6-a7b28e96b019",
+                "cloudWatchLogs": {
+                    "status": "ENABLED",
+                    "groupName": "/devops-g3/codebuild/db-bootstrap",
+                    "streamName": "db"
+                },
+                "s3Logs": {
+                    "status": "DISABLED",
+                    "encryptionDisabled": false
+                }
+            },
+            "timeoutInMinutes": 20,
+            "queuedTimeoutInMinutes": 480,
+            "buildComplete": true,
+            "initiator": "AWSReservedSSO_DevOpsCohort-group3-us-west-1_725a079de6298063/lwambsrat@gmail.com",
+            "vpcConfig": {
+                "vpcId": "vpc-01893fa497449df88",
+                "subnets": [
+                    "subnet-0327830d332cfbb1f",
+                    "subnet-06b0cbcbf13389a85"
+                ],
+                "securityGroupIds": [
+                    "sg-0de9f45140fc87e52"
+                ]
+            },
+            "networkInterface": {
+                "subnetId": "subnet-06b0cbcbf13389a85",
+                "networkInterfaceId": "eni-042b354e3fa759f4c"
+            },
+            "encryptionKey": "arn:aws:kms:us-west-1:240462142849:alias/aws/s3"
+        }
+    ],
+    "buildsNotFound": []
+}
