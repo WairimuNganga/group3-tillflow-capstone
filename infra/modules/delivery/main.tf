@@ -460,6 +460,148 @@ resource "aws_codebuild_project" "pos_migrations" {
   }
 }
 
+resource "aws_codebuild_project" "payments_migrations" {
+  name          = "${var.name_prefix}-payments-migrations"
+  description   = "Run Payments Alembic migrations against RDS before ECS deploy"
+  service_role  = aws_iam_role.codebuild.arn
+  build_timeout = 20
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.codebuild_image
+    type                        = "ARM_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "NAME_PREFIX"
+      value = var.name_prefix
+    }
+
+    environment_variable {
+      name  = "PAYMENTS_REPOSITORY"
+      value = "${var.name_prefix}/payments"
+    }
+
+    environment_variable {
+      name  = "DB_HOST"
+      value = var.db_host
+    }
+
+    environment_variable {
+      name  = "DB_NAME"
+      value = var.db_name
+    }
+
+    # Only the ARN. The buildspec reads the secret at runtime and assembles
+    # PAYMENTS_DB_ADMIN_URL in-process, so the master password never lands in
+    # Terraform state, the task definition, or a build log (threat model T6.3).
+    environment_variable {
+      name  = "MASTER_SECRET_ARN"
+      value = var.master_secret_arn
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspecs/payments-migrations.yml"
+  }
+
+  # In-VPC so it can reach the private RDS Proxy.
+  vpc_config {
+    vpc_id             = var.vpc_id
+    subnets            = var.subnet_ids
+    security_group_ids = [var.security_group_id]
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/${var.name_prefix}/codebuild/payments-migrations"
+      stream_name = "migrate"
+    }
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-payments-migrations"
+    service = "payments"
+  }
+}
+
+resource "aws_codebuild_project" "commission_migrations" {
+  name          = "${var.name_prefix}-commission-migrations"
+  description   = "Run Commission Alembic migrations against RDS before ECS deploy"
+  service_role  = aws_iam_role.codebuild.arn
+  build_timeout = 20
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.codebuild_image
+    type                        = "ARM_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+
+    environment_variable {
+      name  = "NAME_PREFIX"
+      value = var.name_prefix
+    }
+
+    environment_variable {
+      name  = "COMMISSION_REPOSITORY"
+      value = "${var.name_prefix}/commission"
+    }
+
+    environment_variable {
+      name  = "DB_HOST"
+      value = var.db_host
+    }
+
+    environment_variable {
+      name  = "DB_NAME"
+      value = var.db_name
+    }
+
+    # Only the ARN. The buildspec reads the secret at runtime and assembles
+    # COMMISSION_DB_ADMIN_URL in-process, so the master password never lands in
+    # Terraform state, the task definition, or a build log (threat model T6.3).
+    environment_variable {
+      name  = "MASTER_SECRET_ARN"
+      value = var.master_secret_arn
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "buildspecs/commission-migrations.yml"
+  }
+
+  # In-VPC so it can reach the private RDS Proxy.
+  vpc_config {
+    vpc_id             = var.vpc_id
+    subnets            = var.subnet_ids
+    security_group_ids = [var.security_group_id]
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/${var.name_prefix}/codebuild/commission-migrations"
+      stream_name = "migrate"
+    }
+  }
+
+  tags = {
+    Name    = "${var.name_prefix}-commission-migrations"
+    service = "commission"
+  }
+}
+
 data "aws_iam_policy_document" "codepipeline_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -509,6 +651,8 @@ data "aws_iam_policy_document" "codepipeline" {
         aws_codebuild_project.adot_mirror.arn,
         aws_codebuild_project.grafana_image.arn,
         aws_codebuild_project.pos_migrations.arn,
+        aws_codebuild_project.payments_migrations.arn,
+        aws_codebuild_project.commission_migrations.arn,
         aws_codebuild_project.smoke.arn,
       ],
     )
@@ -644,6 +788,18 @@ resource "aws_codepipeline" "this" {
     }
   }
 
+  # Schema must be current before ECS runs the new image: a task started against
+  # a stale schema fails at request time (UndefinedTableError), not at deploy
+  # time, so the failure would surface as 500s rather than a failed release.
+  #
+  # All three actions are run_order = 1, so they execute in parallel — POS,
+  # Payments and Commission own separate schemas and never touch each other's
+  # objects. A stage only completes when every action in it succeeds, so
+  # DeployEcs still waits for all three, and a failed migration stops the
+  # deployment.
+  #
+  # Re-running is safe: `alembic upgrade head` is a no-op once the revision
+  # table is at head, so an unrelated redeploy does not re-apply migrations.
   stage {
     name = "MigrateDb"
 
@@ -658,6 +814,34 @@ resource "aws_codepipeline" "this" {
 
       configuration = {
         ProjectName = aws_codebuild_project.pos_migrations.name
+      }
+    }
+
+    action {
+      name            = "payments-alembic"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.payments_migrations.name
+      }
+    }
+
+    action {
+      name            = "commission-alembic"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.commission_migrations.name
       }
     }
   }

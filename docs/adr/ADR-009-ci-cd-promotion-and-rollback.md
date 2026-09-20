@@ -25,7 +25,8 @@ fast, pre-rehearsed action rather than an improvised rebuild.
     this lane pushes an image or touches a running service.
   - **AWS-native release pipeline** (`infra/modules/delivery`, driving `buildspecs/*.yml`) —
     CodeStarConnections (GitHub source) → CodePipeline → CodeBuild (`BuildScanPush`: mirror the
-    pinned ADOT sidecar, then build+push+scan each service) → `MigrateDb` (POS Alembic migrations)
+    pinned ADOT sidecar, then build+push+scan each service) → `MigrateDb` (POS, Payments and
+    Commission Alembic migrations, in parallel)
     → `DeployEcs` → `Smoke` (scale up, wait for ECS stability, then `curl` the public `/health` and
     `/ready` routes through the real edge — API Gateway → VPC Link → ALB). This lane is what
     actually ships to `dev`, on every push to `main`.
@@ -34,6 +35,27 @@ fast, pre-rehearsed action rather than an improvised rebuild.
   `fixed_version`) — `buildspecs/service-image.yml`. A HIGH/CRITICAL finding with no fixed version
   yet is not a silent pass; it should be recorded in `docs/scar-log.md` with an owner and a
   re-check date, not left implicit.
+- **Schema migrations gate the deploy**: `MigrateDb` runs one CodeBuild action per service that
+  owns a schema (`pos-alembic`, `payments-alembic`, `commission-alembic`), all at `run_order = 1`
+  so they execute in parallel — each owns a separate schema and never touches another's objects.
+  A CodePipeline stage only completes when every action in it succeeds, so **`DeployEcs` starts
+  only after all three migrations pass, and a failed migration stops the deployment**. This
+  ordering is not cosmetic: a task started against a stale schema fails at *request* time, not
+  deploy time — Payments served `500 UndefinedTableError` for exactly that reason while only POS
+  migrations were wired in.
+  - Each action runs `/opt/venv/bin/python -m alembic upgrade head` **inside the service image
+    that was just built and scanned**, so the migration code and the application code are the same
+    artifact. Re-running is safe: `upgrade head` is a no-op once the revision table is at head, so
+    an unrelated redeploy does not re-apply migrations.
+  - `alembic/env.py` issues `SET ROLE tillflow_<service>_owner` *inside* the migration transaction,
+    so tables and `<schema>.alembic_version` are owned by the **owner** role, never the
+    `NOBYPASSRLS` runtime role — a runtime role that owned its tables would bypass its own RLS
+    policies (ADR-005). The connecting identity is the RDS master, which the db-bootstrap job made
+    a member of each owner role.
+  - The admin URL (`POS_DB_ADMIN_URL` / `PAYMENTS_DB_ADMIN_URL` / `COMMISSION_DB_ADMIN_URL`) is
+    assembled inside the build from `MASTER_SECRET_ARN`, URL-quoted, and never echoed — so the
+    master password is absent from Terraform state, the task definition, source control and build
+    logs (threat model T6.3).
 - **Promotion rule**: promotion is strictly commit-SHA-forward and only ever deploys an
   already-built image — never a rebuild of an old commit. Each service's selected `{tag, digest}`
   is the single source of truth in SSM (`/devops-g3/<service>/image-tag`,

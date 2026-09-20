@@ -113,6 +113,19 @@ run "architecture_contracts" {
     error_message = "The delivery lane must provision the ADOT mirror build so a fresh private ECR repository can boot ECS tasks."
   }
 
+  # --- Schema migrations run before deploy (G2) ----------------------------
+  #
+  # A task started against a stale schema fails at request time, not deploy
+  # time — Payments returned 500 UndefinedTableError for exactly this reason
+  # while only POS migrations were wired into the pipeline.
+  assert {
+    condition = alltrue([
+      for svc in ["pos", "payments", "commission"] :
+      module.delivery.codebuild_project_names["${svc}-migrations"] == "${var.name_prefix}-${svc}-migrations"
+    ])
+    error_message = "POS, Payments and Commission must each have an Alembic migration build in the delivery lane, run before DeployEcs."
+  }
+
   # --- Two containers per task (brief requirement) ------------------------
 
   assert {
