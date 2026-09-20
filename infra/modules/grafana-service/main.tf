@@ -160,6 +160,7 @@ resource "aws_ecs_task_definition" "this" {
 
     environment = [
       { name = "AWS_REGION", value = var.region },
+      { name = "GF_AUTH_SIGV4_AUTH_ENABLED", value = "true" },
       { name = "AMP_PROMETHEUS_ENDPOINT", value = var.amp_prometheus_endpoint },
       { name = "GF_AUTH_ANONYMOUS_ENABLED", value = "false" },
       { name = "GF_SECURITY_ADMIN_USER", value = "admin" },
