@@ -408,6 +408,44 @@ data "aws_iam_policy_document" "ci_deploy" {
     resources = ["*"]
   }
 
+  # Synthetics creates a managed Lambda behind each canary (`cwsyn-...`).
+  # Scope Lambda permissions to the generated TillFlow canary functions only.
+  statement {
+    sid = "ManageSyntheticsLambda"
+    actions = [
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:PublishVersion",
+      "lambda:CreateAlias",
+      "lambda:UpdateAlias",
+      "lambda:DeleteAlias",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+      "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
+      "lambda:GetPolicy",
+      "lambda:ListAliases",
+      "lambda:ListVersionsByFunction",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "lambda:ListTags",
+    ]
+    resources = [
+      "arn:aws:lambda:${var.region}:${local.account_id}:function:cwsyn-${var.name_prefix}-*",
+    ]
+  }
+
+  # AWS Synthetics canary Lambdas attach the AWS-managed `Synthetics` layer
+  # from the regional service account. Creating the canary requires read access
+  # to that layer version.
+  statement {
+    sid       = "ReadSyntheticsLambdaLayer"
+    actions   = ["lambda:GetLayerVersion"]
+    resources = ["arn:aws:lambda:${var.region}:*:layer:Synthetics:*"]
+  }
+
   # Terraform creates and attaches the per-service task roles. Restricted to
   # this project's name prefix so a compromised CI run cannot touch unrelated
   # roles in a shared account (threat model T6.2).

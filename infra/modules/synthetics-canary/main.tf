@@ -147,7 +147,7 @@ resource "aws_synthetics_canary" "edge_health" {
   artifact_s3_location = "s3://${aws_s3_bucket.artifacts.id}/${local.s3_prefix}"
   execution_role_arn   = aws_iam_role.canary.arn
   handler              = "canary.handler"
-  runtime_version      = "syn-nodejs-puppeteer-7.0"
+  runtime_version      = var.runtime_version
   start_canary         = true
   zip_file             = data.archive_file.canary_zip.output_path
 
