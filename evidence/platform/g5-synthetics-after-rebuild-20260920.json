@@ -1,0 +1,53 @@
+{
+    "Canaries": [
+        {
+            "Id": "31c9792a-fb3b-4db9-881c-4a7f4e022359",
+            "Name": "devops-g3-edge-health",
+            "Code": {
+                "Handler": "canary.handler"
+            },
+            "ExecutionRoleArn": "arn:aws:iam::240462142849:role/devops-g3-synthetics-canary",
+            "Schedule": {
+                "Expression": "rate(1 minute)",
+                "DurationInSeconds": 0,
+                "RetryConfig": {
+                    "MaxRetries": 0
+                }
+            },
+            "RunConfig": {
+                "TimeoutInSeconds": 60,
+                "MemoryInMB": 1500,
+                "ActiveTracing": false,
+                "EphemeralStorage": 1024
+            },
+            "SuccessRetentionPeriodInDays": 31,
+            "FailureRetentionPeriodInDays": 31,
+            "Status": {
+                "State": "RUNNING"
+            },
+            "Timeline": {
+                "Created": "2026-09-20T18:50:46.940000+03:00",
+                "LastModified": "2026-09-20T18:50:58.347000+03:00",
+                "LastStarted": "2026-09-20T18:50:58.347000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/",
+            "RuntimeVersion": "syn-nodejs-puppeteer-17.0",
+            "ProvisionedResourceCleanup": "AUTOMATIC",
+            "EngineConfigs": [
+                {
+                    "EngineArn": "arn:aws:lambda:us-west-1:240462142849:function:cwsyn-devops-g3-edge-health-31c9792a-fb3b-4db9-881c-4a7f4e022359:1"
+                }
+            ],
+            "VisualReferences": [],
+            "Tags": {
+                "owner": "lwam",
+                "environment": "dev",
+                "managed-by": "terraform",
+                "service": "platform",
+                "capstone": "tillflow",
+                "Name": "devops-g3-edge-health",
+                "group": "devops-g3"
+            }
+        }
+    ]
+}

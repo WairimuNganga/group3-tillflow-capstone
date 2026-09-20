@@ -1,0 +1,80 @@
+{
+    "CanaryRuns": [
+        {
+            "Id": "d1c48f60-b17e-4472-b19b-58281f18614e",
+            "Name": "devops-g3-edge-health",
+            "Status": {
+                "State": "PASSED",
+                "StateReason": "",
+                "StateReasonCode": "",
+                "TestResult": "PASSED"
+            },
+            "Timeline": {
+                "Started": "2026-09-20T19:48:55.519000+03:00",
+                "Completed": "2026-09-20T19:48:56.580000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/us-west-1/devops-g3-edge-health/2026/09/20/16/48-55-516"
+        },
+        {
+            "Id": "a8d1fe65-3c3f-4d04-8f7c-bebaacf93c65",
+            "Name": "devops-g3-edge-health",
+            "Status": {
+                "State": "PASSED",
+                "StateReason": "",
+                "StateReasonCode": "",
+                "TestResult": "PASSED"
+            },
+            "Timeline": {
+                "Started": "2026-09-20T19:47:55.519000+03:00",
+                "Completed": "2026-09-20T19:47:56.585000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/us-west-1/devops-g3-edge-health/2026/09/20/16/47-55-516"
+        },
+        {
+            "Id": "98513b2f-af63-46af-906d-25b70cbc84f4",
+            "Name": "devops-g3-edge-health",
+            "Status": {
+                "State": "PASSED",
+                "StateReason": "",
+                "StateReasonCode": "",
+                "TestResult": "PASSED"
+            },
+            "Timeline": {
+                "Started": "2026-09-20T19:46:55.519000+03:00",
+                "Completed": "2026-09-20T19:46:56.633000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/us-west-1/devops-g3-edge-health/2026/09/20/16/46-55-516"
+        },
+        {
+            "Id": "38bfcd9d-4ba7-468e-a717-6b119a6527b3",
+            "Name": "devops-g3-edge-health",
+            "Status": {
+                "State": "PASSED",
+                "StateReason": "",
+                "StateReasonCode": "",
+                "TestResult": "PASSED"
+            },
+            "Timeline": {
+                "Started": "2026-09-20T19:45:55.519000+03:00",
+                "Completed": "2026-09-20T19:45:56.597000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/us-west-1/devops-g3-edge-health/2026/09/20/16/45-55-516"
+        },
+        {
+            "Id": "9a113a1c-b5fe-4704-8bf4-e120399dbef8",
+            "Name": "devops-g3-edge-health",
+            "Status": {
+                "State": "PASSED",
+                "StateReason": "",
+                "StateReasonCode": "",
+                "TestResult": "PASSED"
+            },
+            "Timeline": {
+                "Started": "2026-09-20T19:44:55.519000+03:00",
+                "Completed": "2026-09-20T19:44:56.553000+03:00"
+            },
+            "ArtifactS3Location": "devops-g3-synthetics-240462142849/canary/us-west-1/devops-g3-edge-health/2026/09/20/16/44-55-516"
+        }
+    ],
+    "NextToken": "2026-09-20T16:44:55.516Z"
+}

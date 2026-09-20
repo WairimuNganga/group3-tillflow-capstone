@@ -13,6 +13,12 @@ variable "canary_name" {
   default     = null
 }
 
+variable "canary_alarm_enabled" {
+  description = "Create the synthetics alarm. Separate from canary_name so count is plan-time known."
+  type        = bool
+  default     = false
+}
+
 variable "ecs_cluster_name" {
   description = "ECS cluster name for service health alarms."
   type        = string

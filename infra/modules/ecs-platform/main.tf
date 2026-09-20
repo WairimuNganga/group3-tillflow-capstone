@@ -66,6 +66,8 @@ resource "aws_ecr_repository" "service" {
 
   name                 = "${var.name_prefix}/${each.key}"
   image_tag_mutability = "IMMUTABLE" # a tag names exactly one build, forever (ADR-009)
+  # G5 destroy/rebuild must remove repositories that still contain images.
+  force_delete = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -83,9 +85,9 @@ resource "aws_ecr_repository" "service" {
 }
 
 resource "aws_ecr_lifecycle_policy" "service" {
-  for_each = aws_ecr_repository.service
+  for_each = toset(var.services)
 
-  repository = each.value.name
+  repository = aws_ecr_repository.service[each.key].name
 
   # Count-based, NOT age-based. Rollback depends on old images still existing
   # (ADR-009 consequences) — an age-only rule could delete the exact image a

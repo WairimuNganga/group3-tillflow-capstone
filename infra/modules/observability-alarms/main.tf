@@ -26,7 +26,7 @@ resource "aws_cloudwatch_metric_alarm" "dlq_depth" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "canary_success" {
-  count = var.canary_name != null ? 1 : 0
+  count = var.canary_alarm_enabled ? 1 : 0
 
   alarm_name          = "${var.name_prefix}-edge-health-canary"
   alarm_description   = "External synthetics success rate below 90% — check API Gateway, ALB, web service (runbook EdgeProbeFailed)."

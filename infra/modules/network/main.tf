@@ -129,23 +129,23 @@ resource "aws_route" "public_internet" {
 }
 
 resource "aws_route_table_association" "public" {
-  for_each = aws_subnet.public
+  for_each = { for i, az in local.azs : az => i }
 
-  subnet_id      = each.value.id
+  subnet_id      = aws_subnet.public[each.key].id
   route_table_id = aws_route_table.public.id
 }
 
 # One app route table per AZ so a future move to one-NAT-per-AZ is a variable
 # change, not a refactor.
 resource "aws_route_table" "private_app" {
-  for_each = aws_subnet.private_app
+  for_each = { for i, az in local.azs : az => i }
 
   vpc_id = aws_vpc.this.id
   tags   = { Name = "${var.name_prefix}-rt-private-app-${each.key}" }
 }
 
 resource "aws_route" "private_app_nat" {
-  for_each = aws_subnet.private_app
+  for_each = { for i, az in local.azs : az => i }
 
   route_table_id         = aws_route_table.private_app[each.key].id
   destination_cidr_block = "0.0.0.0/0"
@@ -158,9 +158,9 @@ resource "aws_route" "private_app_nat" {
 }
 
 resource "aws_route_table_association" "private_app" {
-  for_each = aws_subnet.private_app
+  for_each = { for i, az in local.azs : az => i }
 
-  subnet_id      = each.value.id
+  subnet_id      = aws_subnet.private_app[each.key].id
   route_table_id = aws_route_table.private_app[each.key].id
 }
 
@@ -172,9 +172,9 @@ resource "aws_route_table" "private_data" {
 }
 
 resource "aws_route_table_association" "private_data" {
-  for_each = aws_subnet.private_data
+  for_each = { for i, az in local.azs : az => i }
 
-  subnet_id      = each.value.id
+  subnet_id      = aws_subnet.private_data[each.key].id
   route_table_id = aws_route_table.private_data.id
 }
 

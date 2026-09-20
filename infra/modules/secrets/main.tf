@@ -53,30 +53,3 @@ resource "aws_secretsmanager_secret" "this" {
 
   tags = { Name = "${var.name_prefix}-${each.key}" }
 }
-
-# Resource policy: an explicit allow-list of principals per secret. Belt and
-# braces with the task-role policies — a secret is readable only if BOTH the
-# role policy and this resource policy permit it.
-data "aws_iam_policy_document" "readers" {
-  for_each = { for k, v in local.secrets : k => v if length(v.readers) > 0 }
-
-  statement {
-    sid    = "AllowNamedReaders"
-    effect = "Allow"
-
-    principals {
-      type        = "AWS"
-      identifiers = each.value.readers
-    }
-
-    actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
-    resources = ["*"]
-  }
-}
-
-resource "aws_secretsmanager_secret_policy" "this" {
-  for_each = data.aws_iam_policy_document.readers
-
-  secret_arn = aws_secretsmanager_secret.this[each.key].arn
-  policy     = each.value.json
-}

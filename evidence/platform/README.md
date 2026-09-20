@@ -13,7 +13,7 @@ Platform evidence uses command output first; screenshots are optional support.
 - [x] Apply evidence for latest canary/alarm change: GitHub Terraform apply passed; runtime evidence below confirms the resources are live.
 - [x] Runtime canary proof: [`synthetics-describe-20260920.json`](./synthetics-describe-20260920.json) and [`synthetics-runs-20260920.json`](./synthetics-runs-20260920.json).
 - [x] Runtime alarm proof: [`cloudwatch-alarms-20260920.json`](./cloudwatch-alarms-20260920.json).
-- [ ] G5 destroy/rebuild log.
+- [x] G5 destroy/rebuild log and post-rebuild verification.
 - [ ] Drill 5 restore with measured RPO/RTO.
 
 ## Latest runtime evidence — 2026-09-20
@@ -37,3 +37,27 @@ Gate-specific platform evidence:
 - [G2 deliverables checklist](./G2-deliverables.md)
 - [G2 handover](./G2-handover.md)
 - [How to reproduce current platform evidence](./how-to-reproduce.md)
+
+## G5 destroy/rebuild evidence — 2026-09-20
+
+- Destroy log:
+  - [`destroy-20260920-142510.log`](./destroy-20260920-142510.log)
+  - [`destroy-resume-20260920.log`](./destroy-resume-20260920.log)
+- Empty state proof after destroy: [`g5-state-after-destroy-20260920.txt`](./g5-state-after-destroy-20260920.txt).
+- Rebuild log: [`rebuild-20260920.log`](./rebuild-20260920.log).
+- DB bootstrap proof: [`g5-db-bootstrap-20260920.json`](./g5-db-bootstrap-20260920.json).
+- CodePipeline proof: [`g5-pipeline-after-rebuild-20260920.json`](./g5-pipeline-after-rebuild-20260920.json).
+- ECS service proof: [`g5-services-after-rebuild-20260920.json`](./g5-services-after-rebuild-20260920.json).
+- ECS task/container proof: [`g5-tasks-after-rebuild-20260920.json`](./g5-tasks-after-rebuild-20260920.json).
+- Smoke proof: [`g5-smoke-after-rebuild-20260920.txt`](./g5-smoke-after-rebuild-20260920.txt).
+- Synthetics proof:
+  - [`g5-synthetics-after-rebuild-20260920.json`](./g5-synthetics-after-rebuild-20260920.json)
+  - [`g5-synthetics-runs-after-rebuild-20260920.json`](./g5-synthetics-runs-after-rebuild-20260920.json)
+
+Summary:
+
+- Terraform rebuild completed: `Apply complete! Resources: 244 added, 8 changed, 0 destroyed.`
+- Pipeline stages `Source`, `BuildScanPush`, `MigrateDb`, `DeployEcs`, and `Smoke` all finished `Succeeded`.
+- ECS services after rebuild: web `2/2`, POS `2/2`, payments `2/2`, commission `1/1`, Grafana `1/1`; all rollouts `COMPLETED`.
+- Smoke after rebuild returned HTTP `200` for `/health` and `/ready`.
+- Last five Synthetics canary runs after rebuild are `PASSED`.
