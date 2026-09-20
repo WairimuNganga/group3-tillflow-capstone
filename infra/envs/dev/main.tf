@@ -370,6 +370,9 @@ module "service" {
       # browser-visible links, form actions, redirects and cookie paths while
       # keeping its internal ASGI routes rooted at /.
       WEB_BASE_PATH = "/${var.api_stage_name}"
+      # The browser only reaches Web. Web calls POS privately through ECS
+      # Service Connect to create and retrieve real sales.
+      POS_BASE_URL = "http://pos:8080"
     } : {},
   )
 
@@ -442,6 +445,16 @@ resource "aws_vpc_security_group_ingress_rule" "payments_to_pos" {
   security_group_id            = module.service["pos"].security_group_id
   description                  = "Service Connect: payments to pos internal settlement"
   referenced_security_group_id = module.service["payments"].security_group_id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+}
+
+# Web calls POS over Service Connect for shop setup and the sale workflow.
+resource "aws_vpc_security_group_ingress_rule" "web_to_pos" {
+  security_group_id            = module.service["pos"].security_group_id
+  description                  = "Service Connect: web to pos"
+  referenced_security_group_id = module.service["web"].security_group_id
   from_port                    = 8080
   to_port                      = 8080
   ip_protocol                  = "tcp"

@@ -1,0 +1,59 @@
+version: 0.2
+
+# Runs Payments Alembic migrations from the Payments image that was just built.
+# The admin URL is assembled at runtime from the RDS-managed master secret so
+# database credentials never pass through Terraform state.
+
+env:
+  shell: bash
+  variables:
+    NAME_PREFIX: devops-g3
+    PAYMENTS_REPOSITORY: devops-g3/payments
+
+phases:
+  pre_build:
+    commands:
+      - set -euo pipefail
+      - export AWS_REGION=${AWS_DEFAULT_REGION:-us-west-1}
+      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - export REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
+      - export PAYMENTS_IMAGE_DIGEST="$(aws ssm get-parameter --name "/${NAME_PREFIX}/payments/image-digest" --query Parameter.Value --output text)"
+      - export PAYMENTS_IMAGE_TAG="$(aws ssm get-parameter --name "/${NAME_PREFIX}/payments/image-tag" --query Parameter.Value --output text)"
+      - if [ -n "${PAYMENTS_IMAGE_DIGEST}" ] && [ "${PAYMENTS_IMAGE_DIGEST}" != "UNSET" ]; then export PAYMENTS_IMAGE_URI="${REGISTRY}/${PAYMENTS_REPOSITORY}@${PAYMENTS_IMAGE_DIGEST}"; else export PAYMENTS_IMAGE_URI="${REGISTRY}/${PAYMENTS_REPOSITORY}:${PAYMENTS_IMAGE_TAG}"; fi
+      - echo "Running Payments migrations with ${PAYMENTS_IMAGE_URI}"
+      - export MASTER_SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "${MASTER_SECRET_ARN}" --query SecretString --output text)"
+      # quote() the credentials: the RDS master password is generated, so it can
+      # contain @ : / which would otherwise corrupt the URL. Built here rather
+      # than in Terraform so the password never reaches state. Never echoed.
+      - |
+        export PAYMENTS_DB_ADMIN_URL="$(python - <<'PY'
+        import json
+        import os
+        from urllib.parse import quote
+
+        secret = json.loads(os.environ["MASTER_SECRET_JSON"])
+        username = quote(secret["username"], safe="")
+        password = quote(secret["password"], safe="")
+        host = os.environ["DB_HOST"]
+        db_name = os.environ["DB_NAME"]
+
+        print(f"postgresql+asyncpg://{username}:{password}@{host}:5432/{db_name}?ssl=require")
+        PY
+        )"
+      - test -n "${PAYMENTS_DB_ADMIN_URL}"
+
+  build:
+    commands:
+      # alembic/env.py switches to tillflow_payments_owner inside the migration
+      # transaction, so tables and payments.alembic_version are owned by the
+      # owner role -- not the NOBYPASSRLS runtime role (ADR-005).
+      - |
+        docker run --rm \
+          -e PAYMENTS_DB_ADMIN_URL="${PAYMENTS_DB_ADMIN_URL}" \
+          "${PAYMENTS_IMAGE_URI}" \
+          /opt/venv/bin/python -m alembic upgrade head
+
+  post_build:
+    commands:
+      - echo "Payments Alembic migrations completed"

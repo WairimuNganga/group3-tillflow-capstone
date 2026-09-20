@@ -1,0 +1,59 @@
+version: 0.2
+
+# Runs Commission Alembic migrations from the Commission image that was just
+# built. The admin URL is assembled at runtime from the RDS-managed master
+# secret so database credentials never pass through Terraform state.
+
+env:
+  shell: bash
+  variables:
+    NAME_PREFIX: devops-g3
+    COMMISSION_REPOSITORY: devops-g3/commission
+
+phases:
+  pre_build:
+    commands:
+      - set -euo pipefail
+      - export AWS_REGION=${AWS_DEFAULT_REGION:-us-west-1}
+      - export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - export REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${REGISTRY}"
+      - export COMMISSION_IMAGE_DIGEST="$(aws ssm get-parameter --name "/${NAME_PREFIX}/commission/image-digest" --query Parameter.Value --output text)"
+      - export COMMISSION_IMAGE_TAG="$(aws ssm get-parameter --name "/${NAME_PREFIX}/commission/image-tag" --query Parameter.Value --output text)"
+      - if [ -n "${COMMISSION_IMAGE_DIGEST}" ] && [ "${COMMISSION_IMAGE_DIGEST}" != "UNSET" ]; then export COMMISSION_IMAGE_URI="${REGISTRY}/${COMMISSION_REPOSITORY}@${COMMISSION_IMAGE_DIGEST}"; else export COMMISSION_IMAGE_URI="${REGISTRY}/${COMMISSION_REPOSITORY}:${COMMISSION_IMAGE_TAG}"; fi
+      - echo "Running Commission migrations with ${COMMISSION_IMAGE_URI}"
+      - export MASTER_SECRET_JSON="$(aws secretsmanager get-secret-value --secret-id "${MASTER_SECRET_ARN}" --query SecretString --output text)"
+      # quote() the credentials: the RDS master password is generated, so it can
+      # contain @ : / which would otherwise corrupt the URL. Built here rather
+      # than in Terraform so the password never reaches state. Never echoed.
+      - |
+        export COMMISSION_DB_ADMIN_URL="$(python - <<'PY'
+        import json
+        import os
+        from urllib.parse import quote
+
+        secret = json.loads(os.environ["MASTER_SECRET_JSON"])
+        username = quote(secret["username"], safe="")
+        password = quote(secret["password"], safe="")
+        host = os.environ["DB_HOST"]
+        db_name = os.environ["DB_NAME"]
+
+        print(f"postgresql+asyncpg://{username}:{password}@{host}:5432/{db_name}?ssl=require")
+        PY
+        )"
+      - test -n "${COMMISSION_DB_ADMIN_URL}"
+
+  build:
+    commands:
+      # alembic/env.py switches to tillflow_commission_owner inside the
+      # migration transaction, so tables and commission.alembic_version are
+      # owned by the owner role -- not the NOBYPASSRLS runtime role (ADR-005).
+      - |
+        docker run --rm \
+          -e COMMISSION_DB_ADMIN_URL="${COMMISSION_DB_ADMIN_URL}" \
+          "${COMMISSION_IMAGE_URI}" \
+          /opt/venv/bin/python -m alembic upgrade head
+
+  post_build:
+    commands:
+      - echo "Commission Alembic migrations completed"
