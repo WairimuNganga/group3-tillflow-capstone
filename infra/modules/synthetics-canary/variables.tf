@@ -26,6 +26,12 @@ variable "schedule_expression" {
   default     = "rate(1 minute)"
 }
 
+variable "runtime_version" {
+  description = "CloudWatch Synthetics runtime. Keep current; AWS rejects deprecated versions when creating canaries."
+  type        = string
+  default     = "syn-nodejs-puppeteer-17.0"
+}
+
 variable "owner_tag" {
   type    = string
   default = "lwam"
