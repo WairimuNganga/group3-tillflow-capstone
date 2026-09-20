@@ -76,9 +76,17 @@ terraform -chdir=infra/envs/dev output grafana_url amp_prometheus_endpoint grafa
 
 Do **not** run `spike.js` at the same time as baseline/soak (T1.3 — notify team, run alone).
 
-## External synthetics (Phase C — Terraform TODO)
+## External synthetics (Phase C)
 
-Wire CloudWatch Synthetics canary to `$API_ENDPOINT/health` (1-minute schedule). Until TF lands, edge probe script is the manual stand-in.
+Terraform module `infra/modules/synthetics-canary` — canary `${NAME_PREFIX}-edge-health`, schedule `rate(1 minute)`.
+
+```bash
+CANARY="$(terraform -chdir=infra/envs/dev output -raw synthetics_canary_name)"
+aws synthetics describe-canaries --names "$CANARY" --region "$AWS_REGION"
+aws synthetics get-canary-runs --name "$CANARY" --region "$AWS_REGION" --max-results 3
+```
+
+Until apply completes, `infra/scripts/reliability-edge-probe.sh` remains the manual stand-in.
 
 ## Grafana (Phase B)
 
