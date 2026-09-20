@@ -28,4 +28,4 @@ See `docs/ownership.md`.
 ## One-command lifecycle (fill in during G1)
 - bootstrap: `terraform -chdir=infra/bootstrap apply`
 - deploy: GitHub Actions Terraform workflow on `main`, then AWS CodePipeline `devops-g3-pipeline`
-- destroy: `terraform -chdir=infra/envs/dev destroy` for the dev workload only; coordinate before G5 evidence capture
+- destroy: `terraform -chdir=infra/envs/dev destroy` for the dev workload only; coordinate before G5 evidence capture 

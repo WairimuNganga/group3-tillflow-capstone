@@ -30,8 +30,17 @@ contactPoints:
         type: slack
         settings:
           url: "${SLACK_WEBHOOK_URL}"
-          title: '{{ .CommonLabels.alertname }} (TillFlow)'
-          text: '{{ .CommonAnnotations.summary }} — {{ .CommonAnnotations.runbook }}'
+          title: '{{ .CommonLabels.alertname }} · {{ .CommonLabels.severity }} · TillFlow'
+          text: |-
+            *env:* {{ .CommonAnnotations.env }}
+            *service:* {{ .CommonAnnotations.service }}
+            *symptom:* {{ .CommonAnnotations.symptom }}
+            *user_impact:* {{ .CommonAnnotations.user_impact }}
+            *first_safe_action:* {{ .CommonAnnotations.first_safe_action }}
+            *recovery_signal:* {{ .CommonAnnotations.recovery_signal }}
+            *owner:* {{ .CommonAnnotations.owner }}
+            *runbook_url:* {{ .CommonAnnotations.runbook_url }}
+            *dashboard_url:* {{ .CommonAnnotations.dashboard_url }}
 EOF
 else
   echo "SLACK_WEBHOOK_URL unset; skipping Slack contact point provisioning (Phase E)."

@@ -229,7 +229,7 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 
 **Code:** `infra/grafana/provisioning/alerting/` + Slack URL via ECS secret `SLACK_WEBHOOK_URL` → entrypoint contact point `slack-tillflow`.
 
-**Rules (runbook):** PaymentsHigh5xxRate, PaymentsLatencyP95, EdgeProbeFailed (AMP `count({__name__=~".+"})` proxy until Phase C synthetics).
+**Rules (runbook):** PaymentsHigh5xxRate, PaymentsLatencyP95, EdgeProbeFailed. CloudWatch Synthetics `devops-g3-edge-health-canary` is the source-of-truth edge alarm; Grafana keeps a matching dashboard-side alert contract.
 
 ### Checklist
 
@@ -237,7 +237,7 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 - [ ] `grafana_image_tag` **11.4.0-tillflow2** applied + image in ECR + ECS on new task
 - [ ] Force new Grafana ECS deployment after secret update
 - [ ] Grafana → Alerting → Contact points → **Test** slack-tillflow (CLI webhook test OK 2026-09-20)
-- [ ] Alert rules in folder **TillFlow Alerts** (3 rules)
+- [x] Alert rules in folder **TillFlow Alerts** (3 rules, provisioned as code)
 - [ ] Evidence: Slack screenshot or message ID + date below
 
 ### Recorded run
@@ -275,7 +275,7 @@ Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).
 - [x] Edge probe output (2026-09-19 — OK /health, /ready)
 - [x] k6 smoke thresholds pass — 0% failed, p(95)=287.6ms, checks 100%; log `evidence/reliability/k6-smoke.log`
 - [x] baseline + soak (optional G3 envelope; update k6-analysis table)
-- [ ] Spike summary when run
+- [ ] Spike summary when run (team-notified live load test)
 
 ### Recorded smoke run (2026-09-19)
 
@@ -367,12 +367,10 @@ instrument_fastapi(app, service_name="pos")
 
 ## Next steps (priority order)
 
-1. **Phase E — Deploy alerts (today):** Merge `11.4.0-tillflow2` → terraform apply → pipeline `build-grafana` → Grafana **Test contact point**; fill §Phase E table.
-2. **Phase D — k6 envelope:** Run `baseline.js` then `soak.js` off-hours; update [k6-analysis.md](./k6-analysis.md) table.
-3. **OTLP RED follow-up (unblocks dashboard panels):** Debug why `{service}_requests_total` absent in AMP after `/demo/boom` while `ecs_task_*` present — ADOT OTLP pipeline or metric export naming.
-4. **Phase F:** Save Grafana dashboard JSON exports + one X-Ray trace screenshot/ID under `evidence/reliability/`.
-5. **Phase C:** Platform Terraform for CloudWatch Synthetics on `$API_ENDPOINT/health`.
-6. **Phase G / H:** Drill 3 write-up; link [evidence/delivery/rollback-log.md](../delivery/rollback-log.md) for G4 if graders ask rollback proof.
+1. **Phase E live proof:** In Grafana, Test contact point `slack-tillflow`; capture Slack screenshot/message link.
+2. **Phase D spike:** Run `spike.js` only after warning the team; save `evidence/reliability/k6-spike.log` and update [k6-analysis.md](./k6-analysis.md).
+3. **Phase F trace:** Capture one X-Ray sale→payment→callback trace ID/screenshot under `evidence/reliability/phase-f/traces/`.
+4. **Drill 3:** Seed/break reconciliation DLQ, prove alert firing/recovery, write `drill-3-platform-failure-YYYYMMDD.md`.
 
 ---
 

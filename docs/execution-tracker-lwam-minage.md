@@ -35,11 +35,11 @@
 
 | Step | Task | Status | Evidence |
 |------|------|--------|----------|
-| **C1** | Slack contact point: all 9 contract fields | [ ] | `infra/grafana/docker-entrypoint.sh` |
-| **C2** | Alert rule annotations (env, service, symptom, …) | [ ] | `rules.yaml` |
+| **C1** | Slack contact point: all 9 contract fields | [x] | `infra/grafana/docker-entrypoint.sh` |
+| **C2** | Alert rule annotations (env, service, symptom, …) | [x] | `rules.yaml` |
 | **C3** | Pipeline: bump Grafana image tag + deploy | [ ] | ECS + screenshot |
 | **C4** | Test contact point + capture firing/recovery | [ ] | `slack-alert-*.json` |
-| **C5** | Retarget EdgeProbeFailed to Synthetics metric (after A3) | [ ] | rules.yaml + runbook |
+| **C5** | Retarget EdgeProbeFailed to Synthetics metric (after A3) | [x] | CloudWatch alarm source-of-truth + rules.yaml/runbook links |
 
 ---
 
@@ -47,8 +47,8 @@
 
 | Step | Task | Status | Evidence |
 |------|------|--------|----------|
-| **D1** | SLO/uptime/burn dashboard JSON | [ ] | `infra/grafana/dashboards/tillflow-slo-overview.json` |
-| **D2** | Business metrics on payments dashboard | [ ] | dashboard JSON |
+| **D1** | SLO/uptime/burn dashboard JSON | [x] | `infra/grafana/dashboards/tillflow-slo-overview.json` |
+| **D2** | Business metrics on payments dashboard | [x] | payments dashboard JSON |
 | **D3** | Export to `evidence/reliability/phase-f/dashboards/` | [x] | `evidence/reliability/phase-f/dashboards/` |
 | **D4** | Run `k6 spike.js` | [ ] | `k6-spike.log` |
 | **D5** | Finish `k6-analysis.md` (RPS, bottleneck, cost) | [x] | `evidence/reliability/k6-analysis.md` |
@@ -62,8 +62,8 @@
 |------|------|-------|--------|----------|
 | **E1** | **Drill 3** — break worker/DLQ → alert → recover (timed) | Minage | [ ] | `drill-3-platform-failure-*.md` |
 | **E2** | **Drill 5** — RDS restore → RPO/RTO | Lwam exec | [ ] | `restore-drill-*.md` |
-| **E3** | Runbook: RTO/RPO, restore, reconciliation order, drill index | Minage | [ ] | `docs/runbook.md` |
-| **E4** | Expand `slo-error-budgets.md` per-SLI rows | Minage | [ ] | docs |
+| **E3** | Runbook: RTO/RPO, restore, reconciliation order, drill index | Minage | [x] | `docs/runbook.md` |
+| **E4** | Expand `slo-error-budgets.md` per-SLI rows | Minage | [x] | `docs/slo-error-budgets.md` |
 | **E5** | Phase F X-Ray trace (sale→payment→callback) | Minage | [ ] | phase-f/traces/ |
 
 ---

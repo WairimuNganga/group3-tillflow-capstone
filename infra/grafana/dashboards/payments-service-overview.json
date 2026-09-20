@@ -1,5 +1,7 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -7,11 +9,29 @@
   "links": [],
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "AMP" },
-      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
       "id": 1,
-      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
       "targets": [
         {
           "expr": "sum(rate(payments_requests_total[5m]))",
@@ -19,13 +39,28 @@
           "refId": "A"
         }
       ],
-      "title": "Request rate (RED — rate)",
+      "title": "Request rate (RED \u2014 rate)",
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "AMP" },
-      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
       "id": 2,
       "targets": [
         {
@@ -34,13 +69,26 @@
           "refId": "A"
         }
       ],
-      "title": "Error ratio (RED — errors)",
+      "title": "Error ratio (RED \u2014 errors)",
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "AMP" },
-      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
       "id": 3,
       "targets": [
         {
@@ -49,17 +97,92 @@
           "refId": "A"
         }
       ],
-      "title": "Latency p95 (RED — duration)",
+      "title": "Latency p95 (RED \u2014 duration)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(rate(payments_stk_push_total[5m]))",
+          "legendFormat": "STK push accepted",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(payments_callback_total[5m]))",
+          "legendFormat": "callbacks",
+          "refId": "B"
+        }
+      ],
+      "title": "Business flow \u2014 STK and callbacks",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum(payments_reconciliation_dlq_visible_messages)",
+          "legendFormat": "reconciliation DLQ visible",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(payments_reconciliation_attempts_total[5m]))",
+          "legendFormat": "reconciliation attempts",
+          "refId": "B"
+        }
+      ],
+      "title": "Business safety \u2014 reconciliation queue",
       "type": "timeseries"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["tillflow", "payments", "platform"],
-  "templating": { "list": [] },
-  "time": { "from": "now-1h", "to": "now" },
+  "tags": [
+    "tillflow",
+    "payments",
+    "platform"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
   "timezone": "browser",
-  "title": "Platform / payments — Service overview",
+  "title": "Platform / payments \u2014 Service overview",
   "uid": "tillflow-payments-overview",
   "version": 1
 }

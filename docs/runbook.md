@@ -290,7 +290,52 @@ state and `aws logs tail` for the task before trying a second rollback target.
 | Alert (starter) | Signal (AMP / Grafana) | First action | Recovery |
 |-----------------|------------------------|--------------|----------|
 | PaymentsHigh5xxRate | `sum(rate(payments_requests_total{status="5xx"}[5m])) / sum(rate(payments_requests_total[5m]))` > 0.05 for 10m | Check recent deploy; `aws logs tail` payments; consider rollback workflow | Ratio below 0.02 for 15m |
-| EdgeProbeFailed | Synthetic `/health` or `/ready` failure (see `infra/scripts/reliability-edge-probe.sh`) | API Gateway stage, ALB target health, web service ECS events | Two consecutive probe successes |
+| EdgeProbeFailed | CloudWatch Synthetics `devops-g3-edge-health-canary` SuccessPercent below threshold; Grafana rule links to the same runbook | API Gateway stage, VPC Link/ALB target health, web service ECS events, latest Synthetics run | Two consecutive canary successes and public `/health` returns 200 |
 | PaymentsLatencyP95 | `histogram_quantile(0.95, sum(rate(payments_request_duration_seconds_bucket[5m])) by (le))` > 2s for 15m | RDS Proxy connections, Daraja sandbox status | p95 < 1s for 15m |
 
 Wire rules in Grafana when the ECS service is live ([infra/grafana/README.md](../infra/grafana/README.md)). Each firing alert should link to the panel URL (T8.2).
+
+
+## RTO / RPO targets
+
+| Component | RTO target | RPO target | Recovery owner | Proof artifact |
+|---|---:|---:|---|---|
+| Public edge/API Gateway + ECS web | 15 minutes | 0 data loss | Lwam + Minage | Synthetics run + ECS healthy task evidence |
+| POS sale API | 30 minutes | 0 committed-sale loss | POS owner + Minage | POS `/ready`, DB query, sale smoke |
+| Payments callback/reconciliation | 30 minutes | 0 accepted-payment loss | Hunter + Minage | Callback/reconciliation replay log, DLQ depth back to 0 |
+| RDS primary data | 60 minutes | ≤ 5 minutes | Lwam | Restore drill log with measured RPO/RTO |
+| Commission daily close | Same business day, before 06:30 EAT where possible | 0 duplicate payout | Joyce + Minage | Close run log, reconciliation variance = 0 |
+
+## Restore and reconciliation order
+
+1. Freeze deploys and write the incident start time in the Slack thread.
+2. Restore infrastructure/data first: network, RDS/proxy, Redis, ECS services, then alarms.
+3. Confirm RDS is writable and service `/ready` checks pass before replaying work.
+4. Drain/replay payment reconciliation queues before declaring payment recovery.
+5. Run POS/payment consistency checks: every paid sale has a settled payment; every settled payment has a POS notification.
+6. Run commission/ledger checks last: no duplicate disbursement, reconciliation variance = 0.
+7. Capture evidence links: pipeline run, ECS health, canary run, DLQ depth, smoke response, and any X-Ray trace ID.
+
+## Reliability drill index
+
+| Drill | Owner | Goal | Evidence location | Done criteria |
+|---|---|---|---|---|
+| Drill 3 — worker/DLQ alert | Minage | Break reconciliation worker or seed DLQ, prove Slack alert fires and clears | `evidence/reliability/drill-3-platform-failure-YYYYMMDD.md` | Alert firing screenshot/message, recovery timestamp, DLQ back to 0 |
+| Drill 5 — destroy/rebuild | Lwam + Minage | Rebuild infra from Terraform and prove app health | `evidence/platform/g5-*` | Terraform apply complete, pipeline green, ECS healthy, smoke 200, canary passed |
+| Rollback drill | Wairimu + service owner | Prove image rollback path | `evidence/delivery/rollback-log.md` | Workflow artifact and post-rollback `/health` + `/ready` pass |
+
+## Alert contract
+
+Every critical Slack alert must include these 9 fields, provisioned in `infra/grafana/docker-entrypoint.sh` and populated by `infra/grafana/provisioning/alerting/rules.yaml`:
+
+| Field | Meaning |
+|---|---|
+| `env` | Environment affected, e.g. `dev` |
+| `service` | Owning service or edge component |
+| `symptom` | What changed in the signal |
+| `user_impact` | What users/tenants feel |
+| `first_safe_action` | First action that should not make money/data safety worse |
+| `recovery_signal` | Objective clear condition |
+| `owner` | DRI or pair to page |
+| `runbook_url` | Runbook section or doc path |
+| `dashboard_url` | Grafana dashboard/panel path |

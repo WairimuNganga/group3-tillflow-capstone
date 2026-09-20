@@ -13,6 +13,20 @@
 Budget = eligible events × (1 − target). Invalid requests / genuine business declines may be excluded;
 dependency outages still count when the user journey fails.
 
+
+## Per-SLI definitions
+
+| Service | SLI | Numerator | Denominator | Window | Target | Exclusions | User outcome |
+|---|---|---|---|---|---|---|---|
+| Web | Edge availability | Successful `/health`, `/ready`, and eligible web/API shell responses | All valid edge requests, excluding synthetic duplicate retries | 28 days; dashboard 5m/1h burn views | 99.9% | Invalid routes, auth failures caused by caller error | A tenant can reach TillFlow and start the sales journey |
+| Web | Latency | Requests with p95 < 500ms | Eligible web/API shell requests | 5m rolling, reviewed over 28 days | p95 < 500ms | Health probes excluded from user SLI denominator | App shell loads fast enough for cashier use |
+| POS | Idempotent sale writes | Valid sale writes accepted exactly once | All valid sale create attempts with idempotency key | 28 days | 99.9% | Malformed payloads, invalid tenant/auth | Cashier creates one sale and never duplicates money state |
+| POS | Latency | Sale writes with p95 < 400ms | Valid sale write attempts | 5m rolling, reviewed over 28 days | p95 < 400ms | Caller/network retries not reaching API | Checkout is responsive at the counter |
+| Payments | Payment acceptance + callback | STK/B2C accepted and callback processed within 60s | Valid payment attempts sent to provider | 28 days | 99.5% | Genuine provider/business declines; invalid MSISDN/test data | Customer gets a timely payment decision |
+| Payments | Reconciliation safety | Attempts that settle through callback or reconciliation without DLQ growth | Attempts entering pending/reconciliation state | 28 days | 99.5% | Provider outage still counts if user journey is delayed | No payment is silently stuck |
+| Commission | Daily close timeliness | Eligible payout runs terminal by 06:30 EAT | Scheduled payout runs | 28 days | 99.0% | Manually paused payout windows approved in incident notes | Merchants can trust daily commission settlement |
+| Commission | Duplicate disbursement | Duplicate disbursement events = 0 | All payout ledger entries | Continuous | 0 tolerance | None | No merchant is paid twice for the same sale |
+
 ## Budget policy
 - Fast-burn threshold: burn rate ≥ 14.4× sustained over both a 1h and 5m window (≈2% of the 28-day
   budget consumed in 1h) → page on-call + freeze non-essential releases to the affected service

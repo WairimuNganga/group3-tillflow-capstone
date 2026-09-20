@@ -1,0 +1,207 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "1 - (sum(rate(web_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(web_requests_total[5m])), 1e-9))",
+          "legendFormat": "web success",
+          "refId": "A"
+        },
+        {
+          "expr": "1 - (sum(rate(pos_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(pos_requests_total[5m])), 1e-9))",
+          "legendFormat": "pos success",
+          "refId": "B"
+        },
+        {
+          "expr": "1 - (sum(rate(payments_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(payments_requests_total[5m])), 1e-9))",
+          "legendFormat": "payments success",
+          "refId": "C"
+        }
+      ],
+      "title": "Availability SLI \u2014 success ratio",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "(sum(rate(payments_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(payments_requests_total[5m])), 1e-9)) / 0.005",
+          "legendFormat": "payments burn vs 99.5%",
+          "refId": "A"
+        },
+        {
+          "expr": "(sum(rate(web_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(web_requests_total[5m])), 1e-9)) / 0.001",
+          "legendFormat": "web burn vs 99.9%",
+          "refId": "B"
+        },
+        {
+          "expr": "(sum(rate(pos_requests_total{status=~\"5xx\"}[5m])) / clamp_min(sum(rate(pos_requests_total[5m])), 1e-9)) / 0.001",
+          "legendFormat": "pos burn vs 99.9%",
+          "refId": "C"
+        }
+      ],
+      "title": "Error-budget burn rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(payments_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "payments p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(pos_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "pos p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(web_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "web p95",
+          "refId": "C"
+        }
+      ],
+      "title": "Latency p95 by service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(commission_duplicate_disbursement_total)",
+          "legendFormat": "duplicate disbursement",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(commission_reconciliation_variance_total)",
+          "legendFormat": "reconciliation variance",
+          "refId": "B"
+        }
+      ],
+      "title": "Money-safety invariants (must stay zero)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AMP"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "count({__name__=~\".+\"})",
+          "legendFormat": "AMP visible series",
+          "refId": "A"
+        }
+      ],
+      "title": "Telemetry visibility guard",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "tillflow",
+    "slo",
+    "reliability"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "TillFlow / SLO uptime + burn",
+  "uid": "tillflow-slo",
+  "version": 1
+}
