@@ -81,6 +81,12 @@ variable "api_throttle_rate" {
   default = 100
 }
 
+variable "api_stage_name" {
+  description = "Public API Gateway stage and browser-visible web base path."
+  type        = string
+  default     = "v1"
+}
+
 # --- compute ---------------------------------------------------------------
 
 variable "image_tags" {

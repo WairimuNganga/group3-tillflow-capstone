@@ -29,7 +29,7 @@ k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js
 ## Soak (≥18m at moderate VUs)
 
 ```bash
-k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
+k6 run -e API_ENDPOINT="$API_ENDPOINT" --summary-export evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
 
 ## Spike (brief burst — run manually, not in CI by default)

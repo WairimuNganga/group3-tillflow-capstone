@@ -101,6 +101,15 @@ resource "aws_apigatewayv2_route" "proxy" {
   target    = "integrations/${aws_apigatewayv2_integration.alb.id}"
 }
 
+# A greedy proxy route does not match the empty path. Without this explicit
+# route, opening the stage URL itself (for example, /v1/) returns API Gateway
+# 404 instead of the TillFlow web home page.
+resource "aws_apigatewayv2_route" "root" {
+  api_id    = aws_apigatewayv2_api.this.id
+  route_key = "ANY /"
+  target    = "integrations/${aws_apigatewayv2_integration.alb.id}"
+}
+
 resource "aws_cloudwatch_log_group" "access" {
   name              = "/${var.name_prefix}/apigw"
   retention_in_days = var.log_retention_days

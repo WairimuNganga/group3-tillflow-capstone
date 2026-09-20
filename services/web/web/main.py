@@ -26,6 +26,7 @@ from web.deps import get_commission_client, get_pos_client
 from web.security import SecurityHeadersMiddleware
 from web.session import (
     clear_session,
+    cookie_path,
     load_session,
     save_session,
     verify_csrf,
@@ -51,6 +52,13 @@ app.include_router(
     )
 )
 instrument_fastapi(app, service_name=settings.service_name)
+
+
+def _public_path(path: str = "/") -> str:
+    """Return a browser URL that retains the API Gateway stage prefix."""
+    base = settings.base_path.rstrip("/")
+    normalized = "/" + path.lstrip("/")
+    return f"{base}{normalized}" if base else normalized
 
 
 def _shop_from_session(session: dict) -> dict | None:
@@ -79,7 +87,7 @@ def _attach_csrf(request: Request, response: HTMLResponse, token: str) -> None:
             samesite="lax",
             secure=settings.cookie_secure,
             max_age=60 * 60 * 12,
-            path="/",
+            path=cookie_path(),
         )
 
 
@@ -106,6 +114,7 @@ def _render(
             "shop": _shop_from_session(session),
             "flash": flash,
             "csrf_token": token,
+            "base_path": settings.base_path.rstrip("/"),
             "pos_configured": bool(settings.pos_base_url),
             "commission_configured": bool(settings.commission_base_url),
             **ctx,
@@ -114,7 +123,7 @@ def _render(
     )
     _attach_csrf(request, response, token)
     if request.cookies.get("tillflow_flash"):
-        response.delete_cookie("tillflow_flash", path="/")
+        response.delete_cookie("tillflow_flash", path=cookie_path())
     return response
 
 
@@ -156,7 +165,7 @@ async def setup_shop(
             flash={"kind": "error", "message": f"POS unavailable: {exc}"},
         )
 
-    response = RedirectResponse("/", status_code=303)
+    response = RedirectResponse(_public_path("/"), status_code=303)
     save_session(
         response,
         {
@@ -181,7 +190,7 @@ async def reset_shop(request: Request, csrf_token: str = Form(...)):
             status_code=403,
             flash={"kind": "error", "message": "CSRF check failed."},
         )
-    response = RedirectResponse("/", status_code=303)
+    response = RedirectResponse(_public_path("/"), status_code=303)
     clear_session(response)
     _attach_csrf(request, response, _csrf_token(request))
     return response
@@ -191,7 +200,7 @@ async def reset_shop(request: Request, csrf_token: str = Form(...)):
 async def sale_form(request: Request) -> HTMLResponse:
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
     return _render(request, "sale.html")
 
 
@@ -205,7 +214,7 @@ async def create_sale(
 ):
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
     if not verify_csrf(request, csrf_token):
         return _render(
             request,
@@ -237,7 +246,7 @@ async def create_sale(
             status_code=502,
             flash={"kind": "error", "message": f"POS unavailable: {exc}"},
         )
-    return RedirectResponse(f"/sales/{sale.sale_id}", status_code=303)
+    return RedirectResponse(_public_path(f"/sales/{sale.sale_id}"), status_code=303)
 
 
 def _sale_date(created_at: str | None) -> date | None:
@@ -260,7 +269,7 @@ async def sales_list(
 ) -> HTMLResponse:
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
 
     attendant_id = (attendant_id or "").strip() or None
     status = (status or "").strip() or None
@@ -382,7 +391,7 @@ async def commission_day(
 ) -> HTMLResponse:
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
 
     try:
         day = date.fromisoformat(period) if period else today_eat()
@@ -517,14 +526,14 @@ def _flash_redirect(url: str, *, kind: str, message: str) -> RedirectResponse:
         .encode("ascii", "replace")
         .decode("ascii")
     )
-    response = RedirectResponse(url, status_code=303)
+    response = RedirectResponse(_public_path(url), status_code=303)
     response.set_cookie(
         "tillflow_flash",
         f"{kind}|{safe[:180]}",
         max_age=30,
         httponly=True,
         samesite="lax",
-        path="/",
+        path=cookie_path(),
     )
     return response
 
@@ -538,9 +547,9 @@ async def commission_close(
 ):
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
     if not verify_csrf(request, csrf_token):
-        return RedirectResponse("/commission", status_code=303)
+        return RedirectResponse(_public_path("/commission"), status_code=303)
     try:
         day = date.fromisoformat(period)
     except ValueError:
@@ -572,9 +581,9 @@ async def commission_payout(
 ):
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
     if not verify_csrf(request, csrf_token):
-        return RedirectResponse("/commission", status_code=303)
+        return RedirectResponse(_public_path("/commission"), status_code=303)
     try:
         day = date.fromisoformat(period)
     except ValueError:
@@ -621,7 +630,7 @@ async def payouts_list(
 ) -> HTMLResponse:
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
 
     attendant_id = (attendant_id or "").strip() or None
     state = (state or "").strip() or None
@@ -684,7 +693,7 @@ async def payouts_list(
 async def sale_status(request: Request, sale_id: str) -> HTMLResponse:
     session = load_session(request)
     if not session.get("tenant_id"):
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse(_public_path("/"), status_code=303)
     try:
         sale = await get_pos_client().get_sale(
             tenant_id=session["tenant_id"], sale_id=sale_id

@@ -10,6 +10,11 @@ from starlette.responses import Response
 from web.config import settings
 
 
+def cookie_path() -> str:
+    """Scope browser state to the public app prefix, or root when local."""
+    return settings.base_path.rstrip("/") or "/"
+
+
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(settings.session_secret, salt="tillflow-web-session")
 
@@ -34,12 +39,12 @@ def save_session(response: Response, data: dict[str, Any]) -> None:
         samesite="lax",
         secure=settings.cookie_secure,
         max_age=60 * 60 * 12,
-        path="/",
+        path=cookie_path(),
     )
 
 
 def clear_session(response: Response) -> None:
-    response.delete_cookie(settings.session_cookie_name, path="/")
+    response.delete_cookie(settings.session_cookie_name, path=cookie_path())
 
 
 def ensure_csrf(request: Request, response: Response) -> str:
@@ -53,7 +58,7 @@ def ensure_csrf(request: Request, response: Response) -> str:
             samesite="lax",
             secure=settings.cookie_secure,
             max_age=60 * 60 * 12,
-            path="/",
+            path=cookie_path(),
         )
     return token
 

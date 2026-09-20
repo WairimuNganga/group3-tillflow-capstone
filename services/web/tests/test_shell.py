@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from web.config import settings
 from web.main import app
 
 
@@ -24,6 +25,40 @@ def test_home_renders_brand_and_csp():
     assert "Open a demo shop" in r.text
     assert "Content-Security-Policy" in r.headers
     assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
+
+
+def test_public_base_path_is_used_for_browser_urls_and_cookies(monkeypatch):
+    monkeypatch.setattr(settings, "base_path", "/v1")
+    client = TestClient(app)
+
+    home = client.get("/")
+
+    assert home.status_code == 200
+    assert 'href="/v1/static/app.css"' in home.text
+    assert 'action="/v1/setup"' in home.text
+    assert 'href="/v1/"' in home.text
+    assert "Path=/v1" in home.headers["set-cookie"]
+
+    csrf = home.cookies.get("tillflow_csrf")
+    setup = client.post(
+        "/setup",
+        # In production the browser requests /v1/setup (so the /v1 cookie is
+        # sent) and API Gateway strips the stage before ASGI sees /setup.
+        cookies={"tillflow_csrf": csrf},
+        data={
+            "shop_name": "Stage Shop",
+            "owner_phone": "254700000001",
+            "attendant_name": "Amina",
+            "attendant_phone": "254712345678",
+            "shortcode": "174379",
+            "csrf_token": csrf,
+        },
+        follow_redirects=False,
+    )
+
+    assert setup.status_code == 303
+    assert setup.headers["location"] == "/v1/"
+    assert "Path=/v1" in setup.headers["set-cookie"]
 
 
 def test_setup_requires_csrf():

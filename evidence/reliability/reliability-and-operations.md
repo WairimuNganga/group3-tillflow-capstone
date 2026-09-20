@@ -25,7 +25,7 @@ Letter phases map to this evidence pack and [how-to-reproduce.md](./how-to-repro
 | **A** | OTel instrumentation (shared lib, ADOT on ECS, local traces) | **Mostly done** — A1–A4 ✓; A5 E2E trace sale→callback open | Product path deploy + X-Ray trace capture for ADR-008 |
 | **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 ✓**; **payments RED in AMP ✓** (2026-09-20) | Grafana screenshot with payments RED; pos/web traffic follow-up |
 | **C** | External synthetics (CloudWatch canary on `/health`) | **Done** — live canary proof captured 2026-09-20 | Platform evidence: `synthetics-describe-20260920.json`, `synthetics-runs-20260920.json` |
-| **D** | k6 capacity envelope (**G3**) | **Smoke, baseline, soak ✓** (2026-09-20) | Optional: `spike.js`; cite logs in [k6-analysis.md](./k6-analysis.md) |
+| **D** | k6 capacity envelope (**G3**) | **Smoke, baseline, soak and spike ✓** (2026-09-20) | Results and artifact links in [k6-analysis.md](./k6-analysis.md) |
 | **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **In progress** — rules in `infra/grafana/provisioning/alerting/` | Apply + pipeline + **Test contact point**; record §Phase E |
 | **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in** `evidence/reliability/phase-f/` | Screenshots + X-Ray trace ID table in phase-f README |
 | **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Not recorded** | Execute Drill 3; document in how-to-reproduce §Drill 3 |
@@ -234,17 +234,18 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 ### Checklist
 
 - [x] `devops-g3/slack-webhook` AWSCURRENT full incoming webhook (posts to `# group-3-alerts`)
-- [ ] `grafana_image_tag` **11.4.0-tillflow2** applied + image in ECR + ECS on new task
+- [x] `grafana_image_tag` **11.4.0-tillflow3** applied + image in ECR + ECS on new task
 - [ ] Force new Grafana ECS deployment after secret update
-- [ ] Grafana → Alerting → Contact points → **Test** slack-tillflow (CLI webhook test OK 2026-09-20)
+- [x] Grafana → Alerting → Contact points → **Test** slack-tillflow; Grafana send and Slack receipt captured 2026-09-20
 - [x] Alert rules in folder **TillFlow Alerts** (3 rules, provisioned as code)
-- [ ] Evidence: Slack screenshot or message ID + date below
+- [x] Contact-point delivery evidence: `phase-f/screenshots/grafana-slack-test-sent-20260920.png` and `slack-test-received-20260920.png`; real firing/recovery remains open
 
 ### Recorded run
 
 | Date | Contact point test | Rules provisioned | Slack message link / note |
 |------|-------------------|-------------------|---------------------------|
 | 2026-09-20 | CLI incoming-webhook → `# group-3-alerts` | Pending tillflow2 ECS | Grafana UI Test pending; Phase E merged **main @5746ab0** |
+| 2026-09-20 | Grafana predefined test sent and received in Slack | 3 rules provisioned | Delivery passed; predefined test has no rule annotations, so populated firing/recovery proof remains open |
 
 ---
 
@@ -265,7 +266,7 @@ Longer runs (off-hours; do not overlap with `spike.js`):
 
 ```bash
 k6 run -e API_ENDPOINT="$API_ENDPOINT" reliability/k6/baseline.js | tee evidence/reliability/k6-baseline.log
-k6 run -e API_ENDPOINT="$API_ENDPOINT" --out json=evidence/reliability/k6-soak.json reliability/k6/soak.js
+k6 run -e API_ENDPOINT="$API_ENDPOINT" --summary-export evidence/reliability/k6-soak.json reliability/k6/soak.js
 ```
 
 Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).
@@ -274,8 +275,8 @@ Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).
 
 - [x] Edge probe output (2026-09-19 — OK /health, /ready)
 - [x] k6 smoke thresholds pass — 0% failed, p(95)=287.6ms, checks 100%; log `evidence/reliability/k6-smoke.log`
-- [x] baseline + soak (optional G3 envelope; update k6-analysis table)
-- [ ] Spike summary when run (team-notified live load test)
+- [x] baseline + soak; final soak: 8782 requests, 0 failures, p95 302.82ms, 100% checks; JSON artifact committed
+- [x] Spike summary: 30 VUs, 1820 requests, 0 failures, 45.39 req/s, p95 293.32ms; `k6-spike-20260920.log`
 
 ### Recorded smoke run (2026-09-19)
 
@@ -368,9 +369,8 @@ instrument_fastapi(app, service_name="pos")
 ## Next steps (priority order)
 
 1. **Phase E live proof:** In Grafana, Test contact point `slack-tillflow`; capture Slack screenshot/message link.
-2. **Phase D spike:** Run `spike.js` only after warning the team; save `evidence/reliability/k6-spike.log` and update [k6-analysis.md](./k6-analysis.md).
-3. **Phase F trace:** Capture one X-Ray sale→payment→callback trace ID/screenshot under `evidence/reliability/phase-f/traces/`.
-4. **Drill 3:** Seed/break reconciliation DLQ, prove alert firing/recovery, write `drill-3-platform-failure-YYYYMMDD.md`.
+2. **Phase F trace:** Capture one X-Ray sale→payment→callback trace ID/screenshot under `evidence/reliability/phase-f/traces/`.
+3. **Drill 3:** Seed/break reconciliation DLQ, prove alert firing/recovery, write `drill-3-platform-failure-YYYYMMDD.md`.
 
 ---
 

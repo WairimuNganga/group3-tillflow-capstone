@@ -16,10 +16,10 @@
       <div><strong>Attendant</strong> {{ shop.attendant_name }} · {{ shop.attendant_phone }}</div>
     </div>
     <div class="actions hero-cta">
-      <a class="btn" href="/sale">Start a sale</a>
-      <a class="btn secondary" href="/sales">View sales</a>
-      <a class="btn secondary" href="/commission">Commission</a>
-      <form method="post" action="/reset" style="display:inline">
+      <a class="btn" href="{{ base_path }}/sale">Start a sale</a>
+      <a class="btn secondary" href="{{ base_path }}/sales">View sales</a>
+      <a class="btn secondary" href="{{ base_path }}/commission">Commission</a>
+      <form method="post" action="{{ base_path }}/reset" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <button class="btn secondary" type="submit">Reset shop</button>
       </form>
@@ -27,7 +27,7 @@
   {% else %}
     <h2>Open a demo shop</h2>
     <p class="lede">Creates a tenant, till, attendant, and 2% commission rate via POS.</p>
-    <form method="post" action="/setup">
+    <form method="post" action="{{ base_path }}/setup">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
       <div class="grid two">
         <label>Shop name

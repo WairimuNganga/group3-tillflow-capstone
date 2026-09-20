@@ -1,0 +1,33 @@
+{
+  "test": "k6 soak",
+  "script": "reliability/k6/soak.js",
+  "date_utc": "2026-09-20",
+  "duration_seconds": 1080.9,
+  "max_vus": 10,
+  "iterations": 4391,
+  "interrupted_iterations": 0,
+  "http_requests": 8782,
+  "requests_per_second": 8.124601,
+  "checks": {
+    "total": 8782,
+    "succeeded": 8782,
+    "failed": 0,
+    "success_rate": 1.0
+  },
+  "http_request_failed_rate": 0.0,
+  "http_request_duration_ms": {
+    "average": 288.2,
+    "median": 281.12,
+    "minimum": 262.91,
+    "maximum": 2300.0,
+    "p90": 295.76,
+    "p95": 302.82
+  },
+  "thresholds": {
+    "checks_rate_gt_0_99": true,
+    "http_req_duration_p95_lt_500ms": true,
+    "http_req_failed_rate_lt_0_01": true
+  },
+  "result": "PASS",
+  "full_console_log": "evidence/reliability/k6-soak.log"
+}

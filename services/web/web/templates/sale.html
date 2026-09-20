@@ -6,7 +6,7 @@
 <p class="lede">Enter the amount in whole Kenya shillings (KES).</p>
 
 <div class="panel">
-  <form method="post" action="/sale">
+  <form method="post" action="{{ base_path }}/sale">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
     <div class="grid two">
       <label>Item
@@ -21,7 +21,7 @@
     </div>
     <div class="actions">
       <button class="btn" type="submit">Charge via M-Pesa STK</button>
-      <a class="btn secondary" href="/">Back</a>
+      <a class="btn secondary" href="{{ base_path }}/">Back</a>
     </div>
   </form>
 </div>

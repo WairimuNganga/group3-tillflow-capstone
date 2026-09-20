@@ -14,7 +14,7 @@
 </p>
 {% endif %}
 
-<form class="filters" method="get" action="/payouts">
+<form class="filters" method="get" action="{{ base_path }}/payouts">
   <label>Attendant
     <select name="attendant_id">
       <option value="">All attendants</option>
@@ -35,7 +35,7 @@
   </label>
   <div class="filter-actions">
     <button class="btn" type="submit">Apply</button>
-    <a class="btn secondary" href="/payouts">Clear</a>
+    <a class="btn secondary" href="{{ base_path }}/payouts">Clear</a>
   </div>
 </form>
 
@@ -75,8 +75,8 @@
 </div>
 
 <div class="actions">
-  <a class="btn" href="/commission">Attendant day</a>
-  <a class="btn secondary" href="/sales">Sales</a>
-  <a class="btn secondary" href="/">Home</a>
+  <a class="btn" href="{{ base_path }}/commission">Attendant day</a>
+  <a class="btn secondary" href="{{ base_path }}/sales">Sales</a>
+  <a class="btn secondary" href="{{ base_path }}/">Home</a>
 </div>
 {% endblock %}

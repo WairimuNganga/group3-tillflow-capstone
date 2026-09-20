@@ -12,8 +12,8 @@
 
 **Live proof (add after capture):**
 
-- [ ] Grafana screenshot: TillFlow folder, payments RED row (note No data vs populated)
-- [ ] Explore screenshot: `count({__name__=~".+"})` or `ecs_task_*` (proves AMP query path)
+- [x] Grafana screenshots: TillFlow SLO and payments dashboards (`screenshots/*-20260920.png`); sparse business panels honestly show `No data`
+- [x] Explore screenshots: AMP visible-series query and payments RED metric discovery (`screenshots/amp-query-20260920.png`, `screenshots/payments-red-query-20260920.png`)
 
 Optional: Grafana **Share → Export → Save to file** and replace the JSON here if the live board diverges from repo.
 

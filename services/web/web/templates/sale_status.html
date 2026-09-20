@@ -28,12 +28,12 @@
   </div>
   <div class="actions hero-cta">
     {% if sale.status == "awaiting_payment" %}
-    <a class="btn" href="/sales/{{ sale.sale_id }}">Refresh</a>
+    <a class="btn" href="{{ base_path }}/sales/{{ sale.sale_id }}">Refresh</a>
     {% endif %}
-    <a class="btn{% if sale.status == "awaiting_payment" %} secondary{% endif %}" href="/sale">Another sale</a>
+    <a class="btn{% if sale.status == "awaiting_payment" %} secondary{% endif %}" href="{{ base_path }}/sale">Another sale</a>
   </div>
 </div>
 {% if sale.status == "awaiting_payment" %}
-<script src="/static/sale-poll.js" defer></script>
+<script src="{{ base_path }}/static/sale-poll.js" defer></script>
 {% endif %}
 {% endblock %}
