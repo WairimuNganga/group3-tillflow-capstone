@@ -13,6 +13,22 @@ variable "canary_name" {
   default     = null
 }
 
+variable "ecs_cluster_name" {
+  description = "ECS cluster name for service health alarms."
+  type        = string
+}
+
+variable "ecs_service_names" {
+  description = "Map of service key -> ECS service name."
+  type        = map(string)
+  default     = {}
+}
+
+variable "rds_instance_identifier" {
+  description = "RDS DB instance identifier for database health alarms."
+  type        = string
+}
+
 variable "owner_tag" {
   type    = string
   default = "minage"

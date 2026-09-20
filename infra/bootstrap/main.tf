@@ -388,6 +388,26 @@ data "aws_iam_policy_document" "ci_deploy" {
     resources = ["*"]
   }
 
+  # CloudWatch Synthetics is its own service prefix; `cloudwatch:*` only covers
+  # alarms/metrics and does not allow creating the external edge canary.
+  statement {
+    sid = "CloudWatchSynthetics"
+    actions = [
+      "synthetics:CreateCanary",
+      "synthetics:UpdateCanary",
+      "synthetics:DeleteCanary",
+      "synthetics:DescribeCanaries",
+      "synthetics:GetCanary",
+      "synthetics:GetCanaryRuns",
+      "synthetics:StartCanary",
+      "synthetics:StopCanary",
+      "synthetics:TagResource",
+      "synthetics:UntagResource",
+      "synthetics:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
   # Terraform creates and attaches the per-service task roles. Restricted to
   # this project's name prefix so a compromised CI run cannot touch unrelated
   # roles in a shared account (threat model T6.2).
@@ -431,6 +451,7 @@ data "aws_iam_policy_document" "ci_deploy" {
         "ecs.amazonaws.com",
         "rds.amazonaws.com",
         "elasticloadbalancing.amazonaws.com",
+        "synthetics.amazonaws.com",
       ]
     }
   }

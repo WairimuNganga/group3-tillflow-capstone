@@ -129,9 +129,11 @@ output "synthetics_probe_urls" {
 }
 
 output "cloudwatch_alarm_names" {
-  description = "Starter DLQ + synthetics alarms for drills and runbook."
+  description = "Starter DLQ, synthetics, ECS and RDS alarms for drills and runbook."
   value = {
     dlq    = module.observability_alarms.dlq_alarm_names
     canary = module.observability_alarms.canary_alarm_name
+    ecs    = module.observability_alarms.ecs_alarm_names
+    rds    = module.observability_alarms.rds_alarm_names
   }
 }
