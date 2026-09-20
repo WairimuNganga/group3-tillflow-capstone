@@ -169,7 +169,7 @@ module "alb" {
       port          = 8080
       health_path   = "/ready"
       priority      = 200
-      path_patterns = ["/api/payments/*", "/callback/*"]
+      path_patterns = ["/api/payments/*", "/callbacks/*"]
     }
     grafana = {
       port = 3000
@@ -398,6 +398,11 @@ module "service" {
       DARAJA_INITIATOR           = "${module.secrets.secret_arns["daraja"]}:DARAJA_INITIATOR::"
       DARAJA_SECURITY_CREDENTIAL = "${module.secrets.secret_arns["daraja"]}:DARAJA_SECURITY_CREDENTIAL::"
       MPESA_CALLBACK_SECRET      = "${module.secrets.secret_arns["daraja"]}:MPESA_CALLBACK_SECRET::"
+      # Public URLs Daraja calls back on. Sent to Daraja in the STK/B2C request
+      # payloads (CallBackURL / ResultURL). They embed the callback secret path
+      # segment, so they live in the daraja secret rather than plaintext env.
+      DARAJA_STK_CALLBACK_URL = "${module.secrets.secret_arns["daraja"]}:DARAJA_STK_CALLBACK_URL::"
+      DARAJA_B2C_RESULT_URL   = "${module.secrets.secret_arns["daraja"]}:DARAJA_B2C_RESULT_URL::"
     } : {},
   )
 
