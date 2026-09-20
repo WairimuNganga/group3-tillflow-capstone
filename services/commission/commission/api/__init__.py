@@ -105,10 +105,11 @@ async def list_payouts(
     """List payout intents for a tenant (demo tracking table)."""
     attendant_id = (attendant_id or "").strip() or None
     state = (state or "").strip() or None
-    if session is None:
-        intents = get_memory_intents()
-    else:
-        intents = PostgresPayoutIntentRepository(session)
+    intents = (
+        get_memory_intents()
+        if session is None
+        else PostgresPayoutIntentRepository(session)
+    )
 
     rows = await intents.list_for_tenant(
         tenant_id, attendant_id=attendant_id, state=state

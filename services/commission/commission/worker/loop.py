@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import date
-
 from typing import Any
 
 from commission.services.close_service import CloseService
