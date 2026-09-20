@@ -135,17 +135,17 @@ cd services/pos/local && docker compose down -v
 - ADRs: [ADR-005 (tenancy)](../../docs/adr/ADR-005-multi-tenancy-isolation.md),
   [ADR-004 (idempotency & money)](../../docs/adr/ADR-004-idempotency-and-money-integrity.md)
 
-## Known gaps (carried into G3)
+## Current status / known gaps
 
-- **Infra for the handoff is not provisioned.** The chain needs `PAYMENTS_BASE_URL`
-  and `POS_BASE_URL` on the two ECS tasks, security-group rules both ways on
-  8080, and `/internal/*` blocked at API Gateway/ALB. Until that last one lands,
-  the internal endpoint's only protection in AWS is that nothing routes to it.
-- **Nothing runs the POS migrations against RDS** — the schema exists only
-  locally so far.
-- **Payments `/ready` is broken on `main`** (it hands psycopg a
-  `postgresql+psycopg://` URL, which libpq rejects), so payments tasks would be
-  marked unhealthy in ECS. Same bug POS had; fix belongs to Payments' DRI.
-- **Commission worker not built yet** (daily close → payout ledger → B2C). The
-  B2C leg is exercised here directly against Payments.
-- **Refund / reversal flow** not designed; needs its own states and ledger treatment.
+- **POS ↔ Payments handoff is provisioned in AWS.** The ECS tasks carry
+  `PAYMENTS_BASE_URL=http://payments:8080` and `POS_BASE_URL=http://pos:8080`,
+  and the public edge blocks `/api/pos/internal/*`.
+- **POS migrations run before ECS deploy.** CodePipeline stage `MigrateDb`
+  runs `pos-alembic` from the built POS image before `DeployEcs`.
+- **Payments `/ready` is fixed.** The sync DB health path now uses a libpq-safe
+  DSN, so healthy ECS payments tasks stay in service.
+- **Commission worker exists.** See
+  [`commission-close-b2c.md`](./commission-close-b2c.md) for daily close →
+  payout ledger → B2C evidence and reproduce commands.
+- **Refund / reversal flow** is still not designed; it needs its own states and
+  ledger treatment.

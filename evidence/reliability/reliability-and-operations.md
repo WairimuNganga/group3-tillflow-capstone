@@ -13,6 +13,7 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] B3 — edge probe + k6 smoke (2026-09-19); **baseline + soak (2026-09-20)** — [k6-analysis.md](./k6-analysis.md); spike optional
 - [x] B2 — Grafana ECS + TillFlow dashboards (2026-09-20); AMP datasource + evidence row §B2
 - [x] B2 follow-up — **payments** RED in AMP (2026-09-20); refresh Grafana panels; **web/pos** RED still 0 until counted traffic
+- [x] C — CloudWatch Synthetics canary `devops-g3-edge-health` live; runtime proof in [platform evidence](../platform/README.md)
 - [ ] E — Slack secret + CLI webhook OK; Grafana **Test contact point** + §Phase E row after tillflow2 ECS roll
 
 ## Phases A–H (where we are)
@@ -23,14 +24,14 @@ Letter phases map to this evidence pack and [how-to-reproduce.md](./how-to-repro
 |-------|--------|--------|-------------|
 | **A** | OTel instrumentation (shared lib, ADOT on ECS, local traces) | **Mostly done** — A1–A4 ✓; A5 E2E trace sale→callback open | Product path deploy + X-Ray trace capture for ADR-008 |
 | **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 ✓**; **payments RED in AMP ✓** (2026-09-20) | Grafana screenshot with payments RED; pos/web traffic follow-up |
-| **C** | External synthetics (CloudWatch canary on `/health`) | **Terraform wired** — awaiting apply/run evidence | Capture `describe-canaries` + latest run after Platform apply |
+| **C** | External synthetics (CloudWatch canary on `/health`) | **Done** — live canary proof captured 2026-09-20 | Platform evidence: `synthetics-describe-20260920.json`, `synthetics-runs-20260920.json` |
 | **D** | k6 capacity envelope (**G3**) | **Smoke, baseline, soak ✓** (2026-09-20) | Optional: `spike.js`; cite logs in [k6-analysis.md](./k6-analysis.md) |
 | **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **In progress** — rules in `infra/grafana/provisioning/alerting/` | Apply + pipeline + **Test contact point**; record §Phase E |
 | **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in** `evidence/reliability/phase-f/` | Screenshots + X-Ray trace ID table in phase-f README |
 | **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Not recorded** | Execute Drill 3; document in how-to-reproduce §Drill 3 |
 | **H** | Resilience / rollback (**G4**, multi-AZ when enabled) | **Drill 4 log exists** in delivery evidence | Tie rollback rehearsal to reliability narrative if required |
 
-**You are here:** end of **Phase B** → start **E** (alerts) and **D** (k6 envelope) in parallel; **C** needs apply/runtime proof from Platform canary.
+**You are here:** Phase **C** complete; finish **E** (alerts), **F** (screenshots/traces), and **G** (Drill 3).
 
 ## Phase status (detail)
 
@@ -273,7 +274,7 @@ Spike: `reliability/k6/spike.js` — manual, team notified (T1.3).
 
 - [x] Edge probe output (2026-09-19 — OK /health, /ready)
 - [x] k6 smoke thresholds pass — 0% failed, p(95)=287.6ms, checks 100%; log `evidence/reliability/k6-smoke.log`
-- [ ] baseline + soak (optional G3 envelope; update k6-analysis table)
+- [x] baseline + soak (optional G3 envelope; update k6-analysis table)
 - [ ] Spike summary when run
 
 ### Recorded smoke run (2026-09-19)

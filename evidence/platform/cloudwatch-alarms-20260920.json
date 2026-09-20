@@ -1,0 +1,282 @@
+{
+    "MetricAlarms": [
+        {
+            "AlarmName": "devops-g3-commission-ecs-cpu-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-commission-ecs-cpu-high",
+            "AlarmDescription": "ECS CPU above 80% for commission; check recent deploy, task health and scaling.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:11.166000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [5.344220603505771 (20/09/26 13:05:00), 5.262873247265816 (20/09/26 13:04:00), 5.389514997601509 (20/09/26 13:03:00), 5.6691139588753385 (20/09/26 13:02:00), 5.543303991357486 (20/09/26 13:01:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:08:45.677+0000\",\"startDate\":\"2026-09-20T13:01:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[5.543303991357486,5.6691139588753385,5.389514997601509,5.262873247265816,5.344220603505771],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:05:00.000+0000\",\"sampleCount\":1.0,\"value\":5.344220603505771}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:08:45.680000+00:00",
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/ECS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "ClusterName",
+                    "Value": "devops-g3"
+                },
+                {
+                    "Name": "ServiceName",
+                    "Value": "devops-g3-commission"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:08:45.680000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-edge-health-canary",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-edge-health-canary",
+            "AlarmDescription": "External synthetics success rate below 90% — check API Gateway, ALB, web service (runbook EdgeProbeFailed).",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:35:44.331000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 2 datapoints [100.0 (20/09/26 13:36:00), 100.0 (20/09/26 13:35:00)] were not less than the threshold (90.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:37:09.896+0000\",\"startDate\":\"2026-09-20T13:35:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[100.0,100.0],\"threshold\":90.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:36:00.000+0000\",\"sampleCount\":1.0,\"value\":100.0}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:37:09.897000+00:00",
+            "MetricName": "SuccessPercent",
+            "Namespace": "CloudWatchSynthetics",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "CanaryName",
+                    "Value": "devops-g3-edge-health"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 2,
+            "Threshold": 90.0,
+            "ComparisonOperator": "LessThanThreshold",
+            "TreatMissingData": "breaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:37:09.897000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-payments-ecs-cpu-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-payments-ecs-cpu-high",
+            "AlarmDescription": "ECS CPU above 80% for payments; check recent deploy, task health and scaling.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:11.331000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [1.6385237472131848 (20/09/26 13:05:00), 1.6661832543710868 (20/09/26 13:04:00), 1.6766210552304983 (20/09/26 13:03:00), 1.7099794456735253 (20/09/26 13:02:00), 1.6675905358667176 (20/09/26 13:01:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:08:27.280+0000\",\"startDate\":\"2026-09-20T13:01:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[1.6675905358667176,1.7099794456735253,1.6766210552304983,1.6661832543710868,1.6385237472131848],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:05:00.000+0000\",\"sampleCount\":2.0,\"value\":1.6385237472131848}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:08:27.282000+00:00",
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/ECS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "ClusterName",
+                    "Value": "devops-g3"
+                },
+                {
+                    "Name": "ServiceName",
+                    "Value": "devops-g3-payments"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:08:27.282000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-payout-dlq-depth",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-payout-dlq-depth",
+            "AlarmDescription": "Messages visible on payout DLQ — replay or fix consumer (runbook § Observability alerts).",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T12:42:13.297000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 1 datapoint [0.0 (20/09/26 12:41:00)] was not greater than or equal to the threshold (1.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T12:43:31.353+0000\",\"startDate\":\"2026-09-20T12:41:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T12:41:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}",
+            "StateUpdatedTimestamp": "2026-09-20T12:43:31.354000+00:00",
+            "MetricName": "ApproximateNumberOfMessagesVisible",
+            "Namespace": "AWS/SQS",
+            "Statistic": "Maximum",
+            "Dimensions": [
+                {
+                    "Name": "QueueName",
+                    "Value": "devops-g3-payout-dlq"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 1,
+            "Threshold": 1.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T12:43:31.354000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-pos-ecs-cpu-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-pos-ecs-cpu-high",
+            "AlarmDescription": "ECS CPU above 80% for pos; check recent deploy, task health and scaling.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:11.301000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [4.040159169584513 (20/09/26 13:06:00), 4.043542176485062 (20/09/26 13:05:00), 4.086070214708646 (20/09/26 13:04:00), 4.114747525503238 (20/09/26 13:03:00), 4.043813680609068 (20/09/26 13:02:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:09:00.652+0000\",\"startDate\":\"2026-09-20T13:02:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[4.043813680609068,4.114747525503238,4.086070214708646,4.043542176485062,4.040159169584513],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:06:00.000+0000\",\"sampleCount\":2.0,\"value\":4.040159169584513}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:09:00.654000+00:00",
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/ECS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "ClusterName",
+                    "Value": "devops-g3"
+                },
+                {
+                    "Name": "ServiceName",
+                    "Value": "devops-g3-pos"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:09:00.654000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-rds-connections-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-rds-connections-high",
+            "AlarmDescription": "RDS connections high for dev; check pool sizing, RDS Proxy and stuck tasks.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:09.679000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [14.0 (20/09/26 13:08:00), 14.0 (20/09/26 13:07:00), 14.0 (20/09/26 13:06:00), 14.0 (20/09/26 13:05:00), 14.0 (20/09/26 13:04:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:09:15.272+0000\",\"startDate\":\"2026-09-20T13:04:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[14.0,14.0,14.0,14.0,14.0],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:08:00.000+0000\",\"sampleCount\":1.0,\"value\":14.0}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:09:15.274000+00:00",
+            "MetricName": "DatabaseConnections",
+            "Namespace": "AWS/RDS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "DBInstanceIdentifier",
+                    "Value": "devops-g3-db"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:09:15.274000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-rds-cpu-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-rds-cpu-high",
+            "AlarmDescription": "RDS CPU above 80%; check DB connections, slow queries and RDS events.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:09.679000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [5.088613498567526 (20/09/26 13:07:00), 6.128575002084549 (20/09/26 13:06:00), 4.838844007662197 (20/09/26 13:05:00), 4.327524389227048 (20/09/26 13:04:00), 4.658333333333332 (20/09/26 13:03:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:09:30.503+0000\",\"startDate\":\"2026-09-20T13:03:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[4.658333333333332,4.327524389227048,4.838844007662197,6.128575002084549,5.088613498567526],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:07:00.000+0000\",\"sampleCount\":1.0,\"value\":5.088613498567526}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:09:30.505000+00:00",
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/RDS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "DBInstanceIdentifier",
+                    "Value": "devops-g3-db"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:09:30.505000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-reconciliation-dlq-depth",
+            "AlarmDescription": "Messages visible on reconciliation DLQ — replay or fix consumer (runbook § Observability alerts).",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T12:42:13.317000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 1 datapoint [0.0 (20/09/26 12:40:00)] was not greater than or equal to the threshold (1.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T12:42:34.274+0000\",\"startDate\":\"2026-09-20T12:40:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T12:40:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}",
+            "StateUpdatedTimestamp": "2026-09-20T12:42:34.279000+00:00",
+            "MetricName": "ApproximateNumberOfMessagesVisible",
+            "Namespace": "AWS/SQS",
+            "Statistic": "Maximum",
+            "Dimensions": [
+                {
+                    "Name": "QueueName",
+                    "Value": "devops-g3-reconciliation-dlq"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 1,
+            "Threshold": 1.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T12:42:34.279000+00:00"
+        },
+        {
+            "AlarmName": "devops-g3-web-ecs-cpu-high",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-web-ecs-cpu-high",
+            "AlarmDescription": "ECS CPU above 80% for web; check recent deploy, task health and scaling.",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T13:08:11.165000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 5 datapoints were not greater than the threshold (80.0). The most recent datapoints which not crossed the threshold: [3.8885551542043686 (20/09/26 13:06:00), 3.892384260892868 (20/09/26 13:05:00), 3.9449541941285133 (20/09/26 13:04:00), 3.9542136664191885 (20/09/26 13:03:00), 3.9258475576837855 (20/09/26 13:02:00)].",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T13:09:07.212+0000\",\"startDate\":\"2026-09-20T13:02:00.000+0000\",\"statistic\":\"Average\",\"period\":60,\"recentDatapoints\":[3.9258475576837855,3.9542136664191885,3.9449541941285133,3.892384260892868,3.8885551542043686],\"threshold\":80.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T13:06:00.000+0000\",\"sampleCount\":2.0,\"value\":3.8885551542043686}]}",
+            "StateUpdatedTimestamp": "2026-09-20T13:09:07.215000+00:00",
+            "MetricName": "CPUUtilization",
+            "Namespace": "AWS/ECS",
+            "Statistic": "Average",
+            "Dimensions": [
+                {
+                    "Name": "ClusterName",
+                    "Value": "devops-g3"
+                },
+                {
+                    "Name": "ServiceName",
+                    "Value": "devops-g3-web"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 5,
+            "Threshold": 80.0,
+            "ComparisonOperator": "GreaterThanThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-20T13:09:07.215000+00:00"
+        }
+    ],
+    "CompositeAlarms": []
+}
