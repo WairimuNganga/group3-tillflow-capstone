@@ -533,6 +533,28 @@ module "messaging" {
   kms_key_arn = var.kms_key_arn
 }
 
+# G3 external probe — 1-minute synthetics against public /health and /ready.
+module "synthetics_canary" {
+  source = "../../modules/synthetics-canary"
+
+  name_prefix  = var.name_prefix
+  region       = var.region
+  account_id   = local.account_id
+  api_base_url = module.apigw.api_endpoint
+  kms_key_arn  = var.kms_key_arn
+}
+
+module "observability_alarms" {
+  source = "../../modules/observability-alarms"
+
+  name_prefix             = var.name_prefix
+  dlq_names               = module.messaging.dlq_names
+  canary_name             = module.synthetics_canary.canary_name
+  ecs_cluster_name        = module.ecs_platform.cluster_name
+  ecs_service_names       = { for service, mod in module.service : service => mod.service_name }
+  rds_instance_identifier = module.rds.instance_identifier
+}
+
 module "db_bootstrap" {
   source = "../../modules/db-bootstrap"
 
