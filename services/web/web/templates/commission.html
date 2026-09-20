@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}TillFlow · Commission · {{ shop.shop_name }}{% endblock %}
+{% block content %}
+<p class="eyebrow">{{ shop.shop_name }}</p>
+<h1>Attendant day</h1>
+<p class="lede">
+  Live sales from POS for {{ day.period }} (EAT / GMT+3). Estimated commission uses the
+  current rate; ledgered commission and payout state come from the commission worker after close.
+</p>
+
+<form class="filters" method="get" action="/commission">
+  <label>Day
+    <input name="period" type="date" value="{{ day.period }}" required />
+  </label>
+  <label>Attendant
+    <select name="attendant_id">
+      {% for a in attendants %}
+      <option value="{{ a.id }}" {% if day.attendant_id == a.id %}selected{% endif %}>
+        {{ a.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+  <div class="filter-actions">
+    <button class="btn" type="submit">Show day</button>
+  </div>
+</form>
+
+<div class="panel">
+  <h2>{{ day.attendant_name }}</h2>
+  <div class="meta">
+    <div><strong>Rate</strong> {{ day.rate_display }}</div>
+    <div><strong>Paid sales</strong> {{ day.paid_count }}</div>
+    <div><strong>Sales volume</strong> KES {{ day.gmv_kes }}</div>
+    <div><strong>Estimated commission</strong> KES {{ day.estimated_commission }}</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Close &amp; payout</h2>
+  <div class="meta">
+    <div><strong>Close status</strong> {{ day.close_status }}</div>
+    <div><strong>Ledgered commission</strong> {{ day.ledgered_commission }}</div>
+    <div><strong>Payout state</strong> {{ day.payout_state }}</div>
+    <div><strong>Payout amount</strong> {{ day.payout_amount }}</div>
+    {% if day.payments_payout_id %}
+    <div><strong>Payments payout id</strong> {{ day.payments_payout_id }}</div>
+    {% endif %}
+    {% if day.payout_locked %}
+    <div><strong>Next payout</strong> after close on {{ day.next_payout_period }}</div>
+    {% endif %}
+  </div>
+  {% if not commission_configured %}
+  <p class="lede" style="margin-top:1rem;margin-bottom:0">
+    Set <code>COMMISSION_BASE_URL</code> to talk to the commission service for close/payout.
+  </p>
+  {% else %}
+  <div class="actions" style="margin-top:1.25rem">
+    <form method="post" action="/commission/close" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <input type="hidden" name="period" value="{{ day.period }}" />
+      <input type="hidden" name="attendant_id" value="{{ day.attendant_id }}" />
+      <button class="btn" type="submit">Run daily close</button>
+    </form>
+    {% if day.payout_locked %}
+    <button class="btn secondary" type="button" disabled title="Already paid for this day">
+      Payout already sent
+    </button>
+    {% else %}
+    <form method="post" action="/commission/payout" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <input type="hidden" name="period" value="{{ day.period }}" />
+      <input type="hidden" name="attendant_id" value="{{ day.attendant_id }}" />
+      <button class="btn secondary" type="submit">Request B2C payout</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{% if day.paid_sales %}
+<div class="table-wrap">
+  <table class="sales-table">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Item</th>
+        <th>Amount</th>
+        <th>Est. commission</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sale in day.paid_sales %}
+      <tr>
+        <td class="mono">{{ sale.created_at }}</td>
+        <td><a href="/sales/{{ sale.sale_id }}">{{ sale.item_name }}</a></td>
+        <td>KES {{ sale.total_kes }}</td>
+        <td>{{ sale.commission_display }}</td>
+        <td><span class="status status-{{ sale.status }}">{{ sale.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="actions">
+  <a class="btn secondary" href="/payouts">All payouts</a>
+  <a class="btn secondary" href="/sales">All sales</a>
+  <a class="btn secondary" href="/">Home</a>
+</div>
+{% endblock %}

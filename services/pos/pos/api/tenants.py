@@ -8,7 +8,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from pos.api.schemas import (
+    CommissionRateResponse,
     CreateAttendantRequest,
+    CreateCommissionRateRequest,
     CreateTenantRequest,
     CreateTillRequest,
     OnboardTenantResponse,
@@ -17,7 +19,7 @@ from pos.api.schemas import (
     UserResponse,
 )
 from pos.deps import get_tenant_service, require_tenant
-from pos.repositories.errors import AlreadyExistsError
+from pos.repositories.errors import AlreadyExistsError, InvalidReferenceError
 from pos.services.tenant_service import TenantService
 
 router = APIRouter(tags=["tenants"])
@@ -64,3 +66,37 @@ async def create_attendant(
     except AlreadyExistsError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, "phone already exists") from exc
     return UserResponse.model_validate(user)
+
+
+@router.post(
+    "/commission-rates",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CommissionRateResponse,
+)
+async def create_commission_rate(
+    body: CreateCommissionRateRequest, tenant_id: TenantId, service: TenantServiceDep
+) -> CommissionRateResponse:
+    try:
+        rate = await service.set_commission_rate(
+            tenant_id=tenant_id,
+            attendant_id=body.attendant_id,
+            rate_bps=body.rate_bps,
+            effective_from=body.effective_from,
+        )
+    except AlreadyExistsError as exc:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "rate already exists for attendant/effective_from"
+        ) from exc
+    except InvalidReferenceError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    return CommissionRateResponse.model_validate(rate)
+
+
+@router.get("/commission-rates", response_model=list[CommissionRateResponse])
+async def list_commission_rates(
+    tenant_id: TenantId,
+    service: TenantServiceDep,
+    attendant_id: uuid.UUID | None = None,
+) -> list[CommissionRateResponse]:
+    rates = await service.list_commission_rates(tenant_id=tenant_id, attendant_id=attendant_id)
+    return [CommissionRateResponse.model_validate(r) for r in rates]

@@ -14,7 +14,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pos.domain.models import Sale, Tenant, Till, User
+from pos.domain.models import CommissionRate, Sale, Tenant, Till, User
 from pos.repositories.errors import AlreadyExistsError, InvalidReferenceError
 
 _PG_UNIQUE_VIOLATION = "23505"
@@ -93,3 +93,18 @@ class PostgresPosRepository:
         await self._session.flush()
         await self._session.refresh(sale)
         return sale
+
+    async def create_commission_rate(self, rate: CommissionRate) -> CommissionRate:
+        await self._flush(rate)
+        await self._session.refresh(rate)
+        return rate
+
+    async def list_commission_rates(
+        self, tenant_id: uuid.UUID, attendant_id: uuid.UUID | None = None
+    ) -> list[CommissionRate]:
+        stmt = select(CommissionRate).where(CommissionRate.tenant_id == tenant_id)
+        if attendant_id is not None:
+            stmt = stmt.where(CommissionRate.attendant_id == attendant_id)
+        stmt = stmt.order_by(CommissionRate.effective_from.asc())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())

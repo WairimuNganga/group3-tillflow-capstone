@@ -54,6 +54,22 @@ class TillResponse(BaseModel):
     status: str
 
 
+class CreateCommissionRateRequest(BaseModel):
+    attendant_id: uuid.UUID
+    rate_bps: int = Field(ge=0, le=10000, description="Basis points; 200 = 2%")
+    effective_from: datetime | None = None
+
+
+class CommissionRateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    attendant_id: uuid.UUID
+    rate_bps: int
+    effective_from: datetime
+    created_at: datetime
+
+
 class OnboardTenantResponse(BaseModel):
     tenant: TenantResponse
     owner: UserResponse

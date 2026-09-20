@@ -1,0 +1,347 @@
+:root {
+  --ink: #0b1f1a;
+  --panel: #123028;
+  --line: rgba(232, 245, 233, 0.14);
+  --foam: #e8f5e9;
+  --mute: #9bb8ae;
+  --pulse: #c8f542;
+  --warn: #ffb454;
+  --danger: #ff6b6b;
+  --display: "Fraunces", "Palatino Linotype", Palatino, serif;
+  --body: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(200, 245, 66, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(18, 90, 70, 0.55), transparent 50%),
+    linear-gradient(160deg, #071612 0%, var(--ink) 45%, #0e2a22 100%);
+  color: var(--foam);
+  font-family: var(--body);
+}
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+a { color: var(--pulse); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.shell {
+  width: min(1040px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.5rem 0 3rem;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0 0.5rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2rem;
+}
+
+.brand {
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0;
+}
+
+.brand span {
+  color: var(--pulse);
+}
+
+.eyebrow {
+  color: var(--mute);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+}
+
+h1, h2 {
+  font-family: var(--display);
+  font-weight: 550;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.75rem;
+}
+
+h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+h2 { font-size: 1.45rem; }
+
+.lede {
+  color: var(--mute);
+  font-size: 1.05rem;
+  max-width: 36rem;
+  line-height: 1.5;
+  margin: 0 0 1.75rem;
+}
+
+.panel {
+  background: color-mix(in srgb, var(--panel) 88%, black);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1.35rem 1.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .grid.two { grid-template-columns: 1fr 1fr; }
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--mute);
+  margin-bottom: 0.9rem;
+}
+
+input, select {
+  appearance: none;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--foam);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+}
+
+input:focus, select:focus {
+  outline: 2px solid color-mix(in srgb, var(--pulse) 55%, transparent);
+  border-color: transparent;
+}
+
+select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--mute) 50%),
+    linear-gradient(135deg, var(--mute) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--pulse);
+  color: #102018;
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--foam);
+  border: 1px solid var(--line);
+}
+
+.btn:hover { filter: brightness(1.05); }
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+  pointer-events: none;
+}
+
+.flash {
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+}
+
+.flash.error {
+  background: rgba(255, 107, 107, 0.12);
+  border-color: rgba(255, 107, 107, 0.35);
+  color: #ffd0d0;
+}
+
+.flash.ok {
+  background: rgba(200, 245, 66, 0.1);
+  border-color: rgba(200, 245, 66, 0.35);
+}
+
+.meta {
+  display: grid;
+  gap: 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86rem;
+  color: var(--mute);
+}
+
+.meta strong {
+  color: var(--foam);
+  font-weight: 600;
+}
+
+.status {
+  display: inline-block;
+  margin: 0.75rem 0 0.75rem 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  background: rgba(200, 245, 66, 0.15);
+  color: var(--pulse);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.footer {
+  width: min(1040px, calc(100% - 2rem));
+  margin: 0 auto 1.5rem;
+  color: var(--mute);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.hero-cta {
+  margin-top: 1.5rem;
+}
+
+.filters {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: end;
+}
+
+@media (min-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr 1fr auto;
+  }
+}
+
+.filters label {
+  margin-bottom: 0;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-bottom: 1.25rem;
+}
+
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.sales-table th,
+.sales-table td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.sales-table th {
+  color: var(--mute);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sales-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sales-table tbody tr:hover td {
+  background: rgba(200, 245, 66, 0.04);
+}
+
+.sales-table .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  color: var(--mute);
+}
+
+.sales-table .empty {
+  color: var(--mute);
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.sales-table .status {
+  margin: 0;
+}
+
+.status-paid,
+.status-completed {
+  background: rgba(200, 245, 66, 0.15);
+  color: var(--pulse);
+}
+
+.status-awaiting_payment,
+.status-pending,
+.status-submitted {
+  background: rgba(255, 180, 84, 0.14);
+  color: var(--warn);
+}
+
+.status-failed,
+.status-cancelled {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ffb0b0;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+}
+
+.pager-meta {
+  margin: 0;
+  color: var(--mute);
+  font-size: 0.9rem;
+}
+
+.pager-actions {
+  display: flex;
+  gap: 0.75rem;
+}

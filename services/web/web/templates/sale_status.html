@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}TillFlow · Sale {{ sale.sale_id }}{% endblock %}
+{% block content %}
+<p class="eyebrow">Sale status</p>
+{% if sale.status == "paid" %}
+<h1>Payment received</h1>
+<p class="lede">M-Pesa settled this sale. POS has moved it to paid.</p>
+{% elif sale.status == "failed" %}
+<h1>Payment failed</h1>
+<p class="lede">The customer did not complete the STK push, or M-Pesa declined it.</p>
+{% elif sale.status == "awaiting_payment" %}
+<h1>Waiting on the customer phone</h1>
+<p class="lede">
+  Checking POS every few seconds for the Payments callback. You can also refresh manually.
+</p>
+{% else %}
+<h1>Sale {{ sale.status }}</h1>
+<p class="lede">POS owns the sale state. Refresh to pull the latest status.</p>
+{% endif %}
+
+<div class="panel">
+  <span class="status">{{ sale.status }}</span>
+  <div class="meta" style="margin-top:1rem">
+    <div><strong>Sale</strong> {{ sale.sale_id }}</div>
+    <div><strong>Total</strong> KES {{ sale.total_kes }}</div>
+    {% if sale.payment_id %}<div><strong>Payment</strong> {{ sale.payment_id }}</div>{% endif %}
+    {% if sale.payment_state %}<div><strong>Payment state</strong> {{ sale.payment_state }}</div>{% endif %}
+  </div>
+  <div class="actions hero-cta">
+    {% if sale.status == "awaiting_payment" %}
+    <a class="btn" href="/sales/{{ sale.sale_id }}">Refresh</a>
+    {% endif %}
+    <a class="btn{% if sale.status == "awaiting_payment" %} secondary{% endif %}" href="/sale">Another sale</a>
+  </div>
+</div>
+{% if sale.status == "awaiting_payment" %}
+<script src="/static/sale-poll.js" defer></script>
+{% endif %}
+{% endblock %}
