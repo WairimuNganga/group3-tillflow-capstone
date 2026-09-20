@@ -182,11 +182,21 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
       # OIDC — no long-lived AWS keys exist anywhere in this repo (T6.1).
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      # Grafana is Terraform-managed, but its image is immutable in ECR. Build
+      # the pinned tag before plan/apply so Terraform never points ECS at an
+      # image tag that does not exist yet.
+      - name: ensure Grafana image exists
+        run: bash infra/scripts/ensure-grafana-image.sh
 
       - name: init
         working-directory: infra/envs/dev
