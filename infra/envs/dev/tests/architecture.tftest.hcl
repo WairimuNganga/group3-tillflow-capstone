@@ -173,6 +173,32 @@ run "architecture_contracts" {
     error_message = "VPC interface endpoints for xray and aps-workspaces are required: web/pos/commission have no internet egress (AR-7), so without them the mandatory ADOT sidecar cannot publish traces or metrics."
   }
 
+  # --- Daraja callbacks are reachable; internal payment routes are not -----
+  #
+  # Both Daraja callbacks must be internet-reachable or money state never
+  # settles. Two defects already shipped here: the rule said `/callback/*`
+  # while the app serves `/callbacks/mpesa/*` (404 to Safaricom), and
+  # `/api/payments/*` has never matched anything because the service has no
+  # `/api` prefix and no root_path.
+  assert {
+    condition = alltrue([
+      for p in ["/callbacks/*", "/payments/b2c/result"] :
+      contains(module.alb.target_path_patterns["payments"], p)
+    ])
+    error_message = "Payments must expose /callbacks/* (STK result) and the exact path /payments/b2c/result (B2C result). Daraja cannot deliver a callback to a path the ALB does not route."
+  }
+
+  # The B2C result path must be EXACT. `/payments/*` would also publish
+  # /payments/stk, /payments/b2c and /payments/reconcile/* -- anyone on the
+  # internet could then initiate a collection or a payout.
+  assert {
+    condition = !anytrue([
+      for p in module.alb.target_path_patterns["payments"] :
+      startswith(p, "/payments/") && endswith(p, "*")
+    ])
+    error_message = "No wildcard under /payments/ may be public: it would expose /payments/stk, /payments/b2c and /payments/reconcile/* to the internet. Route the B2C result path exactly."
+  }
+
   # --- Web talks to commission (daily close / payouts) ---------------------
   #
   # web/deps.py only builds HttpCommissionClient when COMMISSION_BASE_URL is

@@ -166,10 +166,23 @@ module "alb" {
       path_patterns = ["/api/pos/*"]
     }
     payments = {
-      port          = 8080
-      health_path   = "/ready"
-      priority      = 200
-      path_patterns = ["/api/payments/*", "/callbacks/*"]
+      port        = 8080
+      health_path = "/ready"
+      priority    = 200
+      # Only the two paths Daraja calls back on are public.
+      #
+      # `/callbacks/*`            -> POST /callbacks/mpesa/{secret}  (STK result)
+      # `/payments/b2c/result`    -> POST /payments/b2c/result       (B2C result)
+      #
+      # The B2C entry is an EXACT path, not `/payments/*`. The service also
+      # serves /payments/stk, /payments/b2c and /payments/reconcile/* on the
+      # same prefix; those are internal (POS and the commission worker reach
+      # them over Service Connect) and must never be internet-reachable.
+      #
+      # `/api/payments/*` matches nothing today -- the app has no /api prefix
+      # and no root_path -- but is kept so the rule does not silently change
+      # meaning if one is introduced.
+      path_patterns = ["/api/payments/*", "/callbacks/*", "/payments/b2c/result"]
     }
     grafana = {
       port = 3000

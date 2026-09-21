@@ -11,3 +11,13 @@ output "is_internal" {
   description = "Asserted by tests — must always be true (ADR-010)."
   value       = aws_lb.this.internal
 }
+
+# Exposed so architecture tests can assert that every internet-reachable path
+# maps to a real application route, and that internal-only routes stay private.
+# Two routing defects shipped before this existed: the ALB matched `/callback/*`
+# while the app served `/callbacks/mpesa/*`, and `/api/payments/*` has never
+# matched anything because the service has no `/api` prefix.
+output "target_path_patterns" {
+  value       = { for name, t in var.targets : name => t.path_patterns }
+  description = "Public path patterns routed to each target group."
+}

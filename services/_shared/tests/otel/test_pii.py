@@ -64,3 +64,51 @@ def test_nested_structures_are_walked():
     payload = {"callback": {"items": [{"msisdn": "254712345678"}]}}
     result = redact(payload)
     assert "254712345678" not in str(result)
+
+
+# --- Daraja callback secret --------------------------------------------------
+#
+# Callback authenticity is the unguessable path segment (ADR-007 / TB5), so the
+# resolved path is a credential. uvicorn's access logger writes the request line
+# verbatim; before this redaction every callback published the secret to
+# CloudWatch, where it could be lifted and replayed to forge a settlement.
+
+
+def test_callback_secret_is_stripped_from_access_log_line():
+    line = '10.20.76.91:0 - "POST /callbacks/mpesa/tillflow-sandbox HTTP/1.1" 200'
+    result = redact_text(line)
+
+    assert "tillflow-sandbox" not in result
+    # The route stays greppable -- redaction must not destroy the log's value.
+    assert "/callbacks/mpesa/" in result
+    assert REDACTED in result
+    assert result.endswith('HTTP/1.1" 200')
+
+
+def test_callback_secret_redacted_in_full_url():
+    url = "https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1/callbacks/mpesa/s3cr3t-value"
+    result = redact_text(url)
+
+    assert "s3cr3t-value" not in result
+    assert result.endswith(f"/callbacks/mpesa/{REDACTED}")
+
+
+def test_callback_secret_redacted_through_nested_payload():
+    payload = {"http": {"request": {"url": "http://p:8080/callbacks/mpesa/abc123"}}}
+    result = redact(payload)
+
+    assert "abc123" not in str(result)
+
+
+def test_callback_redaction_stops_at_the_segment_boundary():
+    """A trailing path or query must survive, or the log stops being diagnostic."""
+    assert redact_text("/callbacks/mpesa/sekret?retry=1").endswith("?retry=1")
+    assert "/extra" in redact_text("/callbacks/mpesa/sekret/extra")
+
+
+def test_unrelated_callback_paths_are_untouched():
+    """Only the M-Pesa callback carries a secret segment; do not over-redact."""
+    assert redact_text("/callbacks/other/plain") == "/callbacks/other/plain"
+    assert redact_text("/internal/sales/2c1cbb8b/payment-result") == (
+        "/internal/sales/2c1cbb8b/payment-result"
+    )
