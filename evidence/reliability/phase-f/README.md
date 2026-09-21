@@ -19,17 +19,49 @@ Optional: Grafana **Share → Export → Save to file** and replace the JSON her
 
 ## Traces (A5 / Phase F)
 
-| Date | Trace ID | Service | Flow | Capture |
-|------|----------|---------|------|---------|
-| | | | sale → payment → callback | X-Ray console screenshot or `aws xray get-trace-summaries` |
+Captured 2026-09-21 18:02 UTC / 21:02 EAT. Full analysis, timeline and
+reproduction: **[traces/sale-payment-callback-20260921.md](./traces/sale-payment-callback-20260921.md)**.
 
-**Commands (fill trace ID in table):**
+One transaction produces **three traces, not one** — Safaricom initiates the
+callback as a new inbound request with no upstream context, so it cannot be
+stitched to the STK trace. They correlate by sale ID
+`2c1cbb8b-4389-421a-b60c-e31dd58cd89b`.
+
+| Date | Trace ID | Services | Flow | Duration |
+|------|----------|----------|------|----------|
+| 2026-09-21 | `1-f9c854e2-60292f314acf2756b35d6933` | payments | STK push to Daraja (202) | 2.946s |
+| 2026-09-21 | `1-36eca49c-b1002c99118ffde2f7227f4e` | web, pos | Web → POS sale read (200) | 0.059s |
+| 2026-09-21 | `1-bafcca63-80239dc21ef6b719ac120203` | payments, pos | Callback → POS settlement (200) | 0.144s |
+
+- [x] Raw trace JSON committed under `traces/` (summaries + one file per trace)
+- [ ] X-Ray console service-map screenshot — optional; the JSON is the proof
+
+**Known gap:** POS → Payments does not propagate trace context, so STK
+initiation cannot be followed from the browser in one trace. Web → POS and
+Payments → POS both propagate correctly. Diagnosis in the analysis document.
+
+**Commands:**
 
 ```bash
-export AWS_REGION=us-west-1
-# After a sale/STK path in dev:
-aws xray get-trace-summaries --start-time $(date -u -d '15 min ago' +%s) --end-time $(date -u +%s) \
-  --filter-expression 'service(id(name: "payments"))' --query 'TraceSummaries[0].Id' --output text
+export AWS_PROFILE=tillflow-g3-lwam AWS_REGION=us-west-1
+DATE=$(date -u +%Y%m%d); OUT=evidence/reliability/phase-f/traces
+: "${OUT:?}" "${DATE:?}"
+
+# after a sale → STK → callback in dev, wait ~60s:
+aws xray get-trace-summaries \
+  --start-time $(date -u -v-30M +%s) --end-time $(date -u +%s) \
+  --output json > "$OUT/xray-summaries-${DATE}.json"
+
+jq -r '.TraceSummaries[] | [.Id,.Duration,.HasError,.HasFault] | @tsv' \
+  "$OUT/xray-summaries-${DATE}.json"
 ```
 
-Save screenshot under `evidence/reliability/phase-f/traces/` (create when you have a capture).
+Do **not** filter on `service(id(name: "payments"))` — it hides the Web → POS
+trace and makes a working capture look empty. Note `date -u -v-30M` is BSD/macOS;
+on Linux use `date -u -d '30 min ago'`.
+
+Tracing produced **zero** traces until PR #66: the task role granted every
+`xray:*` action but scoped the statement to the AMP workspace ARN (X-Ray
+requires `"*"`), and behind that, three services with no internet egress had no
+X-Ray or AMP VPC endpoint. Both are now guarded by assertions in
+`infra/envs/dev/tests/architecture.tftest.hcl`.
