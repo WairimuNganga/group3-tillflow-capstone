@@ -1,0 +1,216 @@
+{
+    "TraceSummaries": [
+        {
+            "Id": "1-6e43610d-afd1f221070ea8e2e8068c0a",
+            "StartTime": "2026-09-21T21:02:24+03:00",
+            "Duration": 0.001,
+            "ResponseTime": 0.001,
+            "HasFault": false,
+            "HasError": false,
+            "HasThrottle": false,
+            "IsPartial": false,
+            "Http": {
+                "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/static/app.css",
+                "HttpStatus": 304,
+                "HttpMethod": "GET",
+                "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+                "ClientIp": "10.20.87.172"
+            },
+            "Annotations": {},
+            "Users": [],
+            "ServiceIds": [
+                {
+                    "Name": "web",
+                    "Names": [
+                        "web"
+                    ],
+                    "Type": "client"
+                },
+                {
+                    "Name": "web",
+                    "Names": [
+                        "web"
+                    ]
+                }
+            ],
+            "ResourceARNs": [],
+            "InstanceIds": [],
+            "AvailabilityZones": [],
+            "EntryPoint": {
+                "Name": "web",
+                "Names": [
+                    "web"
+                ]
+            },
+            "FaultRootCauses": [],
+            "ErrorRootCauses": [],
+            "ResponseTimeRootCauses": [],
+            "Revision": 1
+        },
+        {
+            "Id": "1-f9c854e2-60292f314acf2756b35d6933",
+            "StartTime": "2026-09-21T21:02:33+03:00",
+            "Duration": 2.946,
+            "HasFault": false,
+            "HasError": false,
+            "HasThrottle": false,
+            "IsPartial": true,
+            "Http": {},
+            "Annotations": {},
+            "Users": [],
+            "ServiceIds": [
+                {
+                    "Name": "payments",
+                    "Names": [
+                        "payments"
+                    ]
+                }
+            ],
+            "ResourceARNs": [],
+            "InstanceIds": [],
+            "AvailabilityZones": [],
+            "FaultRootCauses": [],
+            "ErrorRootCauses": [],
+            "ResponseTimeRootCauses": [],
+            "Revision": 1
+        },
+        {
+            "Id": "1-bafcca63-80239dc21ef6b719ac120203",
+            "StartTime": "2026-09-21T21:02:47+03:00",
+            "Duration": 0.144,
+            "ResponseTime": 0.144,
+            "HasFault": false,
+            "HasError": false,
+            "HasThrottle": false,
+            "IsPartial": false,
+            "Http": {
+                "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/callbacks/mpesa/REDACTED-callback-secret",
+                "HttpStatus": 200,
+                "HttpMethod": "POST",
+                "UserAgent": "ReactorNetty/1.2.9",
+                "ClientIp": "10.20.76.91"
+            },
+            "Annotations": {},
+            "Users": [],
+            "ServiceIds": [
+                {
+                    "Name": "pos",
+                    "Names": [
+                        "pos"
+                    ]
+                },
+                {
+                    "Name": "payments",
+                    "Names": [
+                        "payments"
+                    ]
+                },
+                {
+                    "Name": "payments",
+                    "Names": [
+                        "payments"
+                    ],
+                    "Type": "client"
+                }
+            ],
+            "ResourceARNs": [],
+            "InstanceIds": [],
+            "AvailabilityZones": [],
+            "EntryPoint": {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            },
+            "FaultRootCauses": [],
+            "ErrorRootCauses": [],
+            "ResponseTimeRootCauses": [
+                {
+                    "Services": [
+                        {
+                            "Name": "payments",
+                            "Names": [
+                                "payments"
+                            ],
+                            "EntityPath": [
+                                {
+                                    "Name": "payments",
+                                    "Coverage": 1.0,
+                                    "Remote": false
+                                },
+                                {
+                                    "Name": "payments.callback_http",
+                                    "Coverage": 0.989,
+                                    "Remote": false
+                                },
+                                {
+                                    "Name": "payments.callback_process",
+                                    "Coverage": 0.986,
+                                    "Remote": false
+                                }
+                            ],
+                            "Inferred": false
+                        }
+                    ],
+                    "ClientImpacting": true
+                }
+            ],
+            "Revision": 1
+        },
+        {
+            "Id": "1-36eca49c-b1002c99118ffde2f7227f4e",
+            "StartTime": "2026-09-21T21:02:40+03:00",
+            "Duration": 0.059,
+            "ResponseTime": 0.059,
+            "HasFault": false,
+            "HasError": false,
+            "HasThrottle": false,
+            "IsPartial": false,
+            "Http": {
+                "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/sales/2c1cbb8b-4389-421a-b60c-e31dd58cd89b",
+                "HttpStatus": 200,
+                "HttpMethod": "GET",
+                "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+                "ClientIp": "10.20.87.172"
+            },
+            "Annotations": {},
+            "Users": [],
+            "ServiceIds": [
+                {
+                    "Name": "pos",
+                    "Names": [
+                        "pos"
+                    ]
+                },
+                {
+                    "Name": "web",
+                    "Names": [
+                        "web"
+                    ],
+                    "Type": "client"
+                },
+                {
+                    "Name": "web",
+                    "Names": [
+                        "web"
+                    ]
+                }
+            ],
+            "ResourceARNs": [],
+            "InstanceIds": [],
+            "AvailabilityZones": [],
+            "EntryPoint": {
+                "Name": "web",
+                "Names": [
+                    "web"
+                ]
+            },
+            "FaultRootCauses": [],
+            "ErrorRootCauses": [],
+            "ResponseTimeRootCauses": [],
+            "Revision": 2
+        }
+    ],
+    "TracesProcessedCount": 4,
+    "ApproximateTime": "2026-09-21T21:00:00+03:00"
+}

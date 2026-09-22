@@ -19,7 +19,13 @@ groups:
               to: 0
             datasourceUid: AMP
             model:
-              expr: sum(rate(payments_requests_total{status="5xx"}[5m])) / clamp_min(sum(rate(payments_requests_total[5m])), 1e-9)
+              # `> 0.008` (~2.4 requests per 5m) is a minimum-traffic guard, not
+              # a second threshold. /health and /ready are excluded from RED
+              # metrics on purpose (middleware.py DEFAULT_EXCLUDED_PATHS), so
+              # the denominator is business traffic only. Without the guard a
+              # single 5xx in an idle window reads as a 100% error rate and
+              # pages -- observed 2026-09-21.
+              expr: (sum(rate(payments_requests_total{status="5xx"}[5m])) / clamp_min(sum(rate(payments_requests_total[5m])), 1e-9)) and (sum(rate(payments_requests_total[5m])) > 0.008)
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -44,7 +50,11 @@ groups:
                     type: and
                   reducer:
                     type: last
-        noDataState: NoData
+        # OK, not NoData: an idle window means no requests, therefore no failed
+        # requests. With NoData, Grafana re-notified every 1m evaluation and
+        # sent a payments-outage-shaped Slack message while payments was
+        # healthy. Absence of traffic is covered by EdgeProbeFailed.
+        noDataState: OK
         execErrState: Error
         for: 10m
         annotations:
@@ -97,7 +107,10 @@ groups:
                     type: and
                   reducer:
                     type: last
-        noDataState: NoData
+        # Same reasoning as PaymentsHigh5xxRate: no requests means no latency
+        # to breach. histogram_quantile over an empty range returns NaN, which
+        # Grafana reports as NoData -- that must not page.
+        noDataState: OK
         execErrState: Error
         for: 15m
         annotations:

@@ -23,6 +23,16 @@ _SENSITIVE_KEY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# The Daraja STK callback path carries its own shared secret as the final path
+# segment -- authenticity rests entirely on that segment being unguessable
+# (ADR-007 / threat model TB5). uvicorn's access logger writes the *resolved*
+# request line, so without this every callback published the secret to
+# CloudWatch in plaintext, where anyone with log read access could lift it and
+# forge a settlement. Observed 2026-09-21.
+#
+# Matches the segment only, so the route itself stays greppable.
+_CALLBACK_SECRET_RE = re.compile(r"(/callbacks/mpesa/)[^/\s\"'?]+")
+
 _SALT_ENV_VAR = "TILLFLOW_PII_HASH_SALT"
 
 
@@ -53,8 +63,9 @@ def hash_msisdn(value: str) -> str:
 
 
 def redact_text(value: str) -> str:
-    """Replace every MSISDN occurrence inside a string."""
-    return _MSISDN_RE.sub(lambda match: hash_msisdn(match.group(0)), value)
+    """Replace every MSISDN and callback-secret occurrence inside a string."""
+    value = _MSISDN_RE.sub(lambda match: hash_msisdn(match.group(0)), value)
+    return _CALLBACK_SECRET_RE.sub(rf"\g<1>{REDACTED}", value)
 
 
 #: Kept as the name the M-Pesa adapter's docs already advertise.
