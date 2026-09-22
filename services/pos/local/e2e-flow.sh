@@ -22,8 +22,8 @@
 #   POS_URL=... PAY_URL=... CALLBACK_SECRET=... services/pos/local/e2e-flow.sh
 set -euo pipefail
 
-POS_URL="${POS_URL:-http://localhost:8000}"
-PAY_URL="${PAY_URL:-http://localhost:8080}"
+POS_URL="${POS_URL:-http://127.0.0.1:8000}"
+PAY_URL="${PAY_URL:-http://127.0.0.1:8080}"
 COMMISSION_URL="${COMMISSION_URL:-http://localhost:8090}"
 CALLBACK_SECRET="${CALLBACK_SECRET:-local-dev-callback-secret}"
 DB_CONTAINER="${DB_CONTAINER:-tillflow-pos-db}"
@@ -45,7 +45,8 @@ req() { # req METHOD URL [JSON] [curl args...] -> $CODE, body in $BODY
   shift 3 || shift $#
   local args=(-s -o "$BODY" -w '%{http_code}' -X "$method" "$url" -H 'content-type: application/json')
   [[ -n "$data" ]] && args+=(-d "$data")
-  CODE="$(curl "${args[@]}" "$@")"
+  # Do not let set -e kill the script on connection refused (curl exits 7).
+  CODE="$(curl "${args[@]}" "$@" 2>/dev/null)" || CODE="000"
 }
 expect() { if [[ "$CODE" == "$1" ]]; then ok "$2 (HTTP $CODE)"; else bad "$2 — expected $1, got $CODE: $(cat "$BODY")"; fi; }
 check()  { if [[ "$1" == "$2" ]]; then ok "$3"; else bad "$3 — expected '$2', got '$1'"; fi; }

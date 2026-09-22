@@ -14,7 +14,7 @@ Platform evidence uses command output first; screenshots are optional support.
 - [x] Runtime canary proof: [`synthetics-describe-20260920.json`](./synthetics-describe-20260920.json) and [`synthetics-runs-20260920.json`](./synthetics-runs-20260920.json).
 - [x] Runtime alarm proof: [`cloudwatch-alarms-20260920.json`](./cloudwatch-alarms-20260920.json).
 - [x] G5 destroy/rebuild log and post-rebuild verification.
-- [ ] Drill 5 restore with measured RPO/RTO.
+- [x] Drill 5 restore with measured RPO/RTO — `restore-drill-20260922.json`
 
 ## Latest runtime evidence — 2026-09-20
 

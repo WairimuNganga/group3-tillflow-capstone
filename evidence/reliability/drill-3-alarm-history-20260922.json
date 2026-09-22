@@ -1,0 +1,36 @@
+{
+    "AlarmHistoryItems": [
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmType": "MetricAlarm",
+            "Timestamp": "2026-09-22T21:46:44.162000+03:00",
+            "HistoryItemType": "StateUpdate",
+            "HistorySummary": "Alarm updated from ALARM to OK",
+            "HistoryData": "{\"version\":\"1.0\",\"oldState\":{\"stateValue\":\"ALARM\",\"stateReason\":\"Threshold Crossed: 1 datapoint [1.0 (22/09/26 18:40:00)] was greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:42:44.161+0000\",\"startDate\":\"2026-09-22T18:40:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[1.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:40:00.000+0000\",\"sampleCount\":1.0,\"value\":1.0}]}},\"newState\":{\"stateValue\":\"OK\",\"stateReason\":\"Threshold Crossed: 1 datapoint [0.0 (22/09/26 18:44:00)] was not greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:46:44.160+0000\",\"startDate\":\"2026-09-22T18:44:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:44:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}}}"
+        },
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmType": "MetricAlarm",
+            "Timestamp": "2026-09-22T21:42:44.164000+03:00",
+            "HistoryItemType": "StateUpdate",
+            "HistorySummary": "Alarm updated from OK to ALARM",
+            "HistoryData": "{\"version\":\"1.0\",\"oldState\":{\"stateValue\":\"OK\",\"stateReason\":\"Threshold Crossed: 1 datapoint [0.0 (22/09/26 18:20:00)] was not greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:22:44.160+0000\",\"startDate\":\"2026-09-22T18:20:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:20:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}},\"newState\":{\"stateValue\":\"ALARM\",\"stateReason\":\"Threshold Crossed: 1 datapoint [1.0 (22/09/26 18:40:00)] was greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:42:44.161+0000\",\"startDate\":\"2026-09-22T18:40:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[1.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:40:00.000+0000\",\"sampleCount\":1.0,\"value\":1.0}]}}}"
+        },
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmType": "MetricAlarm",
+            "Timestamp": "2026-09-22T21:22:44.162000+03:00",
+            "HistoryItemType": "StateUpdate",
+            "HistorySummary": "Alarm updated from ALARM to OK",
+            "HistoryData": "{\"version\":\"1.0\",\"oldState\":{\"stateValue\":\"ALARM\",\"stateReason\":\"Threshold Crossed: 1 datapoint [1.0 (22/09/26 18:17:00)] was greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:19:44.161+0000\",\"startDate\":\"2026-09-22T18:17:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[1.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:17:00.000+0000\",\"sampleCount\":1.0,\"value\":1.0}]}},\"newState\":{\"stateValue\":\"OK\",\"stateReason\":\"Threshold Crossed: 1 datapoint [0.0 (22/09/26 18:20:00)] was not greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:22:44.160+0000\",\"startDate\":\"2026-09-22T18:20:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:20:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}}}"
+        },
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmType": "MetricAlarm",
+            "Timestamp": "2026-09-22T21:19:44.163000+03:00",
+            "HistoryItemType": "StateUpdate",
+            "HistorySummary": "Alarm updated from OK to ALARM",
+            "HistoryData": "{\"version\":\"1.0\",\"oldState\":{\"stateValue\":\"OK\",\"stateReason\":\"Threshold Crossed: no datapoints were received for 1 period and 1 missing datapoint was treated as [NonBreaching].\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-20T15:51:37.553+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-20T15:49:00.000+0000\"}]}},\"newState\":{\"stateValue\":\"ALARM\",\"stateReason\":\"Threshold Crossed: 1 datapoint [1.0 (22/09/26 18:17:00)] was greater than or equal to the threshold (1.0).\",\"stateReasonData\":{\"version\":\"1.0\",\"queryDate\":\"2026-09-22T18:19:44.161+0000\",\"startDate\":\"2026-09-22T18:17:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[1.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-22T18:17:00.000+0000\",\"sampleCount\":1.0,\"value\":1.0}]}}}"
+        }
+    ]
+}

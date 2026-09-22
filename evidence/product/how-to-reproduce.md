@@ -79,28 +79,26 @@ Both services against one Postgres, separate schemas — the shape AWS uses.
 Recorded run: [`e2e-flow-output.txt`](e2e-flow-output.txt).
 
 ```bash
-# 1. database (POS_DB_PORT avoids a Homebrew Postgres on 5432)
+# From repo root (scripts set DATABASE_URL, PAYMENTS_BASE_URL, ports — see services/pos/local/README.md)
+source .venv/bin/activate
+services/pos/local/db-up.sh
+services/pos/local/migrate-local.sh
+services/pos/local/stop-servers.sh   # if a previous uvicorn still holds :8000/:8080
+services/pos/local/run-pos.sh        # terminal 2
+services/pos/local/run-payments.sh   # terminal 3
+services/pos/local/run-e2e.sh        # terminal 4 -> 41 passed, 0 failed
+```
+
+Manual equivalent (POS must use **`DATABASE_URL`**, not `POS_DATABASE_URL`):
+
+```bash
 cd services/pos/local && POS_DB_PORT=5440 docker compose up -d
-docker exec -i tillflow-pos-db psql -U tillflow -d tillflow < ../../payments/local/init-db.sql
-
-# 2. migrations
-(cd services/pos && POS_DB_ADMIN_URL="postgresql+asyncpg://tillflow:secret@localhost:5440/tillflow" \
-  python -m alembic upgrade head)
-(cd services/payments && DATABASE_URL="postgresql+asyncpg://payments:secret@localhost:5440/tillflow" \
-  python -m alembic upgrade head)
-
-# 3. POS (terminal 2) — PAYMENTS_BASE_URL is what makes the handoff possible
-cd services/pos && DATABASE_URL="postgresql+asyncpg://tillflow_pos:pos_secret@localhost:5440/tillflow" \
-  PAYMENTS_BASE_URL="http://127.0.0.1:8080" TILLFLOW_TELEMETRY_EXPORT=none \
-  uvicorn pos.main:app --port 8000
-
-# 4. Payments (terminal 3) — POS_BASE_URL is how the outcome gets back
-cd services/payments && DATABASE_URL="postgresql+asyncpg://payments:secret@localhost:5440/tillflow" \
-  POS_BASE_URL="http://127.0.0.1:8000" TILLFLOW_TELEMETRY_EXPORT=none MPESA_ADAPTER=fake \
-  uvicorn payments.main:app --port 8080
-
-# 5. the flow (terminal 4)
-services/pos/local/e2e-flow.sh          # -> 40 passed, 0 failed
+docker exec -i tillflow-pos-db psql -U tillflow -d tillflow < services/payments/local/init-db.sql
+(cd services/pos && POS_DB_ADMIN_URL="postgresql+asyncpg://tillflow:secret@127.0.0.1:5440/tillflow" alembic upgrade head)
+(cd services/payments && PAYMENTS_DB_ADMIN_URL="postgresql+asyncpg://tillflow:secret@127.0.0.1:5440/tillflow" \
+  DATABASE_URL="postgresql+asyncpg://tillflow_payments:secret@127.0.0.1:5440/tillflow" alembic upgrade head)
+# terminals: DATABASE_URL + PAYMENTS_BASE_URL=http://127.0.0.1:8080 on POS; Payments on :8080 with POS_BASE_URL + MPESA_ADAPTER=fake
+services/pos/local/e2e-flow.sh
 ```
 
 What the run asserts, in order:

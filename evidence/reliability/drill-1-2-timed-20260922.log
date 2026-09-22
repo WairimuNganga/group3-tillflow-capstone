@@ -1,0 +1,69 @@
+
+[1m0. Both services are up[0m
+  [32mPASS[0m POS /ready (HTTP 200)
+  [32mPASS[0m Payments /health (HTTP 200)
+
+[1m1. Shop onboards (POS)[0m
+  [32mPASS[0m create shop (HTTP 201)
+  [32mPASS[0m add till (HTTP 201)
+  [32mPASS[0m add attendant (HTTP 201)
+  [32mPASS[0m set attendant commission rate (2%) (HTTP 201)
+
+[1m2. Sale -> STK -> callback -> paid (customer pays)[0m
+  [32mPASS[0m attendant rings up KES 125.00 sale (HTTP 201)
+  [32mPASS[0m sale starts 'pending'
+  [32mPASS[0m POS hands the sale to Payments (STK push sent) (HTTP 200)
+  [32mPASS[0m sale moves to 'awaiting_payment'
+  [32mPASS[0m payment state 'stk_sent'
+  [32mPASS[0m retrying pay reaches the SAME payment — no second prompt, no double charge
+  [32mPASS[0m 12500 minor units -> 125 whole KES at the M-Pesa boundary
+  [32mPASS[0m M-Pesa callback arrives (customer entered PIN) (HTTP 200)
+  [32mPASS[0m payment settled 'paid'
+  [32mPASS[0m one ledger entry written
+  [32mPASS[0m Payments told POS — the sale is 'paid' with no manual step
+  [32mPASS[0m the M-Pesa receipt is stored on the sale
+
+[1m3. Duplicate callback (M-Pesa retries) settles once[0m
+  [32mPASS[0m replayed callback accepted (HTTP 200)
+  [32mPASS[0m recognised as a duplicate
+  [32mPASS[0m no second ledger entry
+  [32mPASS[0m sale still exactly 'paid' — one state change, not two
+
+[1m4. Timeout is NOT a decline (uncertain payment)[0m
+  [32mPASS[0m second sale, KES 20.00 (HTTP 201)
+  [32mPASS[0m M-Pesa timed out -> payment 'pending_reconciliation', NOT failed
+  [32mPASS[0m sale is not marked failed — the customer is not told it failed
+  [32mPASS[0m reconciliation queries M-Pesa for the real outcome (HTTP 200)
+  [32mPASS[0m money did arrive -> 'paid'
+  [32mPASS[0m ledger written once, on reconcile
+  [32mPASS[0m reconciliation reported the outcome to POS — sale 'paid'
+
+[1m5. Commission daily close → B2C (via commission worker when up)[0m
+  [32mPASS[0m commission submits payout through Payments (never straight to Daraja) (HTTP 202)
+  [32mPASS[0m payout 'submitted'
+  [32mPASS[0m re-running the daily close does NOT pay twice
+  [32mPASS[0m M-Pesa confirms the payout (HTTP 200)
+  [32mPASS[0m payout 'completed' — attendant paid
+
+[1m6. Another shop cannot touch this one's sale[0m
+  [32mPASS[0m second shop onboards (HTTP 201)
+  [32mPASS[0m shop B cannot read shop A's sale (HTTP 404)
+  [32mPASS[0m shop B cannot cancel shop A's sale (HTTP 404)
+  [32mPASS[0m shop B cannot settle shop A's sale, even on the internal endpoint (HTTP 404)
+
+[1m7. Only Payments can put a sale into a money state[0m
+  [32mPASS[0m a public caller cannot mark a sale paid (HTTP 400)
+  [32mPASS[0m a result whose amount isn't the sale total is refused (HTTP 409)
+
+[1m8. Bad callback secret is rejected[0m
+  [32mPASS[0m forged callback URL rejected (HTTP 403)
+
+[1mResult: 41 passed, 0 failed[0m
+
+Shop:     9d553e63-b7be-44cd-98f2-6935df9a9fdf
+Sale 1:   05d666da-9478-40df-8dbe-7cf04e109d5b   (paid, payment 15d1688b-c7b1-4f35-bf60-d9e51809f959)
+Sale 2:   b6e4e2bc-943a-4541-853c-6f2f25ddeb96  (paid after reconciliation, payment c5e833f5-b14b-4532-9202-ea50777d0fa9)
+Payout:   d6b213d4-6eac-46fd-9dbb-4908d762d49a
+
+The chain is automatic: POS -> Payments (/sales/{id}/pay) and Payments -> POS
+(/internal/sales/{id}/payment-result). No step here marks a sale paid by hand.
