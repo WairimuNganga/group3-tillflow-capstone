@@ -8,7 +8,7 @@
 | G0 | PASS | PASS | ADRs, ownership, threat model (draft items remain in root README) |
 | G1 | PASS | PASS | `evidence/delivery/README.md`, platform screenshots |
 | G2 | PASS | PASS | `evidence/product/e2e-flow-output.txt`, `evidence/reliability/drill-1-2-timed-20260922.log` |
-| G3 | Near-pass (no captured traces; Slack test only) | **Met in repo** (optional polish) | Traces: `evidence/reliability/phase-f/traces/`; Slack: Grafana TestAlert + Drill 3 DLQ ALARM→OK (DLQ alarm has no SNS—see drill-3 note) |
+| G3 | Near-pass (no captured traces; Slack test only) | **Met in repo** | Traces: `evidence/reliability/phase-f/traces/`; Slack: Grafana TestAlert + Drill 3 DLQ firing/recovery screenshots and CloudWatch captures |
 | G4 | HOLD (1/5 drills) | **Met in repo** (local vs deployed nuance) | Drills 1–2 log, Drill 2 deployed JSON/X-Ray, Drill 3, Drill 5 restore JSON, Drill 4 rollback log |
 | G5 | Mostly met (README placeholder; live viva) | **Repo done; viva open** | Root `README.md` one-command lifecycle; **live 6-min defence not in repo** |
 
@@ -22,7 +22,7 @@
 
 1. **Live 6-minute defence** — per member; see `production-readiness.md` G5.  
 2. **Commission service X-Ray in AWS** — no spans when worker did not run in dev during capture; B2C contract proven locally and via Payments boundary (`phase-f/traces/commission-payout-via-payments-20260922.md`).  
-3. **Slack on DLQ alarm** — CloudWatch DLQ alarm fires/recovers (Drill 3); wiring that alarm to Slack is not the same as Grafana TestAlert.  
+3. **Slack on DLQ alarm** — closed by the 2026-09-23 UTC / 2026-09-24 EAT Drill 3 retest: CloudWatch DLQ alarm fired/recovered and Slack received both messages with the full alert contract.  
 4. **Drills 1–2** — timed **local** Postgres + fake M-Pesa; deployed callback piece is Drill 2 JSON + X-Ray (edge contract, not full paid-sale replay on AWS).  
 5. **Admin** — complete threat-model sign-off and mentor repo access (root README checklist).
 
