@@ -1,10 +1,12 @@
 # Commission payout path — B2C via Payments (2026-09-22)
 
-**Gate:** G3 captured traces (commission / money path). **DRI:** Minage.
+**Gate:** G3 captured traces (commission / money path). **DRI:** Minage (traces) · **Payments boundary:** Hunter.
 
 ## What graders ask for
 
 Scheduled close → commission → **Payments `/payments/b2c`** (never Daraja from commission). That contract is the money-critical hop.
+
+**Defence (Payments):** Commission has no Daraja credentials and no M-Pesa client; payout money movement is only through Payments’ B2C handler. Proof: ADR-004/007 + IAM on `devops-g3/daraja`, local timed step 5 in `drill-1-2-timed-20260922.log`, and `evidence/product/e2e-flow-output.txt` — not a second direct disbursement path.
 
 ## Proof (layered)
 

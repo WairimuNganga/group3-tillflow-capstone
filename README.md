@@ -10,6 +10,10 @@ See `docs/ownership.md`.
 - **Delivery / CI-CD** — Wairimu
 - **Reliability + operations** — Minage
 
+## All-gates review follow-up
+
+Review of `e878e32` (21 Sep 2026): [docs/all-gates-review-follow-up.md](docs/all-gates-review-follow-up.md) maps each gap to current evidence. Gate checklist: [docs/production-readiness.md](docs/production-readiness.md).
+
 ## TODO before G0 (Wed 9 Sep)
 - [x] Group number set: **devops-g3**
 - [x] Map @handles in CODEOWNERS to real GitHub usernames

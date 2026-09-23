@@ -36,6 +36,10 @@ stitched to the STK trace. They correlate by sale ID
 - [x] Raw trace JSON committed under `traces/` (summaries + one file per trace)
 - [ ] X-Ray console service-map screenshot — optional; the JSON is the proof
 
+**Commission → Payments (B2C):** Contract and layered proof (local e2e + architecture; commission ECS spans when worker runs in dev):
+
+- [traces/commission-payout-via-payments-20260922.md](./traces/commission-payout-via-payments-20260922.md)
+
 **Known gap:** POS → Payments does not propagate trace context, so STK
 initiation cannot be followed from the browser in one trace. Web → POS and
 Payments → POS both propagate correctly. Diagnosis in the analysis document.
