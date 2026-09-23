@@ -1,0 +1,120 @@
+{
+    "DBInstance": {
+        "DBInstanceIdentifier": "devops-g3-db-drill5-20260922",
+        "DBInstanceClass": "db.t4g.medium",
+        "Engine": "postgres",
+        "DBInstanceStatus": "creating",
+        "MasterUsername": "tillflow_admin",
+        "DBName": "tillflow",
+        "AllocatedStorage": 20,
+        "PreferredBackupWindow": "03:00-04:00",
+        "BackupRetentionPeriod": 7,
+        "DBSecurityGroups": [],
+        "VpcSecurityGroups": [
+            {
+                "VpcSecurityGroupId": "sg-038ef288195737121",
+                "Status": "active"
+            }
+        ],
+        "DBParameterGroups": [
+            {
+                "DBParameterGroupName": "default.postgres16",
+                "ParameterApplyStatus": "in-sync"
+            }
+        ],
+        "DBSubnetGroup": {
+            "DBSubnetGroupName": "devops-g3-db",
+            "DBSubnetGroupDescription": "Managed by Terraform",
+            "VpcId": "vpc-01893fa497449df88",
+            "SubnetGroupStatus": "Complete",
+            "Subnets": [
+                {
+                    "SubnetIdentifier": "subnet-09f0ee4ac0961c17d",
+                    "SubnetAvailabilityZone": {
+                        "Name": "us-west-1a"
+                    },
+                    "SubnetOutpost": {},
+                    "SubnetStatus": "Active"
+                },
+                {
+                    "SubnetIdentifier": "subnet-02c514dcce5718d7d",
+                    "SubnetAvailabilityZone": {
+                        "Name": "us-west-1c"
+                    },
+                    "SubnetOutpost": {},
+                    "SubnetStatus": "Active"
+                }
+            ]
+        },
+        "PreferredMaintenanceWindow": "sun:04:30-sun:05:30",
+        "UpgradeRolloutOrder": "second",
+        "PendingModifiedValues": {},
+        "MultiAZ": false,
+        "EngineVersion": "16.13",
+        "AutoMinorVersionUpgrade": true,
+        "ReadReplicaDBInstanceIdentifiers": [],
+        "LicenseModel": "postgresql-license",
+        "Iops": 3000,
+        "StorageThroughput": 125,
+        "OptionGroupMemberships": [
+            {
+                "OptionGroupName": "default:postgres-16",
+                "Status": "pending-apply"
+            }
+        ],
+        "PubliclyAccessible": false,
+        "StorageType": "gp3",
+        "DbInstancePort": 0,
+        "StorageEncrypted": true,
+        "KmsKeyId": "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0",
+        "DbiResourceId": "db-JSCSL4ZJSO63AKXIORU2OIWDKU",
+        "CACertificateIdentifier": "rds-ca-rsa2048-g1",
+        "DomainMemberships": [],
+        "CopyTagsToSnapshot": false,
+        "MonitoringInterval": 0,
+        "DBInstanceArn": "arn:aws:rds:us-west-1:240462142849:db:devops-g3-db-drill5-20260922",
+        "IAMDatabaseAuthenticationEnabled": false,
+        "DatabaseInsightsMode": "standard",
+        "PerformanceInsightsEnabled": false,
+        "DeletionProtection": false,
+        "AssociatedRoles": [],
+        "TagList": [
+            {
+                "Key": "owner",
+                "Value": "lwam"
+            },
+            {
+                "Key": "environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "managed-by",
+                "Value": "terraform"
+            },
+            {
+                "Key": "service",
+                "Value": "platform"
+            },
+            {
+                "Key": "capstone",
+                "Value": "tillflow"
+            },
+            {
+                "Key": "Name",
+                "Value": "devops-g3-db"
+            },
+            {
+                "Key": "group",
+                "Value": "devops-g3"
+            }
+        ],
+        "CustomerOwnedIpEnabled": false,
+        "NetworkType": "IPV4",
+        "BackupTarget": "region",
+        "CertificateDetails": {
+            "CAIdentifier": "rds-ca-rsa2048-g1"
+        },
+        "DedicatedLogVolume": false,
+        "EngineLifecycleSupport": "open-source-rds-extended-support"
+    }
+}

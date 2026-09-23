@@ -14,7 +14,7 @@ Capstone evidence lives in **this file only** (exact reproduction commands; scre
 - [x] B2 — Grafana ECS + TillFlow dashboards (2026-09-20); AMP datasource + evidence row §B2
 - [x] B2 follow-up — **payments** RED in AMP (2026-09-20); refresh Grafana panels; **web/pos** RED still 0 until counted traffic
 - [x] C — CloudWatch Synthetics canary `devops-g3-edge-health` live; runtime proof in [platform evidence](../platform/README.md)
-- [ ] E — Slack secret + CLI webhook OK; Grafana **Test contact point** + §Phase E row after tillflow2 ECS roll
+- [x] E — Slack secret + CLI webhook OK; Grafana **Test contact point** + §Phase E row (2026-09-22, post-G5 API `k8ve9ik8zl`)
 
 ## Phases A–H (where we are)
 
@@ -26,9 +26,9 @@ Letter phases map to this evidence pack and [how-to-reproduce.md](./how-to-repro
 | **B** | Observability stack (AMP, Grafana, probes) | **B0–B1, B3 ✓**; **B2 ✓**; **payments RED in AMP ✓** (2026-09-20) | Grafana screenshot with payments RED; pos/web traffic follow-up |
 | **C** | External synthetics (CloudWatch canary on `/health`) | **Done** — live canary proof captured 2026-09-20 | Platform evidence: `synthetics-describe-20260920.json`, `synthetics-runs-20260920.json` |
 | **D** | k6 capacity envelope (**G3**) | **Smoke, baseline, soak and spike ✓** (2026-09-20) | Results and artifact links in [k6-analysis.md](./k6-analysis.md) |
-| **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **In progress** — rules in `infra/grafana/provisioning/alerting/` | Apply + pipeline + **Test contact point**; record §Phase E |
+| **E** | Alerting (Grafana → `devops-g3/slack-webhook`) | **Contact point verified** 2026-09-22 | Optional: real rule firing/recovery; tune NoData noise in `# group-3-alerts` |
 | **F** | ADR-008 proof (dashboard JSON + trace captures in evidence) | **JSON in** `evidence/reliability/phase-f/` | Screenshots + X-Ray trace ID table in phase-f README |
-| **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Not recorded** | Execute Drill 3; document in how-to-reproduce §Drill 3 |
+| **G** | Ops drills (Drill 3: fail→alert→runbook→recover; platform G1/G2) | **Drill 3 logged** (2026-09-22); Slack DLQ alert pending Phase E | Attach Slack screenshot or approve CW-only proof; see `drill-3-platform-failure-20260922.md` |
 | **H** | Resilience / rollback (**G4**, multi-AZ when enabled) | **Drill 4 log exists** in delivery evidence | Tie rollback rehearsal to reliability narrative if required |
 
 **You are here:** Phase **C** complete; finish **E** (alerts), **F** (screenshots/traces), and **G** (Drill 3).
@@ -238,7 +238,7 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 - [ ] Force new Grafana ECS deployment after secret update
 - [x] Grafana → Alerting → Contact points → **Test** slack-tillflow; Grafana send and Slack receipt captured 2026-09-20
 - [x] Alert rules in folder **TillFlow Alerts** (3 rules, provisioned as code)
-- [x] Contact-point delivery evidence: `phase-f/screenshots/grafana-slack-test-sent-20260920.png` and `slack-test-received-20260920.png`; real firing/recovery remains open
+- [x] Contact-point delivery evidence: `phase-f/screenshots/grafana-slack-test-sent-20260920.png`, `slack-test-received-20260920.png`, **`slack-grafana-testalert-20260922.png`** (Grafana UI Test → `# group-3-alerts` after G5); real firing/recovery remains open
 
 ### Recorded run
 
@@ -246,6 +246,7 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 |------|-------------------|-------------------|---------------------------|
 | 2026-09-20 | CLI incoming-webhook → `# group-3-alerts` | Pending tillflow2 ECS | Grafana UI Test pending; Phase E merged **main @5746ab0** |
 | 2026-09-20 | Grafana predefined test sent and received in Slack | 3 rules provisioned | Delivery passed; predefined test has no rule annotations, so populated firing/recovery proof remains open |
+| 2026-09-22 | Grafana **Test** on `k8ve9ik8zl…/v1/grafana/` → **`TestAlert - TillFlow`** in Slack | 3 rules provisioned | Screenshot: [slack-grafana-testalert-20260922.png](./phase-f/screenshots/slack-grafana-testalert-20260922.png). Same capture shows prior **`DatasourceNoData`** noise (AMP idle / NoData — not a payments outage). Edge sanity same session: `curl …/v1/health` → **200**. |
 
 ---
 
@@ -368,9 +369,9 @@ instrument_fastapi(app, service_name="pos")
 
 ## Next steps (priority order)
 
-1. **Phase E live proof:** In Grafana, Test contact point `slack-tillflow`; capture Slack screenshot/message link.
+1. ~~**Phase E live proof:**~~ Done 2026-09-22 — [slack-grafana-testalert-20260922.png](./phase-f/screenshots/slack-grafana-testalert-20260922.png).
 2. **Phase F trace:** Capture one X-Ray sale→payment→callback trace ID/screenshot under `evidence/reliability/phase-f/traces/`.
-3. **Drill 3:** Seed/break reconciliation DLQ, prove alert firing/recovery, write `drill-3-platform-failure-YYYYMMDD.md`.
+3. **Drill 3:** [x] DLQ seed + CW alarm + purge — `drill-3-platform-failure-20260922.md`; [ ] Slack firing for DLQ rule.
 
 ---
 

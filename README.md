@@ -25,7 +25,14 @@ See `docs/ownership.md`.
 - **Folder layout**: `services/{web,pos,payments,commission,_shared}`, `infra/{envs,modules}`,
   `.github/workflows/`, `docs/`, `evidence/<area>/` — see [ADR index](docs/adr/).
 
-## One-command lifecycle (fill in during G1)
-- bootstrap: `terraform -chdir=infra/bootstrap apply`
-- deploy: GitHub Actions Terraform workflow on `main`, then AWS CodePipeline `devops-g3-pipeline`
-- destroy: `terraform -chdir=infra/envs/dev destroy` for the dev workload only; coordinate before G5 evidence capture 
+## One-command lifecycle (dev, us-west-1)
+
+```bash
+export AWS_PROFILE=group3 AWS_REGION=us-west-1
+./infra/scripts/bootstrap.sh          # first-time / bootstrap state
+./infra/scripts/deploy.sh --apply     # terraform apply dev + outputs
+# delivery: merge to main → CodePipeline devops-g3-pipeline (build → ECS → smoke)
+./infra/scripts/destroy.sh -auto-approve   # G5 destroy only — coordinate first
+```
+
+Details: [evidence/platform/how-to-reproduce.md](evidence/platform/how-to-reproduce.md).

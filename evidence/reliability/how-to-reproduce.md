@@ -104,8 +104,39 @@ aws secretsmanager get-secret-value --secret-id devops-g3/slack-webhook \
   --query 'length(SecretString)' --output text   # must be > 0
 ```
 
-Record results in [reliability-and-operations.md](./reliability-and-operations.md) §Phase E.
+Record results in [reliability-and-operations.md](./reliability-and-operations.md) §Phase E.  
+2026-09-22 proof: [phase-f/screenshots/slack-grafana-testalert-20260922.png](./phase-f/screenshots/slack-grafana-testalert-20260922.png).
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" \
+  "https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1/health"
+# 200 — edge OK while Grafana DatasourceNoData alerts were AMP idle, not outage
+```
 
 ## Drill 3 (Phase G)
 
-Document timed steps here after execution (platform failure → alert → runbook → recovery).
+Platform failure → alert → runbook → recovery. Full log: [drill-3-platform-failure-20260922.md](./drill-3-platform-failure-20260922.md).
+
+```bash
+export AWS_PROFILE=group3
+export AWS_REGION=us-west-1
+
+DLQ_URL="https://sqs.us-west-1.amazonaws.com/240462142849/devops-g3-reconciliation-dlq"
+
+# 1) Break — one poison message on the reconciliation DLQ
+aws sqs send-message --queue-url "$DLQ_URL" \
+  --message-body '{"drill":"3","purpose":"reconciliation-dlq-alert-test"}'
+
+# 2) Prove visibility (~1–7 min for CloudWatch)
+aws cloudwatch describe-alarms --alarm-names devops-g3-reconciliation-dlq-depth \
+  --query 'MetricAlarms[0].StateValue' --output text
+
+# 3) Recover (drill-only; prod uses redrive/replay)
+aws sqs purge-queue --queue-url "$DLQ_URL"
+
+# 4) Confirm clear
+aws sqs get-queue-attributes --queue-url "$DLQ_URL" \
+  --attribute-names ApproximateNumberOfMessages
+```
+
+Capture Slack when DLQ alerting is wired (Phase E); until then, CloudWatch `ALARM` screenshot for the same alarm.

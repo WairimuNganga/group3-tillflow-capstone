@@ -1,0 +1,4 @@
+Probing https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1
+OK /health
+OK /ready
+Edge probe passed (web /* routes; probes excluded from RED SLI per ADR-008 amendment).

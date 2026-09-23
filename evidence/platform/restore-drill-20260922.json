@@ -1,0 +1,16 @@
+{
+  "drill": 5,
+  "snapshot_id": "rds:devops-g3-db-2026-09-22-03-09",
+  "snapshot_time_utc": "2026-09-22T03:09:09.848000+00:00",
+  "restore_start_utc": "2026-09-22T18:55:39+00:00",
+  "restore_available_utc": "2026-09-22T18:58:26.879000+00:00",
+  "restored_instance": "devops-g3-db-drill5-20260922",
+  "endpoint": "devops-g3-db-drill5-20260922.chgiwkc8muat.us-west-1.rds.amazonaws.com",
+  "rpo_seconds": 56789,
+  "rpo_minutes": 946.5,
+  "rto_seconds": 167,
+  "rto_minutes": 2.8,
+  "target_rpo_minutes": 5,
+  "target_rto_minutes": 60,
+  "note": "Isolated restore; primary devops-g3-db unchanged"
+}

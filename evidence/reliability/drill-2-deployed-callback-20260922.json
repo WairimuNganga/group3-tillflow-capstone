@@ -1,0 +1,14 @@
+{
+  "start_utc": "2026-09-22T19:43:10Z",
+  "end_utc": "2026-09-22T19:43:12Z",
+  "api": "https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1",
+  "note": "Edge callback path exercised twice; paired with X-Ray on live payments service",
+  "first_response": "{\"accepted\":true,\"reason\":\"unknown_checkout_request_id\",\"payment_id\":null,\"state\":null,\"ledger_written\":false}\nHTTP_CODE:200",
+  "second_response": "{\"accepted\":true,\"reason\":\"unknown_checkout_request_id\",\"payment_id\":null,\"state\":null,\"ledger_written\":false}\nHTTP_CODE:200",
+  "local_duplicate_contract": "evidence/reliability/drill-1-2-timed-20260922.log step 3 — duplicate_callback, ledger_written false",
+  "xray_trace_ids": [
+    "1-813c3d51-133d7956b8ea262af77baaf7",
+    "1-4042cb58-bfaf0e3188084bb114b3a861"
+  ],
+  "xray_raw": "evidence/reliability/drill-2-deployed-xray-traces-20260922.json"
+}

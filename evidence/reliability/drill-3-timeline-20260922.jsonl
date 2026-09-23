@@ -1,0 +1,13 @@
+{"event":"inject","utc":"2026-09-22T18:39:39Z","payload":{
+    "MD5OfMessageBody": "a8f055d6481746f710bd3b174a73a3cd",
+    "MessageId": "7dface6e-7f04-43a3-9611-0c7074840974"
+}}
+{"event":"poll","utc":"2026-09-22T18:40:34Z","minute":1,"alarm_state":"OK","sqs":{"ApproximateNumberOfMessages": "1", "ApproximateNumberOfMessagesNotVisible": "0"}}
+{"event":"poll","utc":"2026-09-22T18:41:33Z","minute":2,"alarm_state":"OK","sqs":{"ApproximateNumberOfMessages": "1", "ApproximateNumberOfMessagesNotVisible": "0"}}
+{"event":"poll","utc":"2026-09-22T18:42:32Z","minute":3,"alarm_state":"OK","sqs":{"ApproximateNumberOfMessages": "1", "ApproximateNumberOfMessagesNotVisible": "0"}}
+{"event":"poll","utc":"2026-09-22T18:43:31Z","minute":4,"alarm_state":"ALARM","sqs":{"ApproximateNumberOfMessages": "1", "ApproximateNumberOfMessagesNotVisible": "0"}}
+{"event":"purge","utc":"2026-09-22T18:43:36Z"}
+{"event":"recover_poll","utc":"2026-09-22T18:44:31Z","minute":1,"alarm_state":"ALARM"}
+{"event":"recover_poll","utc":"2026-09-22T18:45:28Z","minute":2,"alarm_state":"ALARM"}
+{"event":"recover_poll","utc":"2026-09-22T18:46:25Z","minute":3,"alarm_state":"ALARM"}
+{"event":"recover_poll","utc":"2026-09-22T18:47:22Z","minute":4,"alarm_state":"OK"}

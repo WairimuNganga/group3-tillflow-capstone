@@ -435,10 +435,11 @@ module "service" {
     each.key == "payments" ? [module.messaging.queue_arns["reconciliation"]] : []
   )
 
-  sqs_consume_arns = each.key == "payments" ? [
-    module.messaging.queue_arns["reconciliation"],
-    module.messaging.queue_arns["payout"],
-  ] : []
+  # Commission worker consumes daily-close + attendant payout messages from payout.
+  # Payments consumes reconciliation only (Daraja status retries).
+  sqs_consume_arns = each.key == "commission" ? [module.messaging.queue_arns["payout"]] : (
+    each.key == "payments" ? [module.messaging.queue_arns["reconciliation"]] : []
+  )
 }
 
 # commission → payments over Service Connect, never through the ALB (T3.2).
