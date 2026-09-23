@@ -42,7 +42,7 @@ Dashboards are baked into the ECR image and loaded from `/var/lib/grafana/dashbo
 
 | File | Purpose |
 |------|---------|
-| [provisioning/alerting/rules.yaml](./provisioning/alerting/rules.yaml) | Runbook starters: PaymentsHigh5xxRate, PaymentsLatencyP95, EdgeProbeFailed (AMP count proxy) |
+| [provisioning/alerting/rules.yaml](./provisioning/alerting/rules.yaml) | Runbook starters: PaymentsHigh5xxRate, PaymentsLatencyP95; EdgeProbeFailed inert in Grafana (CloudWatch canary alarm is edge SoT) |
 | [provisioning/alerting/policies.yaml](./provisioning/alerting/policies.yaml) | Default route → `slack-tillflow` |
 | [docker-entrypoint.sh](./docker-entrypoint.sh) | Writes `contact-points.yaml` from env `SLACK_WEBHOOK_URL` (injected by ECS from Secrets Manager) |
 

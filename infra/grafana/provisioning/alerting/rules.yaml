@@ -138,7 +138,10 @@ groups:
               to: 0
             datasourceUid: AMP
             model:
-              expr: count({__name__=~".+"})
+              # Placeholder until Synthetics SuccessPercent is in AMP. Do not use
+              # count({__name__=~".+"}) — dev AMP often has <50 series and NoData
+              # looked like edge failure (Slack spam while /health was 200).
+              expr: vector(0)
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
@@ -157,14 +160,17 @@ groups:
               refId: C
               conditions:
                 - evaluator:
-                    type: lt
-                    params: [50]
+                    type: gt
+                    params: [1]
                   operator:
                     type: and
                   reducer:
                     type: last
-        noDataState: Alerting
-        execErrState: Error
+        # CloudWatch alarm devops-g3-edge-health-canary remains source of truth
+        # (Terraform; no SNS→Slack yet). Grafana must not page on AMP idle/NoData.
+        noDataState: OK
+        execErrState: OK
+        isPaused: false
         for: 5m
         annotations:
           summary: Edge health or telemetry visibility failed; CloudWatch alarm devops-g3-edge-health-canary is source of truth.

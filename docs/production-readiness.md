@@ -1,6 +1,7 @@
 # Production Readiness — DRI: Lwam
 
-> Checklist aligned with ALL-GATES review (G0–G5). Evidence paths are the proof.
+> Checklist aligned with ALL-GATES review (G0–G5). Evidence paths are the proof.  
+> **Review snapshot:** written against `e878e32` (21 Sep 2026). Gap closure and PR index: [all-gates-review-follow-up.md](all-gates-review-follow-up.md) (includes [#68](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/68) drill + trace artifacts).
 
 ## G0–G2 — PASS
 
