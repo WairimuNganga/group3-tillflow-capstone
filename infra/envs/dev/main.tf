@@ -603,13 +603,21 @@ module "synthetics_canary" {
 module "observability_alarms" {
   source = "../../modules/observability-alarms"
 
-  name_prefix             = var.name_prefix
-  dlq_names               = module.messaging.dlq_names
-  canary_name             = module.synthetics_canary.canary_name
-  canary_alarm_enabled    = true
-  ecs_cluster_name        = module.ecs_platform.cluster_name
-  ecs_service_names       = { for service in local.services : service => module.service[service].service_name }
-  rds_instance_identifier = module.rds.instance_identifier
+  name_prefix              = var.name_prefix
+  region                   = var.region
+  account_id               = local.account_id
+  environment              = var.environment
+  dlq_names                = module.messaging.dlq_names
+  canary_name              = module.synthetics_canary.canary_name
+  canary_alarm_enabled     = true
+  ecs_cluster_name         = module.ecs_platform.cluster_name
+  ecs_service_names        = { for service in local.services : service => module.service[service].service_name }
+  rds_instance_identifier  = module.rds.instance_identifier
+  slack_webhook_secret_arn = module.secrets.secret_arns["slack-webhook"]
+  kms_key_arn              = var.kms_key_arn
+  grafana_panel_url        = "${trimsuffix(module.apigw.api_endpoint, "/")}/grafana/d/tillflow-slo/tillflow-slo-uptime-2b-burn"
+  runbook_url              = "https://github.com/${var.github_repository}/blob/main/docs/runbook.md#observability-alerts"
+  log_retention_days       = var.log_retention_days
 }
 
 module "db_bootstrap" {
@@ -755,8 +763,11 @@ data "aws_iam_policy_document" "slack_readers" {
     effect = "Allow"
 
     principals {
-      type        = "AWS"
-      identifiers = [module.grafana.task_role_arn]
+      type = "AWS"
+      identifiers = [
+        module.grafana.task_role_arn,
+        module.observability_alarms.slack_alarm_lambda_role_arn,
+      ]
     }
 
     actions   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]

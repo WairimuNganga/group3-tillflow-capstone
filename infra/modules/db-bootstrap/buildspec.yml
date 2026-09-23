@@ -237,6 +237,51 @@ phases:
         SQL
       - psql -v ON_ERROR_STOP=1 -f /tmp/g2-db-bootstrap.sql
       - |
+        # Credential-free G1/G2 audit evidence. These queries print role and
+        # policy metadata only; usernames are expected, passwords are never
+        # selected. Capture this CodeBuild log under evidence/platform/.
+        echo "=== TILLFLOW DB AUDIT: SCHEMA OWNERS ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT n.nspname AS schema_name,
+                 pg_get_userbyid(n.nspowner) AS schema_owner
+          FROM pg_namespace AS n
+          WHERE n.nspname IN ('web', 'pos', 'payments', 'commission')
+          ORDER BY n.nspname;"
+
+        echo "=== TILLFLOW DB AUDIT: SERVICE ROLES ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT rolname,
+                 rolcanlogin,
+                 rolbypassrls,
+                 rolsuper
+          FROM pg_roles
+          WHERE rolname ~ '^tillflow_(web|pos|payments|commission)(_owner)?$'
+          ORDER BY rolname;"
+
+        echo "=== TILLFLOW DB AUDIT: RUNTIME SCHEMA PRIVILEGES ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT service,
+                 has_schema_privilege('tillflow_' || service, service, 'USAGE') AS has_usage,
+                 has_schema_privilege('tillflow_' || service, service, 'CREATE') AS has_create
+          FROM unnest(ARRAY['web', 'pos', 'payments', 'commission']) AS services(service)
+          ORDER BY service;"
+
+        echo "=== TILLFLOW DB AUDIT: TABLE RLS AND POLICIES ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT n.nspname AS schema_name,
+                 c.relname AS table_name,
+                 c.relrowsecurity AS rls_enabled,
+                 c.relforcerowsecurity AS rls_forced,
+                 COALESCE(string_agg(p.polname, ',' ORDER BY p.polname), '<none>') AS policies
+          FROM pg_class AS c
+          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+          LEFT JOIN pg_policy AS p ON p.polrelid = c.oid
+          WHERE n.nspname IN ('web', 'pos', 'payments', 'commission')
+            AND c.relkind IN ('r', 'p')
+          GROUP BY n.nspname, c.relname, c.relrowsecurity, c.relforcerowsecurity
+          ORDER BY n.nspname, c.relname;"
+        echo "=== TILLFLOW DB AUDIT COMPLETE ==="
+      - |
         python3 - <<'PY' > /tmp/service-db-secret.json
         import json
         import os

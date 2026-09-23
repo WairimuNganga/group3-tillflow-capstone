@@ -182,7 +182,7 @@ groups:
           recovery_signal: CloudWatch Synthetics SuccessPercent returns to 100% for two consecutive runs and /health curls 200.
           owner: Minage / Platform
           runbook_url: docs/runbook.md#observability-alerts
-          dashboard_url: /d/tillflow-slo/tillflow-slo-uptime-burn
+          dashboard_url: /d/tillflow-slo/tillflow-slo-uptime-2b-burn
         labels:
           severity: critical
           team: reliability

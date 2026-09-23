@@ -42,6 +42,15 @@ mock_provider "aws" {
       arn  = "arn:aws:synthetics:us-west-1:240462142849:canary:devops-g3-edge-health"
     }
   }
+
+  mock_resource "aws_lambda_function" {
+    override_during = plan
+
+    defaults = {
+      arn           = "arn:aws:lambda:us-west-1:240462142849:function:devops-g3-slack-alarm"
+      function_name = "devops-g3-slack-alarm"
+    }
+  }
 }
 
 variables {
@@ -124,6 +133,14 @@ run "architecture_contracts" {
       module.delivery.codebuild_project_names["${svc}-migrations"] == "${var.name_prefix}-${svc}-migrations"
     ])
     error_message = "POS, Payments and Commission must each have an Alembic migration build in the delivery lane, run before DeployEcs."
+  }
+
+  # A CloudWatch alarm without an action can turn red in the console while no
+  # operator is notified. Drill 3 exposed exactly that gap: ALARM -> OK worked,
+  # but AlarmActions was empty and the trainer-required Slack proof was absent.
+  assert {
+    condition     = module.observability_alarms.dlq_alarms_have_slack_action
+    error_message = "Every DLQ alarm must invoke the Terraform-managed Slack relay for both firing and recovery."
   }
 
   # --- ADOT can actually publish traces (Phase F) -------------------------
