@@ -1,6 +1,6 @@
 """Grant commission cross-schema read access to the POS commission views.
 
-Revision ID: 0004_grant_commission_schema_usage
+Revision ID: 0004_commission_schema_usage
 Revises: 0003_commission_read_views
 Create Date: 2026-09-24
 
@@ -26,7 +26,7 @@ from collections.abc import Sequence
 
 from alembic import op
 
-revision: str = "0004_grant_commission_schema_usage"
+revision: str = "0004_commission_schema_usage"
 down_revision: str | Sequence[str] | None = "0003_commission_read_views"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

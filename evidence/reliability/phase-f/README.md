@@ -39,6 +39,9 @@ stitched to the STK trace. They correlate by sale ID
 **Commission → Payments (B2C):** Contract and layered proof (local e2e + architecture; commission ECS spans when worker runs in dev):
 
 - [traces/commission-payout-via-payments-20260922.md](./traces/commission-payout-via-payments-20260922.md)
+- AWS B2C trace/log supplement: `traces/xray-b2c-summaries-20260923.json`, `traces/xray-b2c-trace-20260923.json`, and `traces/b2c-commission-payments-log-20260923.txt`.
+
+**Drills 1–2 deployed supplement:** `../drill-1-2-deployed-aws-20260923.md` records deployed POS → Payments logs and X-Ray trace `1-94dbe6a4-965419f4b305798c78322278`, supplementing the timed local money-safety proof.
 
 **Known gap:** POS → Payments does not propagate trace context, so STK
 initiation cannot be followed from the browser in one trace. Web → POS and

@@ -5,7 +5,7 @@
 
 ## G0–G2 — PASS
 
-Ownership, ADRs, platform live, product e2e: `evidence/product/e2e-flow-output.txt` and `evidence/reliability/drill-1-2-timed-20260922.log` (**41 passed, 0 failed**).
+Ownership, ADRs, platform live, product e2e: `evidence/product/e2e-flow-output.txt`, `evidence/reliability/drill-1-2-timed-20260922.log` (**41 passed, 0 failed**), and deployed AWS Drill 1/2 supplement `evidence/reliability/drill-1-2-deployed-aws-20260923.md`.
 
 Local reproduce: `services/pos/local/run-e2e.sh` (see `services/pos/local/README.md`).
 
@@ -28,8 +28,8 @@ Local reproduce: `services/pos/local/run-e2e.sh` (see `services/pos/local/README
 |-------|--------|----------------|
 | 4 Rollback | Done | `evidence/delivery/rollback-log.md` |
 | 3 DLQ / platform | Done | `evidence/reliability/drill-3-platform-failure-20260922.md`; Slack firing/recovery screenshots under `evidence/reliability/phase-f/screenshots/` |
-| **1 Timeout → reconcile (timed)** | Done | `evidence/reliability/drill-1-2-timed-20260922.log` §4 (local Postgres + fake M-Pesa, timed flow) |
-| **2 Callback replay + trace** | Done | Local duplicate: same log §3; deployed edge + X-Ray: `drill-2-deployed-callback-20260922.json`, `drill-2-deployed-xray-traces-20260922.json` |
+| **1 Timeout → reconcile (timed)** | Done | `evidence/reliability/drill-1-2-timed-20260922.log` §4 (local Postgres + fake M-Pesa, timed flow) plus deployed AWS POS → Payments supplement `drill-1-2-deployed-aws-20260923.md` |
+| **2 Callback replay + trace** | Done | Local duplicate: same log §3; deployed edge + X-Ray: `drill-2-deployed-callback-20260922.json`, `drill-2-deployed-xray-traces-20260922.json`; deployed POS → Payments trace: `phase-f/traces/xray-drill-1-2-trace-20260923.json` |
 | **5 RDS restore RPO/RTO** | Done | `evidence/platform/restore-drill-20260922.json` (RTO ~2.8m, temp instance deleted) |
 
 ## G5 — Release

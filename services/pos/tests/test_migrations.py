@@ -44,7 +44,12 @@ def test_grant_covers_schema_usage():
 
 def test_grant_covers_every_view_commission_reads():
     sql = GRANT_REVISION.read_text()
-    granted = sorted(re.findall(r"GRANT\s+SELECT\s+ON\s+([a-z_.]+)\s+TO\s+tillflow_commission", sql))
+    granted = sorted(
+        re.findall(
+            r"GRANT\s+SELECT\s+ON\s+([a-z_.]+)\s+TO\s+tillflow_commission",
+            sql,
+        )
+    )
     assert granted == COMMISSION_VIEWS, (
         f"expected grants on exactly {COMMISSION_VIEWS}, got {granted}"
     )
