@@ -13,6 +13,10 @@ Platform evidence uses command output first; screenshots are optional support.
 - [x] Apply evidence for latest canary/alarm change: GitHub Terraform apply passed; runtime evidence below confirms the resources are live.
 - [x] Runtime canary proof: [`synthetics-describe-20260920.json`](./synthetics-describe-20260920.json) and [`synthetics-runs-20260920.json`](./synthetics-runs-20260920.json).
 - [x] Runtime alarm proof: [`cloudwatch-alarms-20260920.json`](./cloudwatch-alarms-20260920.json).
+- [x] Naming/tag audit proof: [`naming-tag-audit-20260923.log`](./naming-tag-audit-20260923.log).
+- [x] DB bootstrap status and credential-free schema/role/RLS audit:
+  [`db-bootstrap-status-20260923.json`](./db-bootstrap-status-20260923.json),
+  [`db-roles-rls-20260923.log`](./db-roles-rls-20260923.log).
 - [x] G5 destroy/rebuild log and post-rebuild verification.
 - [x] Drill 5 restore with measured RPO/RTO — `restore-drill-20260922.json`
 
@@ -61,3 +65,13 @@ Summary:
 - ECS services after rebuild: web `2/2`, POS `2/2`, payments `2/2`, commission `1/1`, Grafana `1/1`; all rollouts `COMPLETED`.
 - Smoke after rebuild returned HTTP `200` for `/health` and `/ready`.
 - Last five Synthetics canary runs after rebuild are `PASSED`.
+
+## Platform audit evidence — 2026-09-23
+
+- Naming/tag audit passed: `104` named resources checked and all required tags present.
+- DB bootstrap rerun succeeded: [`db-bootstrap-status-20260923.json`](./db-bootstrap-status-20260923.json).
+- Credential-free DB audit proof: [`db-roles-rls-20260923.log`](./db-roles-rls-20260923.log).
+  - `web`, `pos`, `payments`, and `commission` schemas are owned by their owner roles.
+  - Runtime roles can log in, are not superusers, and have `rolbypassrls = false`.
+  - Runtime roles have schema `USAGE` but not schema `CREATE`.
+  - POS tenant tables have RLS enabled and forced with `tenant_isolation` policies.

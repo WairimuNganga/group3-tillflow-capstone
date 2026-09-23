@@ -1,0 +1,6 @@
+== naming: every resource starts with 'devops-g3' ==
+== tags: every taggable resource carries all 6 required tags ==
+== forbidden: no 'latest' image tag anywhere ==
+== character sets: EC2 descriptions, tag values, IAM descriptions ==
+
+PASS — 104 named resources checked, all tags present.

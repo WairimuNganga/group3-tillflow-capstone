@@ -1,0 +1,21 @@
+{
+    "id": "devops-g3-db-bootstrap:754bb81b-2d7f-4419-9aa3-61162bdaaa46",
+    "status": "SUCCEEDED",
+    "start": "2026-09-23T23:21:59.292000+03:00",
+    "end": "2026-09-23T23:23:16.024000+03:00",
+    "logs": {
+        "groupName": "/devops-g3/codebuild/db-bootstrap",
+        "streamName": "db/754bb81b-2d7f-4419-9aa3-61162bdaaa46",
+        "deepLink": "https://console.aws.amazon.com/cloudwatch/home?region=us-west-1#logsV2:log-groups/log-group/$252Fdevops-g3$252Fcodebuild$252Fdb-bootstrap/log-events/db$252F754bb81b-2d7f-4419-9aa3-61162bdaaa46",
+        "cloudWatchLogsArn": "arn:aws:logs:us-west-1:240462142849:log-group:/devops-g3/codebuild/db-bootstrap:log-stream:db/754bb81b-2d7f-4419-9aa3-61162bdaaa46",
+        "cloudWatchLogs": {
+            "status": "ENABLED",
+            "groupName": "/devops-g3/codebuild/db-bootstrap",
+            "streamName": "db"
+        },
+        "s3Logs": {
+            "status": "DISABLED",
+            "encryptionDisabled": false
+        }
+    }
+}
