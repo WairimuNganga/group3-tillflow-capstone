@@ -49,7 +49,7 @@ aws sqs purge-queue --queue-url "$DLQ_URL"
 
 ## Slack / Grafana (Phase E gap)
 
-Terraform alarm `devops-g3-reconciliation-dlq-depth` has **no SNS/Slack action** (`AlarmActions` empty). Starter Grafana → Slack rules cover payments 5xx/latency and edge probe, not DLQ depth yet.
+At the time of the first 2026-09-22 run, Terraform alarm `devops-g3-reconciliation-dlq-depth` had **no SNS/Slack action** (`AlarmActions` empty). Starter Grafana → Slack rules covered payments 5xx/latency and edge probe, not DLQ depth yet.
 
 **Original gap:** the first drill proved CloudWatch `ALARM` → `OK`, but the DLQ alarm was not yet wired to Slack.
 

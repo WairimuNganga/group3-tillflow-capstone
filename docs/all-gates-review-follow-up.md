@@ -1,6 +1,6 @@
 # All-gates review — follow-up (21 Sep 2026)
 
-**Original review:** commit `e878e32` (65 commits on `main` at review time).  
+**Original review:** commit `e878e32` (65 commits on `main` at review time).
 **This doc tracks closure** against that write-up; proof lives under `evidence/` and [`production-readiness.md`](production-readiness.md).
 
 | Gate | Review verdict (e878e32) | Status after follow-up | Primary proof |
@@ -14,17 +14,21 @@
 
 ## Merged PRs that close the review gaps
 
-- [#62](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/62) — reliability evidence paths  
-- [#67](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/67) — X-Ray sale / callback / settlement captures  
-- [#68](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/68) — G3/G4 drill artifacts + commission payout queue IAM  
+- [#62](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/62) — reliability evidence paths
+- [#67](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/67) — X-Ray sale / callback / settlement captures
+- [#68](https://github.com/WairimuNganga/group3-tillflow-capstone/pull/68) — G3/G4 drill artifacts + commission payout queue IAM
 
 ## Honest remaining items (graders / viva)
 
-1. **Live 6-minute defence** — per member; see `production-readiness.md` G5.  
-2. **Commission service X-Ray in AWS** — no spans when worker did not run in dev during capture; B2C contract proven locally and via Payments boundary (`phase-f/traces/commission-payout-via-payments-20260922.md`).  
-3. **Slack on DLQ alarm** — closed by the 2026-09-23 UTC / 2026-09-24 EAT Drill 3 retest: CloudWatch DLQ alarm fired/recovered and Slack received both messages with the full alert contract.  
-4. **Drills 1–2** — timed **local** Postgres + fake M-Pesa; deployed callback piece is Drill 2 JSON + X-Ray (edge contract, not full paid-sale replay on AWS).  
-5. **Admin** — complete threat-model sign-off and mentor repo access (root README checklist).
+1. **Live 6-minute defence** — per member; see `production-readiness.md` G5.
+2. **Commission service X-Ray in AWS** — no spans when worker did not run in dev during capture; B2C contract proven locally and via Payments boundary (`phase-f/traces/commission-payout-via-payments-20260922.md`).
+3. **Drills 1–2 deployed nuance** — timed **local** Postgres + fake M-Pesa; deployed callback piece is Drill 2 JSON + X-Ray (edge contract, not full paid-sale replay on AWS).
+4. **Admin** — mentor repo access is an external GitHub setting, not verifiable from repo evidence.
+
+## Closed after the review
+
+- **Slack on DLQ alarm** — closed by the 2026-09-23 UTC / 2026-09-24 EAT Drill 3 retest: CloudWatch DLQ alarm fired/recovered and Slack received both messages with the full alert contract.
+- **Drill 5 restore** — `evidence/platform/restore-drill-20260922.json` records the safe-target restore and measured RPO/RTO; supporting AWS start/delete JSON is under `evidence/platform/drill-5-*`.
 
 ## Reproduce the headline proofs
 

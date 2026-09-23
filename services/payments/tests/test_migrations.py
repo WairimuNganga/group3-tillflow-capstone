@@ -81,3 +81,52 @@ def test_0001_upgrade_and_downgrade_are_no_ops():
     )
     assert "def upgrade() -> None:" in source
     assert "def downgrade() -> None:" in source
+
+
+# --- Cross-schema grant for commission --------------------------------------
+#
+# A SELECT grant on a view is unusable without USAGE on its schema. 0004
+# granted only SELECT, so the AWS daily close failed with "permission denied
+# for schema payments". 0005 adds the missing USAGE. db-bootstrap deliberately
+# grants each service USAGE on its own schema only, so this grant has to live
+# in the owning schema's migration.
+
+GRANT_REVISION = VERSIONS / "0005_grant_commission_read_view.py"
+
+
+def test_commission_grant_migration_exists():
+    assert GRANT_REVISION.exists(), (
+        "payments must ship a migration granting commission cross-schema read "
+        "access; without it the daily close returns 500."
+    )
+
+
+def test_grant_covers_schema_usage_and_view_select():
+    sql = GRANT_REVISION.read_text()
+
+    # Both halves, or the grant does nothing usable.
+    assert re.search(r"GRANT\s+USAGE\s+ON\s+SCHEMA\s+payments\s+TO\s+tillflow_commission", sql)
+    assert re.search(
+        r"GRANT\s+SELECT\s+ON\s+payments\.v_paid_sales_for_commission\s+TO\s+tillflow_commission",
+        sql,
+    )
+
+
+def test_grant_is_guarded_on_role_existence():
+    """db-bootstrap creates tillflow_commission; local and CI databases do not."""
+    sql = GRANT_REVISION.read_text()
+    assert "pg_roles" in sql and "tillflow_commission" in sql
+
+
+def test_commission_is_not_granted_the_raw_payments_table():
+    """ADR-002: commission reads the view, never payments.payments."""
+    sql = GRANT_REVISION.read_text()
+    granted = re.findall(r"GRANT\s+SELECT\s+ON\s+([a-z_.]+)\s+TO\s+tillflow_commission", sql)
+    assert granted == ["payments.v_paid_sales_for_commission"], (
+        f"commission must only be granted the view, got: {granted}"
+    )
+
+
+def test_grant_migration_is_reversible():
+    sql = GRANT_REVISION.read_text()
+    assert "REVOKE USAGE ON SCHEMA payments FROM tillflow_commission" in sql

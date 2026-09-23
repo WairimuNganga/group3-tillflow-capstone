@@ -280,6 +280,44 @@ phases:
             AND c.relkind IN ('r', 'p')
           GROUP BY n.nspname, c.relname, c.relrowsecurity, c.relforcerowsecurity
           ORDER BY n.nspname, c.relname;"
+
+        # Cross-schema reads are granted by the OWNING schema's migration, not
+        # by this job -- db-bootstrap only grants each service USAGE on its own
+        # schema. The daily close returned 500 with 'permission denied for
+        # schema payments' because SELECT on a view is unusable without USAGE
+        # on its schema, so both halves are printed here.
+        echo "=== TILLFLOW DB AUDIT: CROSS-SCHEMA READ GRANTS ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT n.nspname AS schema_name,
+                 has_schema_privilege('tillflow_commission', n.nspname, 'USAGE') AS commission_has_usage
+          FROM pg_namespace AS n
+          WHERE n.nspname IN ('pos', 'payments')
+          ORDER BY n.nspname;"
+
+        # Driven off pg_class, so it reports only views that actually exist.
+        # This job can run before the Alembic migrations that create them.
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT n.nspname AS schema_name,
+                 c.relname AS view_name,
+                 has_table_privilege('tillflow_commission', c.oid, 'SELECT') AS commission_can_select
+          FROM pg_class AS c
+          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+          WHERE c.relkind = 'v'
+            AND n.nspname IN ('pos', 'payments')
+            AND c.relname LIKE '%commission%'
+          ORDER BY n.nspname, c.relname;"
+
+        # Negative control: commission reads the view, never the raw money
+        # table (ADR-002). to_regclass returns NULL rather than raising when
+        # the table does not exist yet, which ON_ERROR_STOP would treat as a
+        # build failure.
+        echo "=== TILLFLOW DB AUDIT: COMMISSION MUST NOT READ RAW TABLES ==="
+        psql -v ON_ERROR_STOP=1 --no-psqlrc --pset pager=off --command "
+          SELECT r.relation,
+                 CASE WHEN to_regclass(r.relation) IS NULL THEN NULL
+                      ELSE has_table_privilege('tillflow_commission', r.relation, 'SELECT')
+                 END AS commission_can_select
+          FROM unnest(ARRAY['payments.payments', 'pos.sales']) AS r(relation);"
         echo "=== TILLFLOW DB AUDIT COMPLETE ==="
       - |
         python3 - <<'PY' > /tmp/service-db-secret.json

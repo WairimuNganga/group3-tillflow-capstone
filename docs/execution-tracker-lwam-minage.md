@@ -61,7 +61,7 @@
 | Step | Task | Owner | Status | Evidence |
 |------|------|-------|--------|----------|
 | **E1** | **Drill 3** — break worker/DLQ → alert → recover (timed) | Minage | [x] | `drill-3-platform-failure-20260922.md` |
-| **E2** | **Drill 5** — RDS restore → RPO/RTO | Lwam exec | [ ] | `restore-drill-*.md` |
+| **E2** | **Drill 5** — RDS restore → RPO/RTO | Lwam exec | [x] | `evidence/platform/restore-drill-20260922.json` |
 | **E3** | Runbook: RTO/RPO, restore, reconciliation order, drill index | Minage | [x] | `docs/runbook.md` |
 | **E4** | Expand `slo-error-budgets.md` per-SLI rows | Minage | [x] | `docs/slo-error-budgets.md` |
 | **E5** | Phase F X-Ray trace (sale→payment→callback) | Minage | [x] | `evidence/reliability/phase-f/traces/` |
