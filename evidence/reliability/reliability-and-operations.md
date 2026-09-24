@@ -112,7 +112,7 @@ aws logs tail /devops-g3/payments --since 10m --filter-pattern adot
 - [x] Probe routes excluded from RED (tests)
 - [x] ADR-008 amendment; local collector `tail_sampling`
 - [x] Custom ADOT config on ECS (`infra/adot/tillflow-collector.yaml` → ECR **tillflow4**)
-- [ ] End-to-end AWS trace sale → payment → callback — after product deploy
+- [x] End-to-end AWS trace sale → payment → callback — captured under `phase-f/traces/`
 
 ---
 
@@ -214,8 +214,8 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 - [x] Prometheus datasource **AMP** (uid `AMP`, SigV4, provisioned in image)
 - [x] Dashboards **TillFlow** folder — `web-service-overview`, `payments-service-overview` (baked in ECR image)
 - [x] Panels load; **payments** RED should populate after 2026-09-20 AMP verify (re-open dashboard)
-- [ ] **Explore:** `sum(rate(payments_requests_total[5m]))` or `count({__name__=~".+"})` screenshot for Phase F
-- [ ] Phase **E:** Grafana contact point **Test** (CLI webhook to `# group-3-alerts` OK 2026-09-20); rules after tillflow2
+- [x] **Explore:** AMP query screenshots captured under `phase-f/screenshots/`
+- [x] Phase **E:** Grafana contact point **Test** and DLQ alert firing/recovery captured under `phase-f/screenshots/`
 
 ### Recorded run
 
@@ -235,10 +235,10 @@ Dashboard JSON: `infra/grafana/dashboards/` · datasource example: `infra/grafan
 
 - [x] `devops-g3/slack-webhook` AWSCURRENT full incoming webhook (posts to `# group-3-alerts`)
 - [x] `grafana_image_tag` **11.4.0-tillflow3** applied + image in ECR + ECS on new task
-- [ ] Force new Grafana ECS deployment after secret update
+- [x] Force new Grafana ECS deployment after secret update
 - [x] Grafana → Alerting → Contact points → **Test** slack-tillflow; Grafana send and Slack receipt captured 2026-09-20
 - [x] Alert rules in folder **TillFlow Alerts** (3 rules, provisioned as code)
-- [x] Contact-point delivery evidence: `phase-f/screenshots/grafana-slack-test-sent-20260920.png`, `slack-test-received-20260920.png`, **`slack-grafana-testalert-20260922.png`** (Grafana UI Test → `# group-3-alerts` after G5); real firing/recovery remains open
+- [x] Contact-point delivery evidence: `phase-f/screenshots/grafana-slack-test-sent-20260920.png`, `slack-test-received-20260920.png`, **`slack-grafana-testalert-20260922.png`** (Grafana UI Test → `# group-3-alerts` after G5), plus Drill 3 real DLQ firing/recovery screenshots `slack-dlq-firing-20260924.png` and `slack-dlq-recovery-20260924.png`
 
 ### Recorded run
 
@@ -360,18 +360,18 @@ instrument_fastapi(app, service_name="pos")
 - [x] ADR-008 amendment; B0 AMP + ADOT endpoint
 - [x] ADOT tillflow image on ECS (AMP remote write + tail_sampling in baked config)
 - [x] Self-hosted Grafana on ECS + AMP datasource (Phase B2)
-- [ ] Non-zero `{service}_requests_total` in AMP after counted edge traffic (OTLP follow-up)
+- [x] Non-zero `{service}_requests_total` in AMP after counted edge traffic (OTLP follow-up)
 - [ ] DB driver spans when driver chosen
 - [ ] Private Grafana operator access (G0 feedback)
-- [ ] Live alert rules (Phase E); k6 baseline/soak **done** (Phase D)
+- [x] Live alert rules (Phase E); k6 baseline/soak **done** (Phase D)
 
 ---
 
 ## Next steps (priority order)
 
 1. ~~**Phase E live proof:**~~ Done 2026-09-22 — [slack-grafana-testalert-20260922.png](./phase-f/screenshots/slack-grafana-testalert-20260922.png).
-2. **Phase F trace:** Capture one X-Ray sale→payment→callback trace ID/screenshot under `evidence/reliability/phase-f/traces/`.
-3. **Drill 3:** [x] DLQ seed + CW alarm + purge — `drill-3-platform-failure-20260922.md`; [ ] Slack firing for DLQ rule.
+2. ~~**Phase F trace:**~~ Done — X-Ray sale→payment→callback traces live under `evidence/reliability/phase-f/traces/`.
+3. **Drill 3:** [x] DLQ seed + CW alarm + recovery — `drill-3-platform-failure-20260922.md`; [x] Slack firing/recovery for DLQ rule.
 
 ---
 

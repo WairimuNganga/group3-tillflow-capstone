@@ -49,13 +49,43 @@ aws sqs purge-queue --queue-url "$DLQ_URL"
 
 ## Slack / Grafana (Phase E gap)
 
-Terraform alarm `devops-g3-reconciliation-dlq-depth` has **no SNS/Slack action** (`AlarmActions` empty). Starter Grafana → Slack rules cover payments 5xx/latency and edge probe, not DLQ depth yet.
+At the time of the first 2026-09-22 run, Terraform alarm `devops-g3-reconciliation-dlq-depth` had **no SNS/Slack action** (`AlarmActions` empty). Starter Grafana → Slack rules covered payments 5xx/latency and edge probe, not DLQ depth yet.
 
-**Still needed for full Drill 3 grading checklist:** Slack screenshot or message link when a DLQ alert is wired (Grafana rule on `payments_reconciliation_dlq_visible_messages` or CloudWatch → SNS → webhook), **or** instructor-approved CloudWatch `ALARM` console screenshot attached here.
+**Original gap:** the first drill proved CloudWatch `ALARM` → `OK`, but the DLQ alarm was not yet wired to Slack.
 
-- [ ] Slack firing evidence (Phase E follow-up)
+- [x] Slack firing evidence (Phase E follow-up) — closed by the 2026-09-23 UTC / 2026-09-24 EAT retest below.
 - [x] CloudWatch alarm `ALARM` → `OK` — `drill-3-alarm-firing-20260922.json`, `drill-3-alarm-ok-20260922.json`, `drill-3-timeline-20260922.jsonl`, `drill-3-alarm-history-20260922.json`
 - [x] DLQ depth back to 0
+
+## Retest attempt — 2026-09-23
+
+The reconciliation DLQ was seeded again and CloudWatch moved from `ALARM` back
+to `OK`:
+
+- Inject: [`drill-3-inject-20260923.json`](./drill-3-inject-20260923.json)
+- Recovery alarm capture without Slack actions: [`drill-3-alarm-recovered-20260923.json`](./drill-3-alarm-recovered-20260923.json)
+- Recovery timestamp: [`drill-3-recovered-at-20260923.txt`](./drill-3-recovered-at-20260923.txt)
+
+This did **not** close the Slack gap. The recovery alarm capture still showed
+`AlarmActions: []` and `OKActions: []`, so the Terraform-managed Slack relay was
+not live when this drill ran. The drill was re-run after the DLQ alarms showed
+the Lambda ARN in both action lists.
+
+## Successful Slack retest — 2026-09-23 UTC / 2026-09-24 EAT
+
+After applying the Terraform-managed Slack relay, both DLQ alarms showed the
+Lambda ARN in `AlarmActions` and `OKActions`. The reconciliation DLQ was seeded
+again with one drill message and then recovered by deleting that drill message.
+
+- Inject: [`drill-3-inject-20260923.json`](./drill-3-inject-20260923.json)
+- Firing alarm capture: [`drill-3-slack-alarm-firing-20260923.json`](./drill-3-slack-alarm-firing-20260923.json)
+- Recovery alarm capture: [`drill-3-slack-alarm-recovered-20260923.json`](./drill-3-slack-alarm-recovered-20260923.json)
+- Recovery timestamp: [`drill-3-recovered-at-20260923.txt`](./drill-3-recovered-at-20260923.txt)
+- Slack firing screenshot: [`phase-f/screenshots/slack-dlq-firing-20260924.png`](./phase-f/screenshots/slack-dlq-firing-20260924.png)
+- Slack recovery screenshot: [`phase-f/screenshots/slack-dlq-recovery-20260924.png`](./phase-f/screenshots/slack-dlq-recovery-20260924.png)
+
+Result: Drill 3 now proves CloudWatch DLQ alarm firing, Slack notification with
+the full alert contract, safe recovery to `OK`, and Slack recovery notification.
 
 ## Optional — break worker instead of seed
 

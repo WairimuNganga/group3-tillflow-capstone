@@ -1,0 +1,34 @@
+{
+    "MetricAlarms": [
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-reconciliation-dlq-depth",
+            "AlarmDescription": "Messages visible on reconciliation DLQ — replay or fix consumer (runbook § Observability alerts).",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-20T15:50:51.964000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [],
+            "AlarmActions": [],
+            "InsufficientDataActions": [],
+            "StateValue": "OK",
+            "StateReason": "Threshold Crossed: 1 datapoint [0.0 (23/09/26 20:16:00)] was not greater than or equal to the threshold (1.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-23T20:18:44.161+0000\",\"startDate\":\"2026-09-23T20:16:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[0.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-23T20:16:00.000+0000\",\"sampleCount\":1.0,\"value\":0.0}]}",
+            "StateUpdatedTimestamp": "2026-09-23T20:18:44.163000+00:00",
+            "MetricName": "ApproximateNumberOfMessagesVisible",
+            "Namespace": "AWS/SQS",
+            "Statistic": "Maximum",
+            "Dimensions": [
+                {
+                    "Name": "QueueName",
+                    "Value": "devops-g3-reconciliation-dlq"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 1,
+            "Threshold": 1.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-23T20:18:44.163000+00:00"
+        }
+    ],
+    "CompositeAlarms": []
+}

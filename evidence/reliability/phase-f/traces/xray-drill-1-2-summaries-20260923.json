@@ -1,0 +1,341 @@
+[
+    {
+        "Id": "1-df4f1200-48bc057d45cc440fb9ae34a3",
+        "StartTime": "2026-09-24T01:16:41+03:00",
+        "Duration": 0.396,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": true,
+        "Http": {},
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            },
+            {
+                "Name": "commission",
+                "Names": [
+                    "commission"
+                ]
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [],
+        "Revision": 1
+    },
+    {
+        "Id": "1-282672b9-eeb31b2b8526ef846ad5135c",
+        "StartTime": "2026-09-24T01:26:57+03:00",
+        "Duration": 0.111,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": true,
+        "Http": {},
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            },
+            {
+                "Name": "commission",
+                "Names": [
+                    "commission"
+                ]
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [],
+        "Revision": 1
+    },
+    {
+        "Id": "1-f3bb360f-574cc72055cde40a433c1585",
+        "StartTime": "2026-09-24T01:26:28+03:00",
+        "Duration": 1.928,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": true,
+        "Http": {},
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [],
+        "Revision": 1
+    },
+    {
+        "Id": "1-94dbe6a4-965419f4b305798c78322278",
+        "StartTime": "2026-09-24T01:16:08+03:00",
+        "Duration": 0.3,
+        "ResponseTime": 0.3,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": false,
+        "Http": {
+            "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/callbacks/mpesa/tillflow-sandbox",
+            "HttpStatus": 200,
+            "HttpMethod": "POST",
+            "UserAgent": "ReactorNetty/1.2.9",
+            "ClientIp": "10.20.76.91"
+        },
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "pos",
+                "Names": [
+                    "pos"
+                ]
+            },
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            },
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ],
+                "Type": "client"
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "EntryPoint": {
+            "Name": "payments",
+            "Names": [
+                "payments"
+            ]
+        },
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [
+            {
+                "Services": [
+                    {
+                        "Name": "payments",
+                        "Names": [
+                            "payments"
+                        ],
+                        "EntityPath": [
+                            {
+                                "Name": "payments",
+                                "Coverage": 1.0,
+                                "Remote": false
+                            },
+                            {
+                                "Name": "payments.callback_http",
+                                "Coverage": 0.99,
+                                "Remote": false
+                            },
+                            {
+                                "Name": "payments.callback_process",
+                                "Coverage": 0.99,
+                                "Remote": false
+                            }
+                        ],
+                        "Inferred": false
+                    }
+                ],
+                "ClientImpacting": true
+            }
+        ],
+        "Revision": 1
+    },
+    {
+        "Id": "1-3b5a720d-2a66f22190bb44c86bc68124",
+        "StartTime": "2026-09-24T01:35:39+03:00",
+        "Duration": 2.133,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": true,
+        "Http": {},
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [],
+        "Revision": 1
+    },
+    {
+        "Id": "1-9365c835-8681054a7f5c6fa9bfbbb6b2",
+        "StartTime": "2026-09-24T01:26:41+03:00",
+        "Duration": 0.214,
+        "ResponseTime": 0.214,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": false,
+        "Http": {
+            "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/callbacks/mpesa/tillflow-sandbox",
+            "HttpStatus": 200,
+            "HttpMethod": "POST",
+            "UserAgent": "ReactorNetty/1.2.9",
+            "ClientIp": "10.20.87.172"
+        },
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "pos",
+                "Names": [
+                    "pos"
+                ]
+            },
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ]
+            },
+            {
+                "Name": "payments",
+                "Names": [
+                    "payments"
+                ],
+                "Type": "client"
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "EntryPoint": {
+            "Name": "payments",
+            "Names": [
+                "payments"
+            ]
+        },
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [
+            {
+                "Services": [
+                    {
+                        "Name": "payments",
+                        "Names": [
+                            "payments"
+                        ],
+                        "EntityPath": [
+                            {
+                                "Name": "payments",
+                                "Coverage": 1.0,
+                                "Remote": false
+                            },
+                            {
+                                "Name": "payments.callback_http",
+                                "Coverage": 0.987,
+                                "Remote": false
+                            },
+                            {
+                                "Name": "payments.callback_process",
+                                "Coverage": 0.986,
+                                "Remote": false
+                            }
+                        ],
+                        "Inferred": false
+                    }
+                ],
+                "ClientImpacting": true
+            }
+        ],
+        "Revision": 1
+    },
+    {
+        "Id": "1-7efb5956-f8a3cdea038987d3b86b0c86",
+        "StartTime": "2026-09-24T01:26:30+03:00",
+        "Duration": 0.062,
+        "ResponseTime": 0.062,
+        "HasFault": false,
+        "HasError": false,
+        "HasThrottle": false,
+        "IsPartial": false,
+        "Http": {
+            "HttpURL": "http://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/sales/56e208c8-7ba3-484b-b490-b54135c79441",
+            "HttpStatus": 200,
+            "HttpMethod": "GET",
+            "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+            "ClientIp": "10.20.76.91"
+        },
+        "Annotations": {},
+        "Users": [],
+        "ServiceIds": [
+            {
+                "Name": "pos",
+                "Names": [
+                    "pos"
+                ]
+            },
+            {
+                "Name": "web",
+                "Names": [
+                    "web"
+                ],
+                "Type": "client"
+            },
+            {
+                "Name": "web",
+                "Names": [
+                    "web"
+                ]
+            }
+        ],
+        "ResourceARNs": [],
+        "InstanceIds": [],
+        "AvailabilityZones": [],
+        "EntryPoint": {
+            "Name": "web",
+            "Names": [
+                "web"
+            ]
+        },
+        "FaultRootCauses": [],
+        "ErrorRootCauses": [],
+        "ResponseTimeRootCauses": [],
+        "Revision": 2
+    }
+]

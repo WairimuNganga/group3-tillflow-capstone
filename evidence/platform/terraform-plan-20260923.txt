@@ -1,0 +1,1140 @@
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+  ~ update in-place
+-/+ destroy and then create replacement
+ <= read (data resources)
+
+Terraform will perform the following actions:
+
+  # module.delivery.data.aws_iam_policy_document.codebuild will be read during apply
+  # (depends on a resource or a module with changes pending)
+ <= data "aws_iam_policy_document" "codebuild" {
+      + id            = (known after apply)
+      + json          = (known after apply)
+      + minified_json = (known after apply)
+
+      + statement {
+          + actions   = [
+              + "s3:GetObject",
+              + "s3:GetObjectVersion",
+              + "s3:ListBucket",
+              + "s3:PutObject",
+            ]
+          + resources = [
+              + "arn:aws:s3:::devops-g3-artifacts-240462142849",
+              + "arn:aws:s3:::devops-g3-artifacts-240462142849/*",
+            ]
+          + sid       = "ArtifactBucket"
+        }
+      + statement {
+          + actions   = [
+              + "logs:CreateLogGroup",
+              + "logs:CreateLogStream",
+              + "logs:PutLogEvents",
+            ]
+          + resources = [
+              + "arn:aws:logs:us-west-1:240462142849:log-group:/devops-g3/codebuild*",
+            ]
+          + sid       = "Logs"
+        }
+      + statement {
+          + actions   = [
+              + "ecr:BatchCheckLayerAvailability",
+              + "ecr:BatchGetImage",
+              + "ecr:CompleteLayerUpload",
+              + "ecr:DescribeImageScanFindings",
+              + "ecr:DescribeImages",
+              + "ecr:GetAuthorizationToken",
+              + "ecr:GetDownloadUrlForLayer",
+              + "ecr:InitiateLayerUpload",
+              + "ecr:PutImage",
+              + "ecr:StartImageScan",
+              + "ecr:UploadLayerPart",
+            ]
+          + resources = [
+              + "*",
+            ]
+          + sid       = "EcrBuildPushAndScan"
+        }
+      + statement {
+          + actions   = [
+              + "ssm:AddTagsToResource",
+              + "ssm:GetParameter",
+              + "ssm:GetParameters",
+              + "ssm:ListTagsForResource",
+              + "ssm:PutParameter",
+            ]
+          + resources = [
+              + "arn:aws:ssm:us-west-1:240462142849:parameter/devops-g3/*/image-digest",
+              + "arn:aws:ssm:us-west-1:240462142849:parameter/devops-g3/*/image-tag",
+            ]
+          + sid       = "RecordImageVersions"
+        }
+      + statement {
+          + actions   = [
+              + "secretsmanager:DescribeSecret",
+              + "secretsmanager:GetSecretValue",
+            ]
+          + resources = [
+              + "arn:aws:secretsmanager:us-west-1:240462142849:secret:rds!db-6ece8cb8-2546-4aae-8fbb-9cc5bc1f8830-zhxlY5",
+            ]
+          + sid       = "ReadRdsMasterSecretForMigrations"
+        }
+      + statement {
+          + actions   = [
+              + "ecs:DescribeServices",
+              + "ecs:DescribeTasks",
+              + "ecs:ListTasks",
+              + "ecs:UpdateService",
+            ]
+          + resources = [
+              + "*",
+            ]
+          + sid       = "EcsSmokeAndScale"
+        }
+      + statement {
+          + actions   = [
+              + "kms:Decrypt",
+              + "kms:DescribeKey",
+              + "kms:Encrypt",
+              + "kms:GenerateDataKey",
+            ]
+          + resources = [
+              + "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0",
+            ]
+          + sid       = "KmsForArtifactsAndEcr"
+        }
+      + statement {
+          + actions   = [
+              + "ec2:CreateNetworkInterface",
+              + "ec2:CreateNetworkInterfacePermission",
+              + "ec2:DeleteNetworkInterface",
+              + "ec2:DescribeDhcpOptions",
+              + "ec2:DescribeNetworkInterfaces",
+              + "ec2:DescribeSecurityGroups",
+              + "ec2:DescribeSubnets",
+              + "ec2:DescribeVpcs",
+            ]
+          + resources = [
+              + "*",
+            ]
+          + sid       = "VpcNetworkInterfaces"
+        }
+      + statement {
+          + actions   = [
+              + "sts:GetCallerIdentity",
+            ]
+          + resources = [
+              + "*",
+            ]
+          + sid       = "Identity"
+        }
+    }
+
+  # module.delivery.data.aws_iam_policy_document.codebuild_assume will be read during apply
+  # (depends on a resource or a module with changes pending)
+ <= data "aws_iam_policy_document" "codebuild_assume" {
+      + id            = (known after apply)
+      + json          = (known after apply)
+      + minified_json = (known after apply)
+
+      + statement {
+          + actions = [
+              + "sts:AssumeRole",
+            ]
+
+          + principals {
+              + identifiers = [
+                  + "codebuild.amazonaws.com",
+                ]
+              + type        = "Service"
+            }
+        }
+    }
+
+  # module.delivery.data.aws_iam_policy_document.codepipeline will be read during apply
+  # (depends on a resource or a module with changes pending)
+ <= data "aws_iam_policy_document" "codepipeline" {
+      + id            = (known after apply)
+      + json          = (known after apply)
+      + minified_json = (known after apply)
+
+      + statement {
+          + actions   = [
+              + "s3:GetBucketVersioning",
+              + "s3:GetObject",
+              + "s3:GetObjectVersion",
+              + "s3:ListBucket",
+              + "s3:PutObject",
+            ]
+          + resources = [
+              + "arn:aws:s3:::devops-g3-artifacts-240462142849",
+              + "arn:aws:s3:::devops-g3-artifacts-240462142849/*",
+            ]
+          + sid       = "ArtifactBucket"
+        }
+      + statement {
+          + actions   = [
+              + "codeconnections:UseConnection",
+              + "codestar-connections:UseConnection",
+            ]
+          + resources = [
+              + "arn:aws:codestar-connections:us-west-1:240462142849:connection/578148d4-3b23-46a2-97e8-619d6c1f9012",
+            ]
+          + sid       = "UseGithubConnection"
+        }
+      + statement {
+          + actions   = [
+              + "codebuild:BatchGetBuilds",
+              + "codebuild:StartBuild",
+            ]
+          + resources = [
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-adot-mirror",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-commission-build",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-commission-migrations",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-grafana-build",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-payments-build",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-payments-migrations",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-pos-build",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-pos-migrations",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-smoke",
+              + "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-web-build",
+            ]
+          + sid       = "RunBuilds"
+        }
+      + statement {
+          + actions   = [
+              + "ecs:DescribeClusters",
+              + "ecs:DescribeServices",
+              + "ecs:DescribeTaskDefinition",
+              + "ecs:DescribeTasks",
+              + "ecs:ListTasks",
+              + "ecs:RegisterTaskDefinition",
+              + "ecs:TagResource",
+              + "ecs:UpdateService",
+            ]
+          + resources = [
+              + "*",
+            ]
+          + sid       = "DeployToEcs"
+        }
+      + statement {
+          + actions   = [
+              + "iam:PassRole",
+            ]
+          + resources = [
+              + "arn:aws:iam::240462142849:role/devops-g3-*",
+            ]
+          + sid       = "PassTaskRoles"
+
+          + condition {
+              + test     = "StringEqualsIfExists"
+              + values   = [
+                  + "ecs.amazonaws.com",
+                  + "ecs-tasks.amazonaws.com",
+                ]
+              + variable = "iam:PassedToService"
+            }
+        }
+      + statement {
+          + actions   = [
+              + "kms:Decrypt",
+              + "kms:DescribeKey",
+              + "kms:Encrypt",
+              + "kms:GenerateDataKey",
+            ]
+          + resources = [
+              + "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0",
+            ]
+          + sid       = "KmsForArtifacts"
+        }
+    }
+
+  # module.delivery.data.aws_iam_policy_document.codepipeline_assume will be read during apply
+  # (depends on a resource or a module with changes pending)
+ <= data "aws_iam_policy_document" "codepipeline_assume" {
+      + id            = (known after apply)
+      + json          = (known after apply)
+      + minified_json = (known after apply)
+
+      + statement {
+          + actions = [
+              + "sts:AssumeRole",
+            ]
+
+          + principals {
+              + identifiers = [
+                  + "codepipeline.amazonaws.com",
+                ]
+              + type        = "Service"
+            }
+        }
+    }
+
+  # module.delivery.aws_iam_role.codebuild will be updated in-place
+  ~ resource "aws_iam_role" "codebuild" {
+      ~ assume_role_policy    = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action    = "sts:AssumeRole"
+                      - Effect    = "Allow"
+                      - Principal = {
+                          - Service = "codebuild.amazonaws.com"
+                        }
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> (known after apply)
+        id                    = "devops-g3-codebuild"
+        name                  = "devops-g3-codebuild"
+        tags                  = {
+            "Name"    = "devops-g3-codebuild"
+            "service" = "delivery"
+        }
+        # (11 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.delivery.aws_iam_role.codepipeline will be updated in-place
+  ~ resource "aws_iam_role" "codepipeline" {
+      ~ assume_role_policy    = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action    = "sts:AssumeRole"
+                      - Effect    = "Allow"
+                      - Principal = {
+                          - Service = "codepipeline.amazonaws.com"
+                        }
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> (known after apply)
+        id                    = "devops-g3-pipeline"
+        name                  = "devops-g3-pipeline"
+        tags                  = {
+            "Name"    = "devops-g3-pipeline"
+            "service" = "delivery"
+        }
+        # (11 unchanged attributes hidden)
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.delivery.aws_iam_role_policy.codebuild will be updated in-place
+  ~ resource "aws_iam_role_policy" "codebuild" {
+        id          = "devops-g3-codebuild:delivery-build"
+        name        = "delivery-build"
+      ~ policy      = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action   = [
+                          - "s3:PutObject",
+                          - "s3:ListBucket",
+                          - "s3:GetObjectVersion",
+                          - "s3:GetObject",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = [
+                          - "arn:aws:s3:::devops-g3-artifacts-240462142849/*",
+                          - "arn:aws:s3:::devops-g3-artifacts-240462142849",
+                        ]
+                      - Sid      = "ArtifactBucket"
+                    },
+                  - {
+                      - Action   = [
+                          - "logs:PutLogEvents",
+                          - "logs:CreateLogStream",
+                          - "logs:CreateLogGroup",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:logs:us-west-1:240462142849:log-group:/devops-g3/codebuild*"
+                      - Sid      = "Logs"
+                    },
+                  - {
+                      - Action   = [
+                          - "ecr:UploadLayerPart",
+                          - "ecr:StartImageScan",
+                          - "ecr:PutImage",
+                          - "ecr:InitiateLayerUpload",
+                          - "ecr:GetDownloadUrlForLayer",
+                          - "ecr:GetAuthorizationToken",
+                          - "ecr:DescribeImages",
+                          - "ecr:DescribeImageScanFindings",
+                          - "ecr:CompleteLayerUpload",
+                          - "ecr:BatchGetImage",
+                          - "ecr:BatchCheckLayerAvailability",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "EcrBuildPushAndScan"
+                    },
+                  - {
+                      - Action   = [
+                          - "ssm:PutParameter",
+                          - "ssm:ListTagsForResource",
+                          - "ssm:GetParameters",
+                          - "ssm:GetParameter",
+                          - "ssm:AddTagsToResource",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = [
+                          - "arn:aws:ssm:us-west-1:240462142849:parameter/devops-g3/*/image-tag",
+                          - "arn:aws:ssm:us-west-1:240462142849:parameter/devops-g3/*/image-digest",
+                        ]
+                      - Sid      = "RecordImageVersions"
+                    },
+                  - {
+                      - Action   = [
+                          - "secretsmanager:GetSecretValue",
+                          - "secretsmanager:DescribeSecret",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:secretsmanager:us-west-1:240462142849:secret:rds!db-6ece8cb8-2546-4aae-8fbb-9cc5bc1f8830-zhxlY5"
+                      - Sid      = "ReadRdsMasterSecretForMigrations"
+                    },
+                  - {
+                      - Action   = [
+                          - "ecs:UpdateService",
+                          - "ecs:ListTasks",
+                          - "ecs:DescribeTasks",
+                          - "ecs:DescribeServices",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "EcsSmokeAndScale"
+                    },
+                  - {
+                      - Action   = [
+                          - "kms:GenerateDataKey",
+                          - "kms:Encrypt",
+                          - "kms:DescribeKey",
+                          - "kms:Decrypt",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0"
+                      - Sid      = "KmsForArtifactsAndEcr"
+                    },
+                  - {
+                      - Action   = [
+                          - "ec2:DescribeVpcs",
+                          - "ec2:DescribeSubnets",
+                          - "ec2:DescribeSecurityGroups",
+                          - "ec2:DescribeNetworkInterfaces",
+                          - "ec2:DescribeDhcpOptions",
+                          - "ec2:DeleteNetworkInterface",
+                          - "ec2:CreateNetworkInterfacePermission",
+                          - "ec2:CreateNetworkInterface",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "VpcNetworkInterfaces"
+                    },
+                  - {
+                      - Action   = "sts:GetCallerIdentity"
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "Identity"
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> (known after apply)
+        # (2 unchanged attributes hidden)
+    }
+
+  # module.delivery.aws_iam_role_policy.codepipeline will be updated in-place
+  ~ resource "aws_iam_role_policy" "codepipeline" {
+        id          = "devops-g3-pipeline:delivery-pipeline"
+        name        = "delivery-pipeline"
+      ~ policy      = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action   = [
+                          - "s3:PutObject",
+                          - "s3:ListBucket",
+                          - "s3:GetObjectVersion",
+                          - "s3:GetObject",
+                          - "s3:GetBucketVersioning",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = [
+                          - "arn:aws:s3:::devops-g3-artifacts-240462142849/*",
+                          - "arn:aws:s3:::devops-g3-artifacts-240462142849",
+                        ]
+                      - Sid      = "ArtifactBucket"
+                    },
+                  - {
+                      - Action   = [
+                          - "codestar-connections:UseConnection",
+                          - "codeconnections:UseConnection",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:codestar-connections:us-west-1:240462142849:connection/578148d4-3b23-46a2-97e8-619d6c1f9012"
+                      - Sid      = "UseGithubConnection"
+                    },
+                  - {
+                      - Action   = [
+                          - "codebuild:StartBuild",
+                          - "codebuild:BatchGetBuilds",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = [
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-web-build",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-smoke",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-pos-migrations",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-pos-build",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-payments-migrations",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-payments-build",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-grafana-build",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-commission-migrations",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-commission-build",
+                          - "arn:aws:codebuild:us-west-1:240462142849:project/devops-g3-adot-mirror",
+                        ]
+                      - Sid      = "RunBuilds"
+                    },
+                  - {
+                      - Action   = [
+                          - "ecs:UpdateService",
+                          - "ecs:TagResource",
+                          - "ecs:RegisterTaskDefinition",
+                          - "ecs:ListTasks",
+                          - "ecs:DescribeTasks",
+                          - "ecs:DescribeTaskDefinition",
+                          - "ecs:DescribeServices",
+                          - "ecs:DescribeClusters",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "*"
+                      - Sid      = "DeployToEcs"
+                    },
+                  - {
+                      - Action    = "iam:PassRole"
+                      - Condition = {
+                          - StringEqualsIfExists = {
+                              - "iam:PassedToService" = [
+                                  - "ecs.amazonaws.com",
+                                  - "ecs-tasks.amazonaws.com",
+                                ]
+                            }
+                        }
+                      - Effect    = "Allow"
+                      - Resource  = "arn:aws:iam::240462142849:role/devops-g3-*"
+                      - Sid       = "PassTaskRoles"
+                    },
+                  - {
+                      - Action   = [
+                          - "kms:GenerateDataKey",
+                          - "kms:Encrypt",
+                          - "kms:DescribeKey",
+                          - "kms:Decrypt",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0"
+                      - Sid      = "KmsForArtifacts"
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> (known after apply)
+        # (2 unchanged attributes hidden)
+    }
+
+  # module.observability_alarms.data.aws_iam_policy_document.slack_alarm will be read during apply
+  # (config refers to values not yet known)
+ <= data "aws_iam_policy_document" "slack_alarm" {
+      + id            = (known after apply)
+      + json          = (known after apply)
+      + minified_json = (known after apply)
+
+      + statement {
+          + actions   = [
+              + "logs:CreateLogStream",
+              + "logs:PutLogEvents",
+            ]
+          + effect    = "Allow"
+          + resources = [
+              + (known after apply),
+            ]
+          + sid       = "WriteOwnLogs"
+        }
+      + statement {
+          + actions   = [
+              + "secretsmanager:GetSecretValue",
+            ]
+          + effect    = "Allow"
+          + resources = [
+              + "arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/slack-webhook-eunYoR",
+            ]
+          + sid       = "ReadSlackWebhook"
+        }
+      + statement {
+          + actions   = [
+              + "kms:Decrypt",
+            ]
+          + effect    = "Allow"
+          + resources = [
+              + "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0",
+            ]
+          + sid       = "DecryptSlackWebhook"
+        }
+    }
+
+  # module.observability_alarms.aws_cloudwatch_log_group.slack_alarm must be replaced
+-/+ resource "aws_cloudwatch_log_group" "slack_alarm" {
+      ~ arn                         = "arn:aws:logs:us-west-1:240462142849:log-group:/aws/lambda/devops-g3-slack-alarm" -> (known after apply)
+      ~ deletion_protection_enabled = false -> (known after apply)
+      ~ id                          = "/aws/lambda/devops-g3-slack-alarm" -> (known after apply)
+      ~ log_group_class             = "STANDARD" -> (known after apply)
+      ~ name                        = "/aws/lambda/devops-g3-slack-alarm" -> "/devops-g3/slack-alarm" # forces replacement
+      + name_prefix                 = (known after apply)
+        tags                        = {
+            "Name"    = "devops-g3-slack-alarm"
+            "owner"   = "minage"
+            "service" = "reliability"
+        }
+        # (5 unchanged attributes hidden)
+    }
+
+  # module.observability_alarms.aws_cloudwatch_metric_alarm.dlq_depth["payout"] will be updated in-place
+  ~ resource "aws_cloudwatch_metric_alarm" "dlq_depth" {
+      ~ alarm_actions                         = [] -> (known after apply)
+        id                                    = "devops-g3-payout-dlq-depth"
+      ~ ok_actions                            = [] -> (known after apply)
+        tags                                  = {
+            "Name"    = "devops-g3-payout-dlq-depth"
+            "owner"   = "minage"
+            "service" = "payout"
+        }
+        # (22 unchanged attributes hidden)
+    }
+
+  # module.observability_alarms.aws_cloudwatch_metric_alarm.dlq_depth["reconciliation"] will be updated in-place
+  ~ resource "aws_cloudwatch_metric_alarm" "dlq_depth" {
+      ~ alarm_actions                         = [] -> (known after apply)
+        id                                    = "devops-g3-reconciliation-dlq-depth"
+      ~ ok_actions                            = [] -> (known after apply)
+        tags                                  = {
+            "Name"    = "devops-g3-reconciliation-dlq-depth"
+            "owner"   = "minage"
+            "service" = "reconciliation"
+        }
+        # (22 unchanged attributes hidden)
+    }
+
+  # module.observability_alarms.aws_iam_role_policy.slack_alarm will be updated in-place
+  ~ resource "aws_iam_role_policy" "slack_alarm" {
+        id          = "devops-g3-slack-alarm:slack-alarm"
+        name        = "slack-alarm"
+      ~ policy      = jsonencode(
+            {
+              - Statement = [
+                  - {
+                      - Action   = [
+                          - "logs:PutLogEvents",
+                          - "logs:CreateLogStream",
+                        ]
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:logs:us-west-1:240462142849:log-group:/aws/lambda/devops-g3-slack-alarm:*"
+                      - Sid      = "WriteOwnLogs"
+                    },
+                  - {
+                      - Action   = "secretsmanager:GetSecretValue"
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/slack-webhook-eunYoR"
+                      - Sid      = "ReadSlackWebhook"
+                    },
+                  - {
+                      - Action   = "kms:Decrypt"
+                      - Effect   = "Allow"
+                      - Resource = "arn:aws:kms:us-west-1:240462142849:key/90e2806f-72c0-4b51-ae60-8cc9436bdfe0"
+                      - Sid      = "DecryptSlackWebhook"
+                    },
+                ]
+              - Version   = "2012-10-17"
+            }
+        ) -> (known after apply)
+        # (2 unchanged attributes hidden)
+    }
+
+  # module.observability_alarms.aws_lambda_function.slack_alarm will be created
+  + resource "aws_lambda_function" "slack_alarm" {
+      + architectures                  = (known after apply)
+      + arn                            = (known after apply)
+      + code_sha256                    = (known after apply)
+      + filename                       = "../../modules/observability-alarms/.slack-alarm.zip"
+      + function_name                  = "devops-g3-slack-alarm"
+      + handler                        = "slack_alarm.handler"
+      + id                             = (known after apply)
+      + invoke_arn                     = (known after apply)
+      + last_modified                  = (known after apply)
+      + memory_size                    = 128
+      + package_type                   = "Zip"
+      + publish                        = false
+      + qualified_arn                  = (known after apply)
+      + qualified_invoke_arn           = (known after apply)
+      + region                         = "us-west-1"
+      + reserved_concurrent_executions = -1
+      + response_streaming_invoke_arn  = (known after apply)
+      + role                           = "arn:aws:iam::240462142849:role/devops-g3-slack-alarm"
+      + runtime                        = "python3.12"
+      + signing_job_arn                = (known after apply)
+      + signing_profile_version_arn    = (known after apply)
+      + skip_destroy                   = false
+      + source_code_hash               = "YCLapRn6+krM3iME9NCcrZMfZ5dQ9vy3DtCFMajbxIk="
+      + source_code_size               = (known after apply)
+      + tags                           = {
+          + "Name"    = "devops-g3-slack-alarm"
+          + "owner"   = "minage"
+          + "service" = "reliability"
+        }
+      + tags_all                       = {
+          + "Name"        = "devops-g3-slack-alarm"
+          + "capstone"    = "tillflow"
+          + "environment" = "dev"
+          + "group"       = "devops-g3"
+          + "managed-by"  = "terraform"
+          + "owner"       = "minage"
+          + "service"     = "reliability"
+        }
+      + timeout                        = 10
+      + version                        = (known after apply)
+
+      + environment {
+          + variables = {
+              + "ENVIRONMENT"              = "dev"
+              + "GRAFANA_PANEL_URL"        = "https://k8ve9ik8zl.execute-api.us-west-1.amazonaws.com/v1/grafana/d/tillflow-slo/tillflow-slo-uptime-2b-burn"
+              + "OWNER"                    = "minage"
+              + "RUNBOOK_URL"              = "https://github.com/WairimuNganga/group3-tillflow-capstone/blob/main/docs/runbook.md#observability-alerts"
+              + "SLACK_WEBHOOK_SECRET_ARN" = "arn:aws:secretsmanager:us-west-1:240462142849:secret:devops-g3/slack-webhook-eunYoR"
+            }
+        }
+
+      + ephemeral_storage (known after apply)
+
+      + logging_config {
+          + log_format = "Text"
+          + log_group  = "/devops-g3/slack-alarm"
+        }
+
+      + tracing_config (known after apply)
+    }
+
+  # module.observability_alarms.aws_lambda_permission.cloudwatch_alarms will be created
+  + resource "aws_lambda_permission" "cloudwatch_alarms" {
+      + action              = "lambda:InvokeFunction"
+      + function_name       = "devops-g3-slack-alarm"
+      + id                  = (known after apply)
+      + principal           = "lambda.alarms.cloudwatch.amazonaws.com"
+      + region              = "us-west-1"
+      + source_account      = "240462142849"
+      + source_arn          = "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-*-dlq-depth"
+      + statement_id        = "AllowCloudWatchDlqAlarms"
+      + statement_id_prefix = (known after apply)
+    }
+
+  # module.service["commission"].aws_ecs_service.this will be updated in-place
+  ~ resource "aws_ecs_service" "this" {
+        id                                 = "arn:aws:ecs:us-west-1:240462142849:service/devops-g3/devops-g3-commission"
+        name                               = "devops-g3-commission"
+        tags                               = {
+            "Name"    = "devops-g3-commission"
+            "service" = "commission"
+        }
+      ~ task_definition                    = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-commission:101" -> (known after apply)
+        # (18 unchanged attributes hidden)
+
+        # (5 unchanged blocks hidden)
+    }
+
+  # module.service["commission"].aws_ecs_task_definition.this must be replaced
+-/+ resource "aws_ecs_task_definition" "this" {
+      ~ arn                      = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-commission:100" -> (known after apply)
+      ~ arn_without_revision     = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-commission" -> (known after apply)
+      ~ container_definitions    = jsonencode(
+          ~ [
+              ~ {
+                    name                   = "adot"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 4317
+                            # (2 unchanged attributes hidden)
+                        },
+                      ~ {
+                          - hostPort      = 4318
+                            # (2 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+              ~ {
+                  ~ environment            = [
+                        # (4 unchanged elements hidden)
+                        {
+                            name  = "ENVIRONMENT"
+                            value = "dev"
+                        },
+                      ~ {
+                            name  = "GIT_COMMIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "GIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "IMAGE_DIGEST"
+                          ~ value = "sha256:3d811681b4bd427f7209d9803226499f1e74b7f363ec237ba5afcf831d65f970" -> "sha256:92556af9679bc2adc384062a5af5aa79318f6864f94ee8027d9dccd0cec8d2ed"
+                        },
+                        {
+                            name  = "MPESA_ADAPTER"
+                            value = "sandbox"
+                        },
+                        # (9 unchanged elements hidden)
+                    ]
+                  ~ image                  = "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/commission@sha256:3d811681b4bd427f7209d9803226499f1e74b7f363ec237ba5afcf831d65f970" -> "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/commission@sha256:92556af9679bc2adc384062a5af5aa79318f6864f94ee8027d9dccd0cec8d2ed"
+                    name                   = "commission"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 8080
+                            name          = "commission-http"
+                            # (3 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+            ] # forces replacement
+        )
+      ~ enable_fault_injection   = false -> (known after apply)
+      ~ id                       = "devops-g3-commission" -> (known after apply)
+      ~ revision                 = 100 -> (known after apply)
+        tags                     = {
+            "Name"    = "devops-g3-commission"
+            "service" = "commission"
+        }
+        # (13 unchanged attributes hidden)
+
+      - volume {
+          - configure_at_launch = false -> null
+          - name                = "tmp" -> null
+            # (1 unchanged attribute hidden)
+        }
+      + volume {
+          + configure_at_launch = (known after apply)
+          + name                = "tmp"
+            # (1 unchanged attribute hidden)
+        }
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.service["payments"].aws_ecs_service.this will be updated in-place
+  ~ resource "aws_ecs_service" "this" {
+        id                                 = "arn:aws:ecs:us-west-1:240462142849:service/devops-g3/devops-g3-payments"
+        name                               = "devops-g3-payments"
+        tags                               = {
+            "Name"    = "devops-g3-payments"
+            "service" = "payments"
+        }
+      ~ task_definition                    = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments:100" -> (known after apply)
+        # (18 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # module.service["payments"].aws_ecs_task_definition.this must be replaced
+-/+ resource "aws_ecs_task_definition" "this" {
+      ~ arn                      = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments:99" -> (known after apply)
+      ~ arn_without_revision     = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-payments" -> (known after apply)
+      ~ container_definitions    = jsonencode(
+          ~ [
+              ~ {
+                    name                   = "adot"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 4317
+                            # (2 unchanged attributes hidden)
+                        },
+                      ~ {
+                          - hostPort      = 4318
+                            # (2 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+              ~ {
+                  ~ environment            = [
+                        # (4 unchanged elements hidden)
+                        {
+                            name  = "ENVIRONMENT"
+                            value = "dev"
+                        },
+                      ~ {
+                            name  = "GIT_COMMIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "GIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "IMAGE_DIGEST"
+                          ~ value = "sha256:5820c7fa560e59713dd306570d23793e8e35e46d229539eb91d84ffae4c45adb" -> "sha256:62d89afe8f233228c2093288db40fdab9e8ae58f0d9f520f5ca087d49ad19c9a"
+                        },
+                        {
+                            name  = "MPESA_ADAPTER"
+                            value = "sandbox"
+                        },
+                        # (10 unchanged elements hidden)
+                    ]
+                  ~ image                  = "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/payments@sha256:5820c7fa560e59713dd306570d23793e8e35e46d229539eb91d84ffae4c45adb" -> "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/payments@sha256:62d89afe8f233228c2093288db40fdab9e8ae58f0d9f520f5ca087d49ad19c9a"
+                    name                   = "payments"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 8080
+                            name          = "payments-http"
+                            # (3 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+            ] # forces replacement
+        )
+      ~ enable_fault_injection   = false -> (known after apply)
+      ~ id                       = "devops-g3-payments" -> (known after apply)
+      ~ revision                 = 99 -> (known after apply)
+        tags                     = {
+            "Name"    = "devops-g3-payments"
+            "service" = "payments"
+        }
+        # (13 unchanged attributes hidden)
+
+      - volume {
+          - configure_at_launch = false -> null
+          - name                = "tmp" -> null
+            # (1 unchanged attribute hidden)
+        }
+      + volume {
+          + configure_at_launch = (known after apply)
+          + name                = "tmp"
+            # (1 unchanged attribute hidden)
+        }
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.service["pos"].aws_ecs_service.this will be updated in-place
+  ~ resource "aws_ecs_service" "this" {
+        id                                 = "arn:aws:ecs:us-west-1:240462142849:service/devops-g3/devops-g3-pos"
+        name                               = "devops-g3-pos"
+        tags                               = {
+            "Name"    = "devops-g3-pos"
+            "service" = "pos"
+        }
+      ~ task_definition                    = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos:100" -> (known after apply)
+        # (18 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # module.service["pos"].aws_ecs_task_definition.this must be replaced
+-/+ resource "aws_ecs_task_definition" "this" {
+      ~ arn                      = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos:99" -> (known after apply)
+      ~ arn_without_revision     = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-pos" -> (known after apply)
+      ~ container_definitions    = jsonencode(
+          ~ [
+              ~ {
+                    name                   = "adot"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 4317
+                            # (2 unchanged attributes hidden)
+                        },
+                      ~ {
+                          - hostPort      = 4318
+                            # (2 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+              ~ {
+                  ~ environment            = [
+                        # (4 unchanged elements hidden)
+                        {
+                            name  = "ENVIRONMENT"
+                            value = "dev"
+                        },
+                      ~ {
+                            name  = "GIT_COMMIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "GIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "IMAGE_DIGEST"
+                          ~ value = "sha256:f0157a7ca3c1ae0bed5e66281985dc65d6d00a21ede71784b438ddab9c3945dd" -> "sha256:31d2f2eab9ce4c664698b809f2b10a75950d58b0cfb1974bbf1c3a96984d2c62"
+                        },
+                        {
+                            name  = "MPESA_ADAPTER"
+                            value = "sandbox"
+                        },
+                        # (8 unchanged elements hidden)
+                    ]
+                  ~ image                  = "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/pos@sha256:f0157a7ca3c1ae0bed5e66281985dc65d6d00a21ede71784b438ddab9c3945dd" -> "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/pos@sha256:31d2f2eab9ce4c664698b809f2b10a75950d58b0cfb1974bbf1c3a96984d2c62"
+                    name                   = "pos"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 8080
+                            name          = "pos-http"
+                            # (3 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+            ] # forces replacement
+        )
+      ~ enable_fault_injection   = false -> (known after apply)
+      ~ id                       = "devops-g3-pos" -> (known after apply)
+      ~ revision                 = 99 -> (known after apply)
+        tags                     = {
+            "Name"    = "devops-g3-pos"
+            "service" = "pos"
+        }
+        # (13 unchanged attributes hidden)
+
+      - volume {
+          - configure_at_launch = false -> null
+          - name                = "tmp" -> null
+            # (1 unchanged attribute hidden)
+        }
+      + volume {
+          + configure_at_launch = (known after apply)
+          + name                = "tmp"
+            # (1 unchanged attribute hidden)
+        }
+
+        # (1 unchanged block hidden)
+    }
+
+  # module.service["web"].aws_ecs_service.this will be updated in-place
+  ~ resource "aws_ecs_service" "this" {
+        id                                 = "arn:aws:ecs:us-west-1:240462142849:service/devops-g3/devops-g3-web"
+        name                               = "devops-g3-web"
+        tags                               = {
+            "Name"    = "devops-g3-web"
+            "service" = "web"
+        }
+      ~ task_definition                    = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web:102" -> (known after apply)
+        # (18 unchanged attributes hidden)
+
+        # (6 unchanged blocks hidden)
+    }
+
+  # module.service["web"].aws_ecs_task_definition.this must be replaced
+-/+ resource "aws_ecs_task_definition" "this" {
+      ~ arn                      = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web:101" -> (known after apply)
+      ~ arn_without_revision     = "arn:aws:ecs:us-west-1:240462142849:task-definition/devops-g3-web" -> (known after apply)
+      ~ container_definitions    = jsonencode(
+          ~ [
+              ~ {
+                    name                   = "adot"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 4317
+                            # (2 unchanged attributes hidden)
+                        },
+                      ~ {
+                          - hostPort      = 4318
+                            # (2 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+              ~ {
+                  ~ environment            = [
+                        # (5 unchanged elements hidden)
+                        {
+                            name  = "ENVIRONMENT"
+                            value = "dev"
+                        },
+                      ~ {
+                            name  = "GIT_COMMIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "GIT_SHA"
+                          ~ value = "e333d6112f581fa0f402d5a6b912c696a3cc3abd" -> "2779d53713daa882422df44ab98b3c5971f4d04b"
+                        },
+                      ~ {
+                            name  = "IMAGE_DIGEST"
+                          ~ value = "sha256:f7c5a41f23cf57a3176e4dab2426721d8e98e836e9ddc26d88f5dddab5dca83c" -> "sha256:57108dd8f446539acdd981746aa0b98b42d995ae2d75314c217a1b39532e6819"
+                        },
+                        {
+                            name  = "MPESA_ADAPTER"
+                            value = "sandbox"
+                        },
+                        # (9 unchanged elements hidden)
+                    ]
+                  ~ image                  = "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web@sha256:f7c5a41f23cf57a3176e4dab2426721d8e98e836e9ddc26d88f5dddab5dca83c" -> "240462142849.dkr.ecr.us-west-1.amazonaws.com/devops-g3/web@sha256:57108dd8f446539acdd981746aa0b98b42d995ae2d75314c217a1b39532e6819"
+                    name                   = "web"
+                  ~ portMappings           = [
+                      ~ {
+                          - hostPort      = 8080
+                            name          = "web-http"
+                            # (3 unchanged attributes hidden)
+                        },
+                    ]
+                  - systemControls         = []
+                  - volumesFrom            = []
+                    # (9 unchanged attributes hidden)
+                },
+            ] # forces replacement
+        )
+      ~ enable_fault_injection   = false -> (known after apply)
+      ~ id                       = "devops-g3-web" -> (known after apply)
+      ~ revision                 = 101 -> (known after apply)
+        tags                     = {
+            "Name"    = "devops-g3-web"
+            "service" = "web"
+        }
+        # (13 unchanged attributes hidden)
+
+      - volume {
+          - configure_at_launch = false -> null
+          - name                = "tmp" -> null
+            # (1 unchanged attribute hidden)
+        }
+      + volume {
+          + configure_at_launch = (known after apply)
+          + name                = "tmp"
+            # (1 unchanged attribute hidden)
+        }
+
+        # (1 unchanged block hidden)
+    }
+
+Plan: 7 to add, 11 to change, 5 to destroy.

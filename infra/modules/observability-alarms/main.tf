@@ -28,8 +28,13 @@ resource "aws_iam_role" "slack_alarm" {
   }
 }
 
+# Lambda's default log group is `/aws/lambda/<function-name>`, which fails the
+# brief's naming rule (audit-naming-tags.sh) because it is prefixed `/aws/`,
+# not `/devops-g3`. The function is given an explicit log group below via
+# `logging_config` so it matches the convention every other log group in this
+# repo already follows: /devops-g3/<thing>.
 resource "aws_cloudwatch_log_group" "slack_alarm" {
-  name              = "/aws/lambda/${var.name_prefix}-slack-alarm"
+  name              = "/${var.name_prefix}/slack-alarm"
   retention_in_days = var.log_retention_days
 
   tags = {
@@ -88,6 +93,13 @@ resource "aws_lambda_function" "slack_alarm" {
       RUNBOOK_URL              = var.runbook_url
       SLACK_WEBHOOK_SECRET_ARN = var.slack_webhook_secret_arn
     }
+  }
+
+  # Without this the runtime writes to /aws/lambda/<name> regardless of the
+  # log group declared above, leaving an unmanaged, unretained group behind.
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.slack_alarm.name
   }
 
   tags = {

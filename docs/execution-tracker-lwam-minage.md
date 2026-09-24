@@ -15,7 +15,7 @@
 | **A1** | `synthetics-canary` Terraform module + wire in `envs/dev` | Lwam | [x] | PR: platform synthetics |
 | **A2** | `observability-alarms` module (DLQ depth + canary SuccessPercent) | Lwam | [x] | same PR |
 | **A3** | `terraform test` + apply in dev | Lwam | [x] | GitHub Terraform apply passed; see platform README |
-| **A4** | Capture naming/tag audit log after plan | Lwam | [ ] | `evidence/platform/naming-tag-audit-*.log` |
+| **A4** | Capture naming/tag audit log after plan | Lwam | [x] | `evidence/platform/naming-tag-audit-20260923.log` |
 | **A5** | `aws synthetics describe-canaries` + one run log | Lwam | [x] | `evidence/platform/synthetics-describe-20260920.json`, `synthetics-runs-20260920.json` |
 
 ---
@@ -25,8 +25,8 @@
 | Step | Task | Status | Evidence |
 |------|------|--------|----------|
 | **B1** | `evidence/platform/how-to-reproduce.md` | [x] | this file |
-| **B2** | DB bootstrap build log (rerun if needed) | [ ] | `db-bootstrap-build-*.log` |
-| **B3** | Schema/roles/RLS proof (no passwords) | [ ] | `db-roles-rls-*.log` |
+| **B2** | DB bootstrap build log (rerun if needed) | [x] | `db-bootstrap-status-20260923.json` |
+| **B3** | Schema/roles/RLS proof (no passwords) | [x] | `db-roles-rls-20260923.log` |
 | **B4** | `evidence/platform/README.md` checkboxes + PR links | [x] | `evidence/platform/README.md` |
 
 ---
@@ -38,7 +38,7 @@
 | **C1** | Slack contact point: all 9 contract fields | [x] | `infra/grafana/docker-entrypoint.sh` |
 | **C2** | Alert rule annotations (env, service, symptom, …) | [x] | `rules.yaml` |
 | **C3** | Pipeline: bump Grafana image tag + deploy | [x] | ECS JSON + live dashboard screenshots (2026-09-20) |
-| **C4** | Test contact point + capture firing/recovery | [ ] | `slack-alert-*.json` |
+| **C4** | Test contact point + capture firing/recovery | [x] | Drill 3 Slack firing/recovery screenshots, `drill-3-slack-alarm-*.json` |
 | **C5** | Retarget EdgeProbeFailed to Synthetics metric (after A3) | [x] | CloudWatch alarm source-of-truth + rules.yaml/runbook links |
 
 ---
@@ -60,11 +60,11 @@
 
 | Step | Task | Owner | Status | Evidence |
 |------|------|-------|--------|----------|
-| **E1** | **Drill 3** — break worker/DLQ → alert → recover (timed) | Minage | [ ] | `drill-3-platform-failure-*.md` |
-| **E2** | **Drill 5** — RDS restore → RPO/RTO | Lwam exec | [ ] | `restore-drill-*.md` |
+| **E1** | **Drill 3** — break worker/DLQ → alert → recover (timed) | Minage | [x] | `drill-3-platform-failure-20260922.md` |
+| **E2** | **Drill 5** — RDS restore → RPO/RTO | Lwam exec | [x] | `evidence/platform/restore-drill-20260922.json` |
 | **E3** | Runbook: RTO/RPO, restore, reconciliation order, drill index | Minage | [x] | `docs/runbook.md` |
 | **E4** | Expand `slo-error-budgets.md` per-SLI rows | Minage | [x] | `docs/slo-error-budgets.md` |
-| **E5** | Phase F X-Ray trace (sale→payment→callback) | Minage | [ ] | phase-f/traces/ |
+| **E5** | Phase F X-Ray trace (sale→payment→callback) | Minage | [x] | `evidence/reliability/phase-f/traces/` |
 
 ---
 
@@ -72,10 +72,10 @@
 
 | Step | Task | Status |
 |------|------|--------|
-| **F1** | Root README: bootstrap/deploy/destroy + API URL + demo | [ ] |
-| **F2** | `destroy-rebuild` log | [ ] |
-| **F3** | `production-readiness.md` stub filled (reliability + platform) | [ ] |
-| **F4** | Final evidence checklist in both READMEs | [ ] |
+| **F1** | Root README: bootstrap/deploy/destroy + API URL + demo | [x] |
+| **F2** | `destroy-rebuild` log | [x] |
+| **F3** | `production-readiness.md` stub filled (reliability + platform) | [x] |
+| **F4** | Final evidence checklist in both READMEs | [x] |
 
 ---
 

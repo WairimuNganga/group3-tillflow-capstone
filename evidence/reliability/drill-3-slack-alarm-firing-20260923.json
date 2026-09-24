@@ -1,0 +1,38 @@
+{
+    "MetricAlarms": [
+        {
+            "AlarmName": "devops-g3-reconciliation-dlq-depth",
+            "AlarmArn": "arn:aws:cloudwatch:us-west-1:240462142849:alarm:devops-g3-reconciliation-dlq-depth",
+            "AlarmDescription": "Messages visible on reconciliation DLQ — replay or fix consumer (runbook § Observability alerts).",
+            "AlarmConfigurationUpdatedTimestamp": "2026-09-23T20:59:33.243000+00:00",
+            "ActionsEnabled": true,
+            "OKActions": [
+                "arn:aws:lambda:us-west-1:240462142849:function:devops-g3-slack-alarm"
+            ],
+            "AlarmActions": [
+                "arn:aws:lambda:us-west-1:240462142849:function:devops-g3-slack-alarm"
+            ],
+            "InsufficientDataActions": [],
+            "StateValue": "ALARM",
+            "StateReason": "Threshold Crossed: 1 datapoint [1.0 (23/09/26 21:00:00)] was greater than or equal to the threshold (1.0).",
+            "StateReasonData": "{\"version\":\"1.0\",\"queryDate\":\"2026-09-23T21:02:37.211+0000\",\"startDate\":\"2026-09-23T21:00:00.000+0000\",\"statistic\":\"Maximum\",\"period\":60,\"recentDatapoints\":[1.0],\"threshold\":1.0,\"evaluatedDatapoints\":[{\"timestamp\":\"2026-09-23T21:00:00.000+0000\",\"sampleCount\":1.0,\"value\":1.0}]}",
+            "StateUpdatedTimestamp": "2026-09-23T21:02:37.212000+00:00",
+            "MetricName": "ApproximateNumberOfMessagesVisible",
+            "Namespace": "AWS/SQS",
+            "Statistic": "Maximum",
+            "Dimensions": [
+                {
+                    "Name": "QueueName",
+                    "Value": "devops-g3-reconciliation-dlq"
+                }
+            ],
+            "Period": 60,
+            "EvaluationPeriods": 1,
+            "Threshold": 1.0,
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "TreatMissingData": "notBreaching",
+            "StateTransitionedTimestamp": "2026-09-23T21:02:37.212000+00:00"
+        }
+    ],
+    "CompositeAlarms": []
+}

@@ -22,3 +22,12 @@ output "ci_plan_role_arn" {
   description = "Read-only role for PR plans. Set as AWS_PLAN_ROLE_ARN in the workflow."
   value       = aws_iam_role.ci_plan.arn
 }
+
+# Exposed for tests/ci-permissions.tftest.hcl. The CI deploy role silently
+# lacking a permission has broken an apply three times (rds CreateSecret,
+# ecs:TagResource, lambda:CreateFunction) and each failure surfaced only
+# mid-apply, after earlier resources were already created.
+output "ci_deploy_lambda_function_arns" {
+  description = "Lambda functions the GitHub deploy role may manage."
+  value       = local.ci_deploy_lambda_function_arns
+}

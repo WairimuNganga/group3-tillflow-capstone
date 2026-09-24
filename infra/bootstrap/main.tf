@@ -36,6 +36,14 @@ locals {
     "repo:${local.github_owner}@*/${local.github_repo}@*:*",
     "repo:${lower(local.github_owner)}@*/${lower(local.github_repo)}@*:*",
   ]
+
+  # Lambda functions the CI deploy role may manage, held as a local so
+  # tests/ci-permissions.tftest.hcl can assert the scope. aws_iam_policy_document
+  # is a data source and mocks to an empty document under `terraform test`, so a
+  # rendered-JSON assertion would pass against nothing and prove nothing.
+  ci_deploy_lambda_function_arns = [
+    "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${var.name_prefix}-slack-alarm",
+  ]
 }
 
 # ---------------------------------------------------------------------------
@@ -444,6 +452,42 @@ data "aws_iam_policy_document" "ci_deploy" {
     sid       = "ReadSyntheticsLambdaLayer"
     actions   = ["lambda:GetLayerVersion"]
     resources = ["arn:aws:lambda:${var.region}:*:layer:Synthetics:*"]
+  }
+
+  # The DLQ alarms invoke a Terraform-owned relay Lambda that posts the alert
+  # contract to Slack (modules/observability-alarms). ManageSyntheticsLambda
+  # above is scoped to `cwsyn-*`, which does not match it, so a GitHub apply
+  # created the log group and role and then failed on lambda:CreateFunction.
+  #
+  # Named exactly, not `${var.name_prefix}-*`: this is the only Terraform-owned
+  # function in the stack, and a prefix wildcard would silently authorise every
+  # future one. Add a sibling statement when a second relay appears.
+  #
+  # The log group and the execution role are already covered by
+  # PlatformServices (`logs:*`) and ScopedIam (`${var.name_prefix}-*`). The
+  # archive provider only zips a local file and needs no AWS permission.
+  statement {
+    sid = "ManageSlackAlarmLambda"
+    actions = [
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:PublishVersion",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+      "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
+      # The AWS provider reads the code-signing config on every refresh of an
+      # aws_lambda_function, even when signing is not configured.
+      "lambda:GetFunctionCodeSigningConfig",
+      "lambda:GetPolicy",
+      "lambda:ListVersionsByFunction",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "lambda:ListTags",
+    ]
+    resources = local.ci_deploy_lambda_function_arns
   }
 
   # Terraform creates and attaches the per-service task roles. Restricted to
